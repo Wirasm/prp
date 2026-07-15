@@ -33,6 +33,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 import time
@@ -61,7 +62,12 @@ REVIEW_DIR = ROOT / ".claude" / "PRPs" / "reviews"
 GREEN = "VALIDATION: GREEN"
 PROTECTED_BRANCHES = {"main", "master", "development", "develop"}
 STAGE_TIMEOUT = 3600  # seconds per claude stage
-LOOP_ARTIFACTS = (".claude/prp-loop.state.json", ".claude/prp-loop.run.log")  # never commit these
+# The loop's own artifacts — never commit these, even when the target repo doesn't gitignore them.
+LOOP_ARTIFACTS = (
+    ".claude/prp-loop.state.json*",  # state file + its atomic-write temp
+    ".claude/prp-loop.run.log",
+    ".claude/PRPs/reviews/*.verdict.json",  # per-cycle review verdicts
+)
 
 
 def log(msg: str) -> None:
@@ -75,14 +81,19 @@ def now() -> str:
 # ---------- state ----------
 def load_state() -> dict | None:
     if STATE_FILE.exists():
-        return json.loads(STATE_FILE.read_text())
+        try:
+            return json.loads(STATE_FILE.read_text())
+        except json.JSONDecodeError as e:
+            sys.exit(f"state file {STATE_FILE} is corrupt ({e}); fix or delete it to start over")
     return None
 
 
 def save_state(state: dict) -> None:
     state["updated_at"] = now()
     STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
-    STATE_FILE.write_text(json.dumps(state, indent=2))
+    tmp = STATE_FILE.with_name(STATE_FILE.name + ".tmp")
+    tmp.write_text(json.dumps(state, indent=2))
+    os.replace(tmp, STATE_FILE)  # atomic: a crash mid-write never corrupts the state file
 
 
 def record(state: dict, stage: str, result: str) -> None:
@@ -127,13 +138,24 @@ def run_claude(prompt: str) -> str:
 
 
 # ---------- helpers ----------
-def newest_plan() -> str | None:
+def plan_snapshot() -> dict[str, float]:
+    if not PLANS_DIR.exists():
+        return {}
+    return {str(p): p.stat().st_mtime for p in PLANS_DIR.glob("*.plan.md")}
+
+
+def newest_plan(before: dict[str, float]) -> str | None:
+    """The plan written by this run's plan stage — new or modified since the snapshot,
+    never a pre-existing plan that happened to be lying around."""
     if not PLANS_DIR.exists():
         return None
-    plans = list(PLANS_DIR.glob("*.plan.md"))
-    if not plans:
+    fresh = [
+        p for p in PLANS_DIR.glob("*.plan.md")
+        if str(p) not in before or p.stat().st_mtime > before[str(p)]
+    ]
+    if not fresh:
         return None
-    return str(max(plans, key=lambda p: p.stat().st_mtime).relative_to(ROOT))
+    return str(max(fresh, key=lambda p: p.stat().st_mtime).relative_to(ROOT))
 
 
 def current_pr() -> tuple[int | None, str | None]:
@@ -164,7 +186,12 @@ def ensure_committed(state: dict) -> None:
         run_claude("Use the prp-commit skill to commit all current changes.")
     if _dirty():
         subprocess.run(["git", "add", "-A", "--", ".", *_excludes()], cwd=ROOT)
-        subprocess.run(["git", "commit", "-m", "chore: prp-loop checkpoint"], cwd=ROOT)
+        commit = subprocess.run(
+            ["git", "commit", "-m", "chore: prp-loop checkpoint"],
+            cwd=ROOT, capture_output=True, text=True,
+        )
+        if commit.returncode != 0 or _dirty():
+            halt(state, f"checkpoint commit failed: {(commit.stderr or commit.stdout)[:300]}")
 
 
 def check_green(state: dict, result: str) -> tuple[bool, str]:
@@ -173,7 +200,9 @@ def check_green(state: dict, result: str) -> tuple[bool, str]:
     if cmd:
         proc = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True, shell=True)
         return proc.returncode == 0, (proc.stdout + proc.stderr)[-2000:]
-    if GREEN in result:
+    # The stage is told to END its message with the sentinel; require it at the end so a
+    # mere echo of the instruction in the body never counts as green.
+    if result.rstrip().endswith(GREEN):
         return True, ""
     if "VALIDATION: FAILED" in result:
         return False, result.split("VALIDATION: FAILED", 1)[-1][:2000]
@@ -190,9 +219,11 @@ def implement_until_green(state: dict, initial_prompt: str, label: str) -> bool:
             record(state, label, f"green@{i}")
             save_state(state)
             return True
+        plan = state.get("artifacts", {}).get("plan_path")
+        plan_ref = f" against the plan at {plan}" if plan else ""
         prompt = (
-            "Continue working on the current branch. The previous attempt's validations "
-            f"did not pass:\n{failures}\n\n"
+            f"Continue working on the current branch{plan_ref}. The previous attempt's "
+            f"validations did not pass:\n{failures}\n\n"
             "Fix the failures, re-run ALL validations, and commit. End your message with "
             f"exactly '{GREEN}' when everything passes, otherwise 'VALIDATION: FAILED' "
             "followed by the failing output."
@@ -204,10 +235,11 @@ def implement_until_green(state: dict, initial_prompt: str, label: str) -> bool:
 # ---------- stages ----------
 def stage_plan(state: dict) -> None:
     log("STAGE plan")
+    before = plan_snapshot()
     run_claude(f"Use the prp-plan skill to create an implementation plan for: {state['feature']}")
-    plan = newest_plan()
+    plan = newest_plan(before)
     if not plan:
-        halt(state, "plan stage produced no .plan.md under .claude/PRPs/plans/")
+        halt(state, "plan stage produced no new .plan.md under .claude/PRPs/plans/")
     state["artifacts"]["plan_path"] = plan
     record(state, "plan", "ok")
     state["stage"] = "implement"
@@ -266,13 +298,23 @@ def stage_review(state: dict) -> None:
         'shape and nothing else:\n'
         '{"clean": <true|false>, "blocking": ["<one line per blocking finding>"]}'
     )
+    verdict_path.unlink(missing_ok=True)  # never trust a stale verdict from a prior attempt
     run_claude(prompt)
     if not verdict_path.exists():
         halt(state, f"review stage did not write the verdict file {rel}")
-    verdict = json.loads(verdict_path.read_text())
+    try:
+        text = verdict_path.read_text().strip()
+        if text.startswith("```"):  # tolerate a markdown-fenced verdict
+            text = text.split("\n", 1)[-1].rsplit("```", 1)[0].strip()
+        verdict = json.loads(text)
+    except (json.JSONDecodeError, ValueError) as e:
+        halt(state, f"verdict file {rel} is not valid JSON: {e}")
     state["artifacts"].setdefault("review_verdicts", []).append(str(rel))
 
-    if verdict.get("clean"):
+    clean = verdict.get("clean")
+    if not isinstance(clean, bool):  # a string "false" is truthy — never trust raw truthiness
+        clean = str(clean).strip().lower() == "true"
+    if clean:
         record(state, "review", "clean")
         state["stage"] = "done"
         state["status"] = "done"
@@ -297,6 +339,8 @@ def stage_fix(state: dict) -> None:
     plan = state["artifacts"]["plan_path"]
     pr_num = state["artifacts"]["pr_number"]
     head_before = git("rev-parse", "HEAD")
+    if not head_before:
+        halt(state, "could not resolve HEAD before the fix pass")
     initial = (
         f"Address these blocking review findings on the current branch (PR #{pr_num}):\n"
         f"{findings}\n\n"
@@ -355,8 +399,11 @@ def main() -> None:
             state["until"] = args.until_stage
         log(f"resuming at stage={state['stage']} cycle={state['cycle']}")
     else:
-        if state and state.get("status") == "running":
-            sys.exit(f"a loop is already running ({STATE_FILE.relative_to(ROOT)}); use --resume or delete it")
+        if state and state.get("status") in ("running", "halted"):
+            sys.exit(
+                f"a loop with status '{state.get('status')}' exists "
+                f"({STATE_FILE.relative_to(ROOT)}); use --resume or delete it"
+            )
         if not args.feature:
             sys.exit("a feature description is required to start a new loop")
         state = {

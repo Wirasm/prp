@@ -53,10 +53,19 @@ if [[ ${#MISSING[@]} -eq 0 ]]; then
   exit 0
 fi
 
+# Never block twice in a row - a second Stop while stop_hook_active means the model
+# already got one retry; allow it to stop rather than risk an infinite block loop.
+STOP_ACTIVE=$(printf '%s' "$HOOK_INPUT" | jq -r '.stop_hook_active // false' 2>/dev/null || echo false)
+if [[ "$STOP_ACTIVE" == "true" ]]; then
+  echo "prp-research-team: plan still incomplete after retry; allowing stop." >&2
+  rm -f "$SENTINEL_FILE"
+  exit 0
+fi
+
 # Missing sections - block exit with feedback
 MISSING_LIST=""
 for section in "${MISSING[@]}"; do
-  MISSING_LIST="${MISSING_LIST}\n- ${section}"
+  MISSING_LIST="${MISSING_LIST}"$'\n'"- ${section}"
 done
 
 FEEDBACK="Research plan is incomplete. Missing required sections:

@@ -17,5 +17,8 @@ wheels/
 .claude/prp-loop.state.json
 .claude/prp-loop.run.log
 
-# PRP Ralph runtime state (written by the plugins/prp-core ralph commands)
-.claude/prp-ralph.state.md.claude/PRPs/reviews/*.verdict.json
+# PRP loop review verdict artifacts
+.claude/PRPs/reviews/*.verdict.json
+
+# PRP research-team stop-hook sentinel
+.claude/prp-research-team.state
