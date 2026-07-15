@@ -11,9 +11,10 @@ Pipeline:
     review dirty? -> fix (loop until green) -> push -> review   (cyclic, bounded)
 
 Design:
-- Headless: each stage is one `claude -p "<prompt>"` call in a fresh session.
+- Headless: each stage is one CLI call in a fresh session — `claude -p "<prompt>"` by
+  default, or `codex exec "<prompt>"` with --cli codex (the CLI choice persists in state).
 - State lives in .claude/prp-loop.state.json (resumable: re-run with --resume).
-- Fully autonomous (--dangerously-skip-permissions).
+- Fully autonomous (permission/sandbox bypass flags per CLI).
 - Self-contained: this script owns both loops itself and detects "green" from each
   stage's `VALIDATION: GREEN` sentinel (parsed from the clean result text) and/or an
   optional hard `--validate` command (authoritative). No external Stop-hook involved.
@@ -61,7 +62,8 @@ REVIEW_DIR = ROOT / ".claude" / "PRPs" / "reviews"
 
 GREEN = "VALIDATION: GREEN"
 PROTECTED_BRANCHES = {"main", "master", "development", "develop"}
-STAGE_TIMEOUT = 3600  # seconds per claude stage
+STAGE_TIMEOUT = 3600  # seconds per agent stage
+CLI = "claude"  # which headless CLI drives the stages; set in main(), persisted in state
 # The loop's own artifacts — never commit these, even when the target repo doesn't gitignore them.
 LOOP_ARTIFACTS = (
     ".claude/prp-loop.state.json*",  # state file + its atomic-write temp
@@ -118,8 +120,12 @@ def git(*args: str) -> str:
     ).stdout.strip()
 
 
-def run_claude(prompt: str) -> str:
-    """Run one headless Claude stage; return its final result text. Raises on error."""
+def run_agent(prompt: str) -> str:
+    """Run one headless agent stage via the configured CLI; return its final result text."""
+    return _run_codex(prompt) if CLI == "codex" else _run_claude(prompt)
+
+
+def _run_claude(prompt: str) -> str:
     cmd = [
         "claude", "-p", prompt,
         "--dangerously-skip-permissions",
@@ -135,6 +141,37 @@ def run_claude(prompt: str) -> str:
     if data.get("is_error"):
         raise RuntimeError(f"stage reported an error: {str(data.get('result'))[:500]}")
     return str(data.get("result", ""))
+
+
+def _run_codex(prompt: str) -> str:
+    """`codex exec --json` emits a JSONL event stream; collect the final agent message.
+    Parsing is deliberately tolerant of event-schema drift: unknown lines are skipped and
+    an empty extraction falls back to the raw stream tail (check_green still gates it)."""
+    cmd = [
+        "codex", "exec", "--json",
+        "--dangerously-bypass-approvals-and-sandbox",
+        prompt,
+    ]
+    proc = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True, timeout=STAGE_TIMEOUT)
+    if proc.returncode != 0:
+        raise RuntimeError(f"codex exited {proc.returncode}: {proc.stderr[:500]}")
+    last_message, error = "", ""
+    for line in proc.stdout.splitlines():
+        try:
+            ev = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        etype = str(ev.get("type", ""))
+        item = ev.get("item") or {}
+        if etype == "item.completed" and str(
+            item.get("item_type") or item.get("type") or ""
+        ) in ("agent_message", "assistant_message", "message"):
+            last_message = str(item.get("text") or item.get("content") or last_message)
+        elif etype in ("turn.failed", "error"):
+            error = str(ev.get("error") or ev)[:500]
+    if error:
+        raise RuntimeError(f"codex stage reported an error: {error}")
+    return last_message or proc.stdout[-2000:]
 
 
 # ---------- helpers ----------
@@ -183,7 +220,7 @@ def ensure_committed(state: dict) -> None:
     (state.json / run.log) — even if the target repo doesn't gitignore them."""
     if _dirty():
         log("uncommitted changes remain; committing via prp-commit")
-        run_claude("Use the prp-commit skill to commit all current changes.")
+        run_agent("Use the prp-commit skill to commit all current changes.")
     if _dirty():
         subprocess.run(["git", "add", "-A", "--", ".", *_excludes()], cwd=ROOT)
         commit = subprocess.run(
@@ -213,7 +250,7 @@ def implement_until_green(state: dict, initial_prompt: str, label: str) -> bool:
     prompt = initial_prompt
     for i in range(1, state["max_implement_iterations"] + 1):
         log(f"{label} iteration {i}/{state['max_implement_iterations']} (cycle {state['cycle']})")
-        result = run_claude(prompt)
+        result = run_agent(prompt)
         green, failures = check_green(state, result)
         if green:
             record(state, label, f"green@{i}")
@@ -236,7 +273,7 @@ def implement_until_green(state: dict, initial_prompt: str, label: str) -> bool:
 def stage_plan(state: dict) -> None:
     log("STAGE plan")
     before = plan_snapshot()
-    run_claude(f"Use the prp-plan skill to create an implementation plan for: {state['feature']}")
+    run_agent(f"Use the prp-plan skill to create an implementation plan for: {state['feature']}")
     plan = newest_plan(before)
     if not plan:
         halt(state, "plan stage produced no new .plan.md under .claude/PRPs/plans/")
@@ -271,7 +308,7 @@ def stage_pr(state: dict) -> None:
         halt(state, f"refusing to open a PR from base/protected branch '{branch}'")
     state["artifacts"]["branch"] = branch
     base_arg = f" --base {state['base']}" if state.get("base") else ""
-    run_claude(f"Use the prp-pr skill to push the current branch and open a pull request{base_arg}.")
+    run_agent(f"Use the prp-pr skill to push the current branch and open a pull request{base_arg}.")
     num, url = current_pr()
     if not num:
         halt(state, "pr stage did not produce a discoverable PR (gh pr view failed)")
@@ -299,7 +336,7 @@ def stage_review(state: dict) -> None:
         '{"clean": <true|false>, "blocking": ["<one line per blocking finding>"]}'
     )
     verdict_path.unlink(missing_ok=True)  # never trust a stale verdict from a prior attempt
-    run_claude(prompt)
+    run_agent(prompt)
     if not verdict_path.exists():
         halt(state, f"review stage did not write the verdict file {rel}")
     try:
@@ -388,6 +425,9 @@ def main() -> None:
                     help="Stop after the named stage completes. '--until implement' grinds one "
                          "plan to green and stops before opening a PR (replaces the old Ralph loop).")
     ap.add_argument("--resume", action="store_true", help="Resume from the existing state file.")
+    ap.add_argument("--cli", choices=["claude", "codex"], default=None,
+                    help="Headless CLI that drives the stages (default: claude; "
+                         "a resumed loop keeps its original CLI unless overridden).")
     args = ap.parse_args()
 
     state = load_state()
@@ -397,6 +437,8 @@ def main() -> None:
         state["status"] = "running"
         if args.until_stage:  # allow narrowing/overriding the stop point on resume
             state["until"] = args.until_stage
+        if args.cli:
+            state["cli"] = args.cli
         log(f"resuming at stage={state['stage']} cycle={state['cycle']}")
     else:
         if state and state.get("status") in ("running", "halted"):
@@ -417,12 +459,16 @@ def main() -> None:
             "validate_cmd": args.validate_cmd,
             "until": args.until_stage,
             "base": args.base,
+            "cli": args.cli or "claude",
             "status": "running",
             "artifacts": {},
             "history": [],
             "started_at": now(),
         }
         save_state(state)
+
+    global CLI
+    CLI = state.get("cli", "claude")
 
     until = state.get("until")
     while state["stage"] != "done":
