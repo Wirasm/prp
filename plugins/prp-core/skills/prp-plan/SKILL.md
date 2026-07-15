@@ -131,49 +131,10 @@ So that <benefit/value>
 
 ## Phase 2: EXPLORE - Codebase Intelligence
 
-**CRITICAL: Launch two specialized agents in parallel using multiple Task tool calls in a single message.**
+**CRITICAL: Launch two specialized agents in parallel using multiple Task tool calls in a single message.** Read `references/agent-prompts.md` now (mandatory) — it is the exact prompt text for every subagent launch in Phases 2, 3, and 5.
 
-### Agent 1: `prp-core:codebase-explorer`
-
-Finds WHERE code lives and extracts implementation patterns.
-
-Use Task tool with `subagent_type="prp-core:codebase-explorer"`:
-
-```
-Find all code relevant to implementing: [feature description].
-
-LOCATE:
-1. Similar implementations - analogous features with file:line references
-2. Naming conventions - actual examples of function/class/file naming
-3. Error handling patterns - how errors are created, thrown, caught
-4. Logging patterns - logger usage, message formats
-5. Type definitions - relevant interfaces and types
-6. Test patterns - test file structure, assertion styles, test file locations
-7. Configuration - relevant config files and settings
-8. Dependencies - relevant libraries already in use
-
-Categorize findings by purpose (implementation, tests, config, types, docs).
-Return ACTUAL code snippets from codebase, not generic examples.
-```
-
-### Agent 2: `prp-core:codebase-analyst`
-
-Analyzes HOW integration points work and traces data flow.
-
-Use Task tool with `subagent_type="prp-core:codebase-analyst"`:
-
-```
-Analyze the implementation details relevant to: [feature description].
-
-TRACE:
-1. Entry points - where new code will connect to existing code
-2. Data flow - how data moves through related components
-3. State changes - side effects in related functions
-4. Contracts - interfaces and expectations between components
-5. Patterns in use - design patterns and architectural decisions
-
-Document what exists with precise file:line references. No suggestions or improvements.
-```
+- **Agent 1: `prp-core:codebase-explorer`** — finds WHERE code lives and extracts implementation patterns. Launch with the Phase 2 codebase-explorer prompt.
+- **Agent 2: `prp-core:codebase-analyst`** — analyzes HOW integration points work and traces data flow. Launch with the Phase 2 codebase-analyst prompt.
 
 ### Merge Agent Results
 
@@ -202,27 +163,7 @@ Combine findings from both agents into a unified discovery table:
 
 **ONLY AFTER Phase 2 is complete** - solutions must fit existing codebase patterns first.
 
-**Use Task tool with `subagent_type="prp-core:web-researcher"`:**
-
-```
-Research external documentation relevant to implementing: [feature description].
-
-FIND:
-1. Official documentation for involved libraries (match versions from package.json: [list relevant deps and versions])
-2. Known gotchas, breaking changes, deprecations for these versions
-3. Security considerations and best practices
-4. Performance optimization patterns
-
-VERSION CONSTRAINTS:
-- [library]: v{version} (from package.json)
-- [library]: v{version}
-
-Return findings with:
-- Direct links to specific doc sections (not just homepages)
-- Key insights that affect implementation
-- Gotchas with mitigation strategies
-- Any conflicts between docs and existing codebase patterns found in Phase 2
-```
+**Launch `prp-core:web-researcher`** with the Phase 3 web-researcher prompt from `references/agent-prompts.md`, filling in the feature description and the dependency versions found in Phase 2.
 
 **FORMAT the agent's findings into plan references:**
 
@@ -245,51 +186,7 @@ Return findings with:
 
 ## Phase 4: DESIGN - UX Transformation
 
-**CREATE ASCII diagrams showing user experience before and after:**
-
-```
-╔═══════════════════════════════════════════════════════════════════════════════╗
-║                              BEFORE STATE                                      ║
-╠═══════════════════════════════════════════════════════════════════════════════╣
-║                                                                               ║
-║   ┌─────────────┐         ┌─────────────┐         ┌─────────────┐            ║
-║   │   Screen/   │ ──────► │   Action    │ ──────► │   Result    │            ║
-║   │  Component  │         │   Current   │         │   Current   │            ║
-║   └─────────────┘         └─────────────┘         └─────────────┘            ║
-║                                                                               ║
-║   USER_FLOW: [describe current step-by-step experience]                       ║
-║   PAIN_POINT: [what's missing, broken, or inefficient]                        ║
-║   DATA_FLOW: [how data moves through the system currently]                    ║
-║                                                                               ║
-╚═══════════════════════════════════════════════════════════════════════════════╝
-
-╔═══════════════════════════════════════════════════════════════════════════════╗
-║                               AFTER STATE                                      ║
-╠═══════════════════════════════════════════════════════════════════════════════╣
-║                                                                               ║
-║   ┌─────────────┐         ┌─────────────┐         ┌─────────────┐            ║
-║   │   Screen/   │ ──────► │   Action    │ ──────► │   Result    │            ║
-║   │  Component  │         │    NEW      │         │    NEW      │            ║
-║   └─────────────┘         └─────────────┘         └─────────────┘            ║
-║                                   │                                           ║
-║                                   ▼                                           ║
-║                          ┌─────────────┐                                      ║
-║                          │ NEW_FEATURE │  ◄── [new capability added]          ║
-║                          └─────────────┘                                      ║
-║                                                                               ║
-║   USER_FLOW: [describe new step-by-step experience]                           ║
-║   VALUE_ADD: [what user gains from this change]                               ║
-║   DATA_FLOW: [how data moves through the system after]                        ║
-║                                                                               ║
-╚═══════════════════════════════════════════════════════════════════════════════╝
-```
-
-**DOCUMENT interaction changes:**
-
-| Location        | Before          | After       | User_Action | Impact        |
-| --------------- | --------------- | ----------- | ----------- | ------------- |
-| `/route`        | State A         | State B     | Click X     | Can now Y     |
-| `Component.tsx` | Missing feature | Has feature | Input Z     | Gets result W |
+**CREATE ASCII diagrams showing user experience before and after, then DOCUMENT interaction changes.** Read `templates/ux-diagram-format.md` now (mandatory) — it is the exact BEFORE/AFTER diagram shape and interaction-changes table to produce.
 
 **PHASE_4_CHECKPOINT:**
 
@@ -302,25 +199,7 @@ Return findings with:
 
 ## Phase 5: ARCHITECT - Strategic Design
 
-**For complex features with multiple integration points**, use `prp-core:codebase-analyst` to trace how existing architecture works at the integration points identified in Phase 2:
-
-Use Task tool with `subagent_type="prp-core:codebase-analyst"`:
-
-```
-Analyze the architecture around these integration points for: [feature description].
-
-INTEGRATION POINTS (from Phase 2):
-- [entry point 1 from explorer/analyst findings]
-- [entry point 2]
-
-ANALYZE:
-1. How data flows through each integration point
-2. What contracts exist between components
-3. What side effects occur at each stage
-4. What error handling patterns are in place
-
-Document what exists with precise file:line references. No suggestions.
-```
+**For complex features with multiple integration points**, use `prp-core:codebase-analyst` to trace how existing architecture works at the integration points identified in Phase 2 — launch with the Phase 5 architecture deep-dive prompt from `references/agent-prompts.md`.
 
 **Then ANALYZE deeply (use extended thinking if needed):**
 
@@ -363,7 +242,7 @@ NOT_BUILDING (explicit scope limits):
 
 Create directory if needed: `mkdir -p .claude/PRPs/plans`
 
-**PLAN_STRUCTURE**: Read `templates/plan-template.md` now (mandatory) — it is the exact plan document to fill and save. Keep every section heading; fill every `{placeholder}` with real, project-specific content (the template's task entries and snippets are illustrative examples from one TypeScript project, not content to keep).
+**PLAN_STRUCTURE**: Read `templates/plan-template.md` now (mandatory) — it is the exact plan document to fill and save. Keep every section heading; fill every `{placeholder}` with real, project-specific content (the template's remaining snippets and table entries are illustrative examples from one TypeScript project, not content to keep). Before writing the plan's Step-by-Step Tasks section, read `references/task-block-format.md` (mandatory) for the task-block field detail and worked examples; before filling its Validation Commands section, read `references/validation-commands.md` (mandatory) for the per-language commands to embed.
 
 </process>
 
@@ -378,51 +257,7 @@ Create directory if needed: `mkdir -p .claude/PRPs/plans`
 
 2. **Edit the PRD file** with these changes
 
-**REPORT_TO_USER** (display after creating plan):
-
-```markdown
-## Plan Created
-
-**File**: `.claude/PRPs/plans/{feature-name}.plan.md`
-
-{If from PRD:}
-**Source PRD**: `{prd-file-path}`
-**Phase**: #{number} - {phase name}
-**PRD Updated**: Status set to `in-progress`, plan linked
-
-{If parallel phases available:}
-**Parallel Opportunity**: Phase {X} can run concurrently in a separate worktree.
-To start: `git worktree add -b phase-{X} ../project-phase-{X} && cd ../project-phase-{X} && /prp-plan {prd-path}`
-
-**Summary**: {2-3 sentence feature overview}
-
-**Complexity**: {LOW/MEDIUM/HIGH} - {brief rationale}
-
-**Scope**:
-- {N} files to CREATE
-- {M} files to UPDATE
-- {K} total tasks
-
-**Key Patterns Discovered**:
-- {Pattern 1 from codebase-explorer/analyst with file:line}
-- {Pattern 2 from codebase-explorer/analyst with file:line}
-
-**External Research**:
-- {Key doc 1 with version}
-- {Key doc 2 with version}
-
-**UX Transformation**:
-- BEFORE: {one-line current state}
-- AFTER: {one-line new state}
-
-**Risks**:
-- {Primary risk}: {mitigation}
-
-**Confidence Score**: {1-10}/10 for one-pass implementation success
-- {Rationale for score}
-
-**Next Step**: To execute, run: `/prp-implement .claude/PRPs/plans/{feature-name}.plan.md`
-```
+**REPORT_TO_USER** (display after creating plan): Read `templates/report-format.md` now (mandatory) and display the "Plan Created" report in exactly that structure.
 
 </output>
 
@@ -478,5 +313,10 @@ To start: `git worktree add -b phase-{X} ../project-phase-{X} && cd ../project-p
 
 ## Resources
 
-- `templates/plan-template.md` — the plan document to fill and save (read in Phase 6)
+- `references/agent-prompts.md` — exact subagent prompts for Phases 2, 3, and 5 (mandatory read at Phase 2)
+- `templates/plan-template.md` — the plan document to fill and save (mandatory read in Phase 6)
+- `templates/ux-diagram-format.md` — the BEFORE/AFTER ASCII diagram shape and interaction-changes table (mandatory read in Phase 4)
+- `templates/report-format.md` — the "Plan Created" report displayed to the user (mandatory read in Output)
+- `references/task-block-format.md` — task-block field detail and worked examples (mandatory read in Phase 6, before writing Step-by-Step Tasks)
+- `references/validation-commands.md` — per-language validation command catalog (mandatory read in Phase 6, before filling Validation Commands)
 - `workflows/update-references.md` — the update-references mode (read only when Mode Select routes there)

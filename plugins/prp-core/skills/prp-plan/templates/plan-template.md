@@ -169,75 +169,16 @@ Execute in order. Each task is atomic and independently verifiable.
 
 **Status markers** — prefix EVERY task header with one; the build agent updates it inline as it works: `[ ]` idle · `[wip]` in progress · `[x]` complete · `[f]` failed. All tasks start `[ ]`. If a task cannot be made to pass, mark it `[f]`, record why in Agent Notes, and move on if the rest of the plan can still proceed.
 
-### `[ ]` Task 1: UPDATE `src/core/database/schema.ts`
+### `[ ]` Task {N}: {ACTION} `{path/to/file}`
 
-- **ACTION**: ADD table definition to schema
-- **IMPLEMENT**: {specific columns, types, constraints}
-- **MIRROR**: `src/core/database/schema.ts:XX-YY` - follow existing table pattern
-- **IMPORTS**: `import { pgTable, text, timestamp } from "drizzle-orm/pg-core"`
-- **GOTCHA**: {known issue to avoid, e.g., "use uuid for id, not serial"}
-- **VALIDATE**: `npx tsc --noEmit` - types must compile
+- **ACTION**: {what to do to this file - CREATE / UPDATE / ADD ...}
+- **IMPLEMENT**: {the specific content to implement}
+- **MIRROR**: `{path/to/analogous/file:lines}` - {existing pattern to copy exactly}
+- **IMPORTS**: {exact import statements the new code needs}
+- **GOTCHA**: {known issue to avoid, from research findings}
+- **VALIDATE**: `{executable command proving the task is done}`
 
-### `[ ]` Task 2: CREATE `src/features/new/models.ts`
-
-- **ACTION**: CREATE type definitions file
-- **IMPLEMENT**: Re-export table, define inferred types
-- **MIRROR**: `src/features/projects/models.ts:1-10`
-- **IMPORTS**: `import { things } from "@/core/database/schema"`
-- **TYPES**: `type Thing = typeof things.$inferSelect`
-- **GOTCHA**: Use `$inferSelect` for read types, `$inferInsert` for write
-- **VALIDATE**: `npx tsc --noEmit`
-
-### `[ ]` Task 3: CREATE `src/features/new/schemas.ts`
-
-- **ACTION**: CREATE Zod validation schemas
-- **IMPLEMENT**: CreateThingSchema, UpdateThingSchema
-- **MIRROR**: `src/features/projects/schemas.ts:1-30`
-- **IMPORTS**: `import { z } from "zod/v4"` (note: zod/v4 not zod)
-- **GOTCHA**: z.record requires two args in v4
-- **VALIDATE**: `npx tsc --noEmit`
-
-### `[ ]` Task 4: CREATE `src/features/new/errors.ts`
-
-- **ACTION**: CREATE feature-specific error classes
-- **IMPLEMENT**: ThingNotFoundError, ThingAccessDeniedError
-- **MIRROR**: `src/features/projects/errors.ts:1-40`
-- **PATTERN**: Extend base Error, include code and statusCode
-- **VALIDATE**: `npx tsc --noEmit`
-
-### `[ ]` Task 5: CREATE `src/features/new/repository.ts`
-
-- **ACTION**: CREATE database operations
-- **IMPLEMENT**: findById, findByUserId, create, update, delete
-- **MIRROR**: `src/features/projects/repository.ts:1-60`
-- **IMPORTS**: `import { db } from "@/core/database/client"`
-- **GOTCHA**: Use `results[0]` pattern, not `.first()` - check noUncheckedIndexedAccess
-- **VALIDATE**: `npx tsc --noEmit`
-
-### `[ ]` Task 6: CREATE `src/features/new/service.ts`
-
-- **ACTION**: CREATE business logic layer
-- **IMPLEMENT**: createThing, getThing, updateThing, deleteThing
-- **MIRROR**: `src/features/projects/service.ts:1-80`
-- **PATTERN**: Use repository, add logging, throw custom errors
-- **IMPORTS**: `import { getLogger } from "@/core/logging"`
-- **VALIDATE**: `{type-check-cmd} && {lint-cmd}`
-
-### `[ ]` Task 7: CREATE `{source-dir}/features/new/index.ts`
-
-- **ACTION**: CREATE public API exports
-- **IMPLEMENT**: Export types, schemas, errors, service functions
-- **MIRROR**: `{source-dir}/features/{example}/index.ts:1-20`
-- **PATTERN**: Named exports only, hide repository (internal)
-- **VALIDATE**: `{type-check-cmd}`
-
-### `[ ]` Task 8: CREATE `{source-dir}/features/new/tests/service.test.ts`
-
-- **ACTION**: CREATE unit tests for service
-- **IMPLEMENT**: Test each service function, happy path + error cases
-- **MIRROR**: `{source-dir}/features/{example}/tests/service.test.ts:1-100`
-- **PATTERN**: Use project's test framework (jest, vitest, bun:test, pytest, etc.)
-- **VALIDATE**: `{test-cmd} {path-to-tests}`
+{Repeat one block per task, in dependency order, numbered from 1.}
 
 ---
 
@@ -272,7 +213,6 @@ Execute in order. Each task is atomic and independently verifiable.
 
 ```bash
 {runner} run lint && {runner} run type-check
-# Examples: npm run lint, pnpm lint, ruff check . && mypy ., cargo clippy
 ```
 
 **EXPECT**: Exit 0, no errors or warnings
@@ -281,7 +221,6 @@ Execute in order. Each task is atomic and independently verifiable.
 
 ```bash
 {runner} test {path/to/feature/tests}
-# Examples: npm test, pytest tests/, cargo test, go test ./...
 ```
 
 **EXPECT**: All tests pass, coverage >= 80%
@@ -290,7 +229,6 @@ Execute in order. Each task is atomic and independently verifiable.
 
 ```bash
 {runner} test && {runner} run build
-# Examples: npm test && npm run build, cargo test && cargo build
 ```
 
 **EXPECT**: All tests pass, build succeeds
