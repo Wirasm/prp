@@ -69,12 +69,13 @@ For runs that need more than notifications + the run file (e.g. a log line or de
 Use only when work must **survive the orchestrator session** (overnight batches) or run on a **different harness** (Codex-style CLIs). Same protocol — one worktree + branch per workstream, artifacts and PR state as the only truth — but the launch is a detached process:
 
 ```bash
-REPO_ROOT=$(git rev-parse --show-toplevel)
-WT="$REPO_ROOT/../$(basename "$REPO_ROOT")--<slug>"
-git -C "$REPO_ROOT" worktree add -b <branch> "$WT" <base>
+# Create the worktree with the prp-worktree skill (its create command prints
+# the worktree's absolute path as its final line):
+#   /prp-worktree create <branch> --base <base>
+WT=<path printed by prp-worktree create>
 cd "$WT" && nohup claude -p "<workstream prompt>" \
   --dangerously-skip-permissions --output-format stream-json --verbose \
-  > "$WT/.claude/orchestrator-ws.log" 2>&1 &
+  > /tmp/orchestrator-ws-<slug>.log 2>&1 &
 echo $!   # record the PID in the run file (replaces the agent ID)
 ```
 
@@ -82,10 +83,8 @@ Differences from the default lane: no SendMessage (course-correct by restarting 
 
 ## Cleanup (Phase 7 only)
 
-Agent-tool worktrees are auto-removed when unchanged; pushed branches survive regardless. For worktrees created manually (fallback lane):
+Agent-tool worktrees are auto-removed when unchanged; pushed branches survive regardless. For worktrees created via the prp-worktree skill (fallback lane), tear down with the same skill — its rails encode the safety order (refuses dirty worktrees and unmerged branch deletion):
 
-```bash
-git branch --merged <base> | grep <branch>    # verify merged FIRST
-git worktree remove "$WT"                     # refuses if dirty — investigate before --force
-git branch -d <branch>                        # -d not -D: refuses unmerged
+```
+/prp-worktree remove <branch> --delete-branch    # --force only after investigating what would be lost
 ```

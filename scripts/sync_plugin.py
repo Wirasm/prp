@@ -3,8 +3,8 @@
 
 What is generated:
 - plugins/prp-core/skills/  <- .claude/skills/, verbatim except:
-    * prp-loop/SKILL.md: the launcher path .claude/PRPs/scripts/prp_loop.py is
-      rewritten to ${CLAUDE_PLUGIN_ROOT}/skills/prp-loop/scripts/prp_loop.py
+    * SKILL.md launcher paths in LAUNCHER_REWRITES (scripts invoked from a
+      .claude/ path locally) are rewritten to their ${CLAUDE_PLUGIN_ROOT} form
     * prp-loop/scripts/prp_loop.py is added, copied from .claude/PRPs/scripts/
 - plugins/prp-core/agents/  <- .claude/agents/, minus EXCLUDED_AGENTS
   (personal agents that are not part of the pack)
@@ -31,8 +31,18 @@ PLUGIN = ROOT / "plugins" / "prp-core"
 
 EXCLUDED_AGENTS = {"gpui-researcher.md"}
 
-LOOP_PATH_LOCAL = ".claude/PRPs/scripts/prp_loop.py"
-LOOP_PATH_PLUGIN = "${CLAUDE_PLUGIN_ROOT}/skills/prp-loop/scripts/prp_loop.py"
+# SKILL.md files whose bodies invoke a bundled script by its repo-local path;
+# the plugin copy must invoke the same script via ${CLAUDE_PLUGIN_ROOT}.
+LAUNCHER_REWRITES: dict[Path, tuple[str, str]] = {
+    Path("skills/prp-loop/SKILL.md"): (
+        ".claude/PRPs/scripts/prp_loop.py",
+        "${CLAUDE_PLUGIN_ROOT}/skills/prp-loop/scripts/prp_loop.py",
+    ),
+    Path("skills/prp-worktree/SKILL.md"): (
+        ".claude/skills/prp-worktree/scripts/worktree.py",
+        "${CLAUDE_PLUGIN_ROOT}/skills/prp-worktree/scripts/worktree.py",
+    ),
+}
 
 SKIP_DIRS = {"__pycache__"}
 SKIP_SUFFIXES = {".pyc", ".pyo"}
@@ -53,11 +63,12 @@ def expected_files() -> dict[Path, bytes]:
     for src in _walk(SRC_SKILLS):
         rel = Path("skills") / src.relative_to(SRC_SKILLS)
         content = src.read_bytes()
-        if rel == Path("skills/prp-loop/SKILL.md"):
+        if rel in LAUNCHER_REWRITES:
+            local, plugin = LAUNCHER_REWRITES[rel]
             text = content.decode()
-            if LOOP_PATH_LOCAL not in text:
-                sys.exit(f"{src}: expected launcher path '{LOOP_PATH_LOCAL}' not found")
-            content = text.replace(LOOP_PATH_LOCAL, LOOP_PATH_PLUGIN).encode()
+            if local not in text:
+                sys.exit(f"{src}: expected launcher path '{local}' not found")
+            content = text.replace(local, plugin).encode()
         expected[rel] = content
     expected[Path("skills/prp-loop/scripts/prp_loop.py")] = SRC_LOOP_SCRIPT.read_bytes()
     for src in _walk(SRC_AGENTS):

@@ -22,3 +22,6 @@ wheels/
 
 # PRP research-team stop-hook sentinel
 .claude/prp-research-team.state
+
+# prp-worktree managed worktrees (also self-excluded via .git/info/exclude)
+.worktrees/
