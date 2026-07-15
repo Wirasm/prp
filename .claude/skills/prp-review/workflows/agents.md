@@ -27,37 +27,37 @@ Before running reviews:
 
 | Aspect | Agent | When to Run |
 |--------|-------|-------------|
-| `code` | code-reviewer | Always - general quality and guidelines |
-| `docs` | docs-impact-agent | Almost always - identifies stale docs |
-| `tests` | pr-test-analyzer | When test files or tested code changed |
-| `comments` | comment-analyzer | When comments/docstrings added |
-| `errors` | silent-failure-hunter | When error handling changed |
-| `types` | type-design-analyzer | When types added/modified |
-| `simplify` | code-simplifier | When `all` or `simplify` requested - advisory polish |
+| `code` | prp-core:code-reviewer | Always - general quality and guidelines |
+| `docs` | prp-core:docs-impact-agent | Almost always - identifies stale docs |
+| `tests` | prp-core:pr-test-analyzer | When test files or tested code changed |
+| `comments` | prp-core:comment-analyzer | When comments/docstrings added |
+| `errors` | prp-core:silent-failure-hunter | When error handling changed |
+| `types` | prp-core:type-design-analyzer | When types added/modified |
+| `simplify` | prp-core:code-simplifier | When `all` or `simplify` requested - advisory polish |
 | `all` | All applicable | Default if no aspects specified |
 
 ## Aspect Selection Logic
 
 **Always run**:
-- `code-reviewer` - Core quality check
+- `prp-core:code-reviewer` - Core quality check
 
 **Almost always run** (skip only for trivial PRs):
-- `docs-impact-agent` - Identifies stale or missing docs
+- `prp-core:docs-impact-agent` - Identifies stale or missing docs
 
-**Skip docs-impact-agent only when**:
+**Skip prp-core:docs-impact-agent only when**:
 - Typo-only fixes (comments, strings)
 - Test-only changes (no production code)
 - Documentation-only changes
 - Config tweaks (CI, linting)
 
 **Run based on changes**:
-- Test files changed → `pr-test-analyzer`
-- Comments/docstrings added → `comment-analyzer`
-- Try-catch or error handling → `silent-failure-hunter`
-- New types or type modifications → `type-design-analyzer`
+- Test files changed → `prp-core:pr-test-analyzer`
+- Comments/docstrings added → `prp-core:comment-analyzer`
+- Try-catch or error handling → `prp-core:silent-failure-hunter`
+- New types or type modifications → `prp-core:type-design-analyzer`
 
 **Include when in scope** (`all` or `simplify` requested):
-- `code-simplifier` - Advisory polish; runs in the same parallel batch as the others
+- `prp-core:code-simplifier` - Advisory polish; runs in the same parallel batch as the others
 
 ## Execution
 
@@ -67,10 +67,10 @@ Run in two steps: **decide which agents apply, then dispatch them in parallel.**
 
 Using the Aspect Selection Logic above (and any aspects passed in `$ARGUMENTS`), build the final list of agents to run:
 
-- Always include `code-reviewer`.
-- Add `docs-impact-agent` unless the PR is trivial (see skip rules).
-- Add change-based specialists (`pr-test-analyzer`, `comment-analyzer`, `silent-failure-hunter`, `type-design-analyzer`) based on what the diff touches.
-- Include `code-simplifier` when `all` or `simplify` is in scope.
+- Always include `prp-core:code-reviewer`.
+- Add `prp-core:docs-impact-agent` unless the PR is trivial (see skip rules).
+- Add change-based specialists (`prp-core:pr-test-analyzer`, `prp-core:comment-analyzer`, `prp-core:silent-failure-hunter`, `prp-core:type-design-analyzer`) based on what the diff touches.
+- Include `prp-core:code-simplifier` when `all` or `simplify` is in scope.
 
 ### Step 2 — Launch all selected agents in parallel (default)
 
@@ -87,25 +87,25 @@ Run agents one at a time **only if the user explicitly asks for "sequential"** �
 
 When launching each agent via Task tool:
 
-**code-reviewer**:
+**prp-core:code-reviewer**:
 > Review PR #<number> for project guideline compliance, bugs, and quality issues. Focus on the diff. Report only high-confidence issues (80+).
 
-**docs-impact-agent**:
+**prp-core:docs-impact-agent**:
 > Review PR #<number> and identify any documentation affected by these changes. Check CLAUDE.md, README.md, and docs/ for stale, incorrect, or missing content. Report findings with specific file locations and suggested fixes. Do not modify files or commit.
 
-**pr-test-analyzer**:
+**prp-core:pr-test-analyzer**:
 > Analyze test coverage for PR #<number>. Focus on behavioral coverage, identify critical gaps, rate recommendations by criticality.
 
-**comment-analyzer**:
+**prp-core:comment-analyzer**:
 > Analyze code comments in PR #<number> for accuracy, completeness, and long-term value. Verify comments match actual code behavior.
 
-**silent-failure-hunter**:
+**prp-core:silent-failure-hunter**:
 > Hunt for silent failures in PR #<number>. Check all error handling for proper logging, user feedback, and specific catch blocks.
 
-**type-design-analyzer**:
+**prp-core:type-design-analyzer**:
 > Analyze type design in PR #<number>. Rate encapsulation, invariant expression, usefulness, and enforcement. Focus on new or modified types.
 
-**code-simplifier**:
+**prp-core:code-simplifier**:
 > Identify simplification opportunities in PR #<number> for clarity while preserving functionality. No nested ternaries, prefer explicit over clever. Report findings with before/after suggestions. Do not modify files or commit.
 
 ## Result Aggregation

@@ -26,7 +26,7 @@ The principles that govern everything here:
 ## What lives where
 
 - **`.claude/skills/`** — the skills, and the working **source of truth**. Each is a self-contained Agent Skill: a `SKILL.md` spine plus optional `references/`, `templates/`, `scripts/`.
-- **`plugins/prp-core/`** — the same skills + agents + hooks packaged as a distributable plugin. It is a **mirror of `.claude/skills/`, currently synced by hand** — change a skill in both. The only intentional difference is the `prp-loop` launcher path (`.claude/PRPs/scripts/prp_loop.py` vs `${CLAUDE_PLUGIN_ROOT}/skills/prp-loop/scripts/prp_loop.py`).
+- **`plugins/prp-core/`** — the same skills + agents (+ plugin-only hooks) packaged as a distributable plugin. Its `skills/` and `agents/` are **generated from `.claude/` by `scripts/sync_plugin.py`** — never edit them directly; edit the `.claude/` source and regenerate. The script owns the intentional differences: the `prp-loop` launcher path (`.claude/PRPs/scripts/prp_loop.py` → `${CLAUDE_PLUGIN_ROOT}/skills/prp-loop/scripts/prp_loop.py`), bundling `prp_loop.py` into the skill, and excluding personal agents (`gpui-researcher`). `hooks/`, `README.md`, and `.claude-plugin/` are plugin-only and hand-maintained.
 - **`.claude/agents/`, `plugins/prp-core/agents/`** — advisory (read-only) review/research subagents.
 - **`claude_md_files/`** — framework-specific `CLAUDE.md` examples (Rust, Python, Node, React, …).
 - **`PRPs/templates/`, `PRPs/ai_docs/`** — PRP templates and curated reference docs.
@@ -36,12 +36,13 @@ The principles that govern everything here:
 
 1. **Author or refactor with `prp-meta-skill`** (`/prp-core:prp-meta-skill`). It encodes the craft: lean `SKILL.md`, detail in `references/`, output shapes in `templates/`, a third-person trigger-rich `description`, an imperative body, no duplication, and self-containment (no cross-skill file references).
 2. **Classify the skill type** (workflow / artifact-generator / knowledge / tool-wrapper) and apply only the principles that fit — don't force phases or validation loops onto a knowledge skill.
-3. **Keep `.claude/skills/` and `plugins/prp-core/skills/` in sync** whenever you touch a skill.
+3. **Regenerate the plugin** whenever you touch a skill or agent: `python3 scripts/sync_plugin.py` (verify with `--check`).
 4. **Bundled scripts must be location-agnostic** — derive the project root from git/cwd, never from `__file__`; the script operates on the user's project, not the skill directory.
-5. **Validate the change**: skills are markdown (nothing to build); `prp_loop.py` must pass `python3 -m py_compile`; the real test is triggering the skill and exercising it end-to-end.
+5. **Validate the change**: skills are markdown (nothing to build); `prp_loop.py` must pass `python3 -m py_compile`; `python3 scripts/sync_plugin.py --check` must pass; the real test is triggering the skill and exercising it end-to-end.
 
 ## Conventions
 
+- **Agent naming:** skills always reference the pack's subagents with the plugin namespace — `prp-core:code-reviewer`, `prp-core:codebase-explorer`, … — never bare names. This assumes the prp-core plugin is enabled wherever the skills run (including this repo).
 - **Commits & PRs:** conventional style (`feat(prp-core): …`, `refactor(…): …`), written as a human would — no AI attribution, no `Co-Authored-By: Claude`.
 - **Branches:** work on a feature branch; `main` and `development` are the primary branches and are kept in sync.
 - **Contributing:** see `CONTRIBUTING.md` — changes are scrutinized because the skills are load-bearing.

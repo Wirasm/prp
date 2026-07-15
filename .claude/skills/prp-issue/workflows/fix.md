@@ -447,7 +447,7 @@ PR_NUMBER=$(gh pr view --json number -q '.number')
 
 Launch both agents in a **single message with two Task tool calls** so they run concurrently. Both are advisory and read the same diff — there is no reason to serialize them.
 
-**code-reviewer** (subagent_type="code-reviewer"):
+**prp-core:code-reviewer** (subagent_type="prp-core:code-reviewer"):
 
 ```
 Review the changes in this PR for issue #{number}.
@@ -463,7 +463,7 @@ Focus on:
 Review only the diff, not the entire codebase.
 ```
 
-**code-simplifier** (subagent_type="code-simplifier"):
+**prp-core:code-simplifier** (subagent_type="prp-core:code-simplifier"):
 
 ```
 Identify simplification opportunities in the changes for issue #{number}.
@@ -491,7 +491,7 @@ gh pr comment --body "$(cat <<'EOF'
 - `{file}:{line}` - {suggestion}
 - {other suggestions}
 
-#### 🧹 Simplification (from code-simplifier)
+#### 🧹 Simplification (from prp-core:code-simplifier)
 - `{file}:{line}` - {simplification, or "No simplifications identified"}
 
 #### 🔒 Security
