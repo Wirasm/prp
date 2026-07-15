@@ -18,6 +18,15 @@ if [[ ! -f "$SENTINEL_FILE" ]]; then
   exit 0
 fi
 
+# Ignore a stale sentinel (e.g. left behind by a crashed or interrupted session):
+# older than 2 hours cannot belong to this stop, so clean it up and allow exit.
+SENTINEL_MTIME=$(stat -f %m "$SENTINEL_FILE" 2>/dev/null || stat -c %Y "$SENTINEL_FILE" 2>/dev/null || date +%s)
+if (( $(date +%s) - SENTINEL_MTIME > 7200 )); then
+  echo "prp-research-team: ignoring stale sentinel (>2h old)." >&2
+  rm -f "$SENTINEL_FILE"
+  exit 0
+fi
+
 # Read the output file path from sentinel
 OUTPUT_PATH=$(head -1 "$SENTINEL_FILE" | tr -d '[:space:]')
 
