@@ -74,7 +74,6 @@ myproject/
 - Use `internal/` for everything not meant to be imported by other modules.
 - Only create a `pkg/` (or top-level exported packages) when external consumers actually exist — YAGNI.
 - Test files live next to the code they test (`foo.go` → `foo_test.go`). This is the Go convention, not optional.
-- Package names are short, lowercase, singular, no underscores: `user`, not `user_helpers` or `userUtils`.
 
 ## 🛠️ Development Environment
 
@@ -173,7 +172,7 @@ func (s *Server) ProcessOrder(ctx context.Context, orderID string) (*Order, erro
 
 ### Naming Conventions
 
-- **Packages**: short, lowercase, no underscores — `httputil`, not `http_util`
+- **Packages**: short, lowercase, singular, no underscores — `user`/`httputil`, not `user_helpers`, `userUtils`, or `http_util`
 - **Exported identifiers**: `MixedCaps` — `UserRepository`, `MaxRetries`
 - **Unexported identifiers**: `mixedCaps` — `userCache`, `defaultTimeout`
 - **Interfaces**: `-er` suffix for single-method interfaces — `Reader`, `Validator`, `OrderProcessor`
@@ -197,6 +196,8 @@ type UserRepository interface {
 // NewServer creates a Server with the given options.
 // It returns an error if the configuration is invalid.
 func NewServer(cfg Config) (*Server, error) {
+	// ...
+}
 ```
 
 - Complex logic should have inline comments with `// Reason:` prefix explaining the why, not the what.
@@ -254,23 +255,30 @@ case err != nil:
 
 var vErr *ValidationError
 if errors.As(err, &vErr) {
-	log.Warn("invalid input", "field", vErr.Field)
+	slog.Warn("invalid input", "field", vErr.Field)
 }
 ```
 
 ### Resource Cleanup
 
 ```go
-// Always pair acquisition with deferred release — and check close errors on writes.
-f, err := os.Create(path)
-if err != nil {
-	return fmt.Errorf("create %s: %w", path, err)
-}
-defer func() {
-	if cerr := f.Close(); cerr != nil && err == nil {
-		err = fmt.Errorf("close %s: %w", path, cerr)
+// Always pair acquisition with deferred release — and check close errors
+// on writes. The named return (err error) is what lets the deferred
+// closure propagate a close error to the caller.
+func writeFile(path string, data []byte) (err error) {
+	f, err := os.Create(path)
+	if err != nil {
+		return fmt.Errorf("create %s: %w", path, err)
 	}
-}()
+	defer func() {
+		if cerr := f.Close(); cerr != nil && err == nil {
+			err = fmt.Errorf("close %s: %w", path, cerr)
+		}
+	}()
+
+	_, err = f.Write(data)
+	return err
+}
 ```
 
 ## 🧪 Testing Strategy
