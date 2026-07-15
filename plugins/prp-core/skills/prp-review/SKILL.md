@@ -32,7 +32,7 @@ Perform a thorough, senior-engineer-level code review:
 1. **Understand** what the PR is trying to accomplish
 2. **Check** the code against project patterns and constraints
 3. **Run** all validation (type-check, lint, tests, build)
-4. **Identify** issues by severity
+4. **Identify** issues by category (Critical / Important / Suggestions / Strengths)
 5. **Report** findings as PR comment AND local file
 
 **Golden Rule**: Be constructive and actionable. Every issue should have a clear recommendation. Acknowledge good work too.
@@ -231,18 +231,18 @@ For each file in the diff:
 
 If a deviation from expected patterns is documented in the implementation report with a valid reason, it is NOT an issue - it's an intentional decision. Only flag **undocumented** deviations.
 
-**Issue Severity Levels:**
+**Finding Categories** (shared with `--agents` mode — see `templates/review-report.md`):
 
-| Level | Icon | Criteria | Examples |
-|-------|------|----------|----------|
-| Critical | `RED` | Blocking - must fix | Security vulnerabilities, data loss potential, crashes |
-| High | `ORANGE` | Should fix before merge | Type safety violations, missing error handling, logic errors |
-| Medium | `YELLOW` | Should consider | Pattern inconsistencies, missing edge cases, undocumented deviations |
-| Low | `BLUE` | Suggestions | Style preferences, minor optimizations, documentation |
+| Category | Icon | Criteria | Examples |
+|----------|------|----------|----------|
+| Critical | `RED` | Must fix before merge - blocking | Security vulnerabilities, data loss potential, crashes |
+| Important | `ORANGE` | Should fix before merge | Type safety violations, missing error handling, logic errors |
+| Suggestions | `YELLOW` | Nice to have - consider | Pattern inconsistencies, missing edge cases, undocumented deviations, style preferences, minor optimizations, documentation |
+| Strengths | `GREEN` | What's good - acknowledge | Good patterns, clean code, thorough tests |
 
 **PHASE_3_CHECKPOINT:**
 - [ ] All changed files reviewed
-- [ ] Issues categorized by severity
+- [ ] Issues categorized
 - [ ] Implementation report deviations accounted for
 - [ ] Positive aspects noted
 
@@ -307,13 +307,13 @@ npm test -- {relevant-test-pattern}
 ### 5.1 Decision Logic
 
 **APPROVE** if:
-- No critical or high issues
+- No Critical or Important issues
 - All validation passes
 - Code follows patterns
 - Changes match PR intent
 
 **REQUEST CHANGES** if:
-- High priority issues exist
+- Important issues exist
 - Validation fails but is fixable
 - Pattern violations that need addressing
 - Missing tests for new functionality
@@ -403,14 +403,11 @@ recommendation: {approve|request-changes|block}
   - **Why**: {Explanation of the problem}
   - **Fix**: {Specific recommendation}
 
-### High Priority
+### Important
 {Issues that should be fixed before merge}
 
-### Medium Priority
-{Issues worth addressing but not blocking}
-
 ### Suggestions
-{Nice-to-haves and future improvements}
+{Issues worth considering but not blocking, nice-to-haves, and future improvements}
 
 ---
 
@@ -435,7 +432,7 @@ recommendation: {approve|request-changes|block}
 
 ---
 
-## What's Good
+## Strengths
 
 {Acknowledge positive aspects - good patterns, clean code, thorough tests, etc.}
 
@@ -466,10 +463,10 @@ recommendation: {approve|request-changes|block}
 Based on recommendation and flags:
 
 ```bash
-# If --approve flag AND no critical/high issues
+# If --approve flag AND no Critical/Important issues
 gh pr review {NUMBER} --approve --body-file .claude/PRPs/reviews/pr-{NUMBER}-review.md
 
-# If --request-changes flag OR high issues found
+# If --request-changes flag OR Important issues found
 gh pr review {NUMBER} --request-changes --body-file .claude/PRPs/reviews/pr-{NUMBER}-review.md
 
 # Otherwise just comment
@@ -500,11 +497,10 @@ gh pr view {NUMBER} --json reviews,comments --jq '.reviews[-1].url // .comments[
 
 ### Issues Found
 
-| Severity | Count |
+| Category | Count |
 |----------|-------|
 | Critical | {N} |
-| High | {N} |
-| Medium | {N} |
+| Important | {N} |
 | Suggestions | {N} |
 
 ### Validation
@@ -525,7 +521,7 @@ gh pr view {NUMBER} --json reviews,comments --jq '.reviews[-1].url // .comments[
 
 {Based on recommendation:}
 - APPROVE: "PR is ready for merge"
-- REQUEST CHANGES: "Author should address {N} high-priority issues"
+- REQUEST CHANGES: "Author should address {N} Important issues"
 - BLOCK: "Fundamental issues need resolution before proceeding"
 ```
 
@@ -537,7 +533,7 @@ gh pr view {NUMBER} --json reviews,comments --jq '.reviews[-1].url // .comments[
 
 2. **Be specific.** "This could be better" is useless. "Use `execFile` instead of `exec` to prevent command injection at line 45" is helpful.
 
-3. **Prioritize.** Not everything is critical. Use severity levels honestly.
+3. **Prioritize.** Not everything is critical. Use the categories honestly.
 
 4. **Be constructive.** Offer solutions, not just problems.
 
@@ -558,7 +554,7 @@ gh pr view {NUMBER} --json reviews,comments --jq '.reviews[-1].url // .comments[
 - **CONTEXT_GATHERED**: PR metadata, diff, and implementation artifacts reviewed
 - **CODE_REVIEWED**: All changed files analyzed against checklist
 - **VALIDATION_RUN**: All automated checks executed
-- **ISSUES_CATEGORIZED**: Findings organized by severity
+- **ISSUES_CATEGORIZED**: Findings organized by category
 - **REPORT_GENERATED**: Comprehensive review saved locally
 - **PR_UPDATED**: Review/comment posted to GitHub
 - **RECOMMENDATION_CLEAR**: Approve/request-changes/block with rationale
