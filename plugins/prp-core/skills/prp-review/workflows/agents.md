@@ -114,12 +114,22 @@ After all agents complete, aggregate findings into the canonical summary format.
 
 **MANDATORY READ**: `../templates/review-report.md` — use its Categories and Summary Format exactly. Do not improvise a different shape.
 
+## Write Local Report
+
+**Always write the aggregated summary to a local file** (same artifact contract as single-pass mode):
+
+```bash
+mkdir -p .claude/PRPs/reviews
+```
+
+**Path**: `.claude/PRPs/reviews/pr-{NUMBER}-review.md`
+
 ## Post to GitHub
 
 **Always post the summary to the PR when a PR number is provided**:
 
 ```bash
-gh pr comment <PR_NUMBER> --body "<summary>"
+gh pr comment <PR_NUMBER> --body-file .claude/PRPs/reviews/pr-<PR_NUMBER>-review.md
 ```
 
 ## Usage Examples
@@ -168,4 +178,4 @@ gh pr comment <PR_NUMBER> --body "<summary>"
 - Agents analyze git diff by default (changed files only)
 - Each agent returns detailed report with file:line references
 - All agents are advisory — they report findings but do not modify files or commit
-- Summary always posted as PR comment when PR number provided
+- Summary always written to `.claude/PRPs/reviews/pr-{NUMBER}-review.md`, and posted as PR comment when PR number provided
