@@ -43,6 +43,7 @@ Get the skills one of two ways (see the main `README.md` for details):
 | `/prp-plan`      | Create an implementation plan                   |
 | `/prp-implement` | Execute a plan with validation loops            |
 | `/prp-loop`      | Autonomous pipeline: plan → implement → pr → review |
+| `/prp-orchestrate` | Run many workstreams in parallel worktrees, you sit at the gates |
 
 ### Issue & Debug Workflow
 

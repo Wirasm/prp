@@ -114,6 +114,7 @@ The `.claude/skills/` directory contains the core PRP workflow as Agent Skills �
 | Command     | Description                                                            |
 | ----------- | --------------------------------------------------------------------- |
 | `/prp-loop` | Autonomous cyclic pipeline: plan → implement → pr → review (review→fix loops until clean) |
+| `/prp-orchestrate` | Coordinate parallel workstreams running PRP skills in git worktrees, with review gates and merge sequencing |
 
 ### Research & Authoring
 

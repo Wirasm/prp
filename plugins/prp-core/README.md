@@ -23,6 +23,7 @@ Everything ships as **skills** (not slash commands), so each one is both **user-
 |-------|-------------|
 | `/prp-core:prp-implement` | Execute a plan with rigorous validation loops; maintains the plan's status markers, lifecycle, and amendments |
 | `/prp-core:prp-loop` | **Autonomous** cyclic pipeline: plan → implement → pr → review, looping review→fix until clean. `--until implement` grinds a single plan to green without a PR |
+| `/prp-core:prp-orchestrate` | Turn the session into an **orchestrator**: coordinate parallel workstreams running PRP skills in git worktrees, with review gates, a standing-decisions log, and merge sequencing |
 | `/prp-core:prp-commit` | Smart commit with natural-language file targeting |
 | `/prp-core:prp-pr` | Push the branch and open a PR with template support |
 
