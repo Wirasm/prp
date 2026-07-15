@@ -335,7 +335,6 @@ Evidence: `file.ts:789` - `{problematic code}`
 // Line 45-50
 {actual current code}
 ```
-````
 
 **Required change:**
 
@@ -448,7 +447,7 @@ describe("{feature}", () => {
 ```bash
 git add .claude/PRPs/issues/
 git status
-````
+```
 
 **If changes to commit:**
 
@@ -517,7 +516,7 @@ gh issue comment {number} --body "$(cat <<'EOF'
 ```bash
 # Run project's validation commands (adapt to toolchain)
 {type-check-cmd} && {test-cmd} {pattern} && {lint-cmd}
-````
+```
 
 ---
 
@@ -579,7 +578,7 @@ EOF
 ### Next Step
 
 Run `/prp-issue fix {number}` to execute the plan.
-````
+```
 
 ---
 

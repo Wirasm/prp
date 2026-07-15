@@ -397,7 +397,7 @@ gh pr create --base "{base-branch}" --title "Fix: {title} (#{number})" --body "$
 ```bash
 # Run project's validation commands (adapt to toolchain)
 {type-check-cmd} && {test-cmd} {pattern} && {lint-cmd}
-````
+```
 
 ## Issue
 
@@ -431,7 +431,7 @@ EOF
 ```bash
 PR_URL=$(gh pr view --json url -q '.url')
 PR_NUMBER=$(gh pr view --json number -q '.number')
-````
+```
 
 **PHASE_7_CHECKPOINT:**
 
