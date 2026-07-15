@@ -12,9 +12,9 @@
 
 ## Workstreams
 
-| # | Workstream | Engine | Lane | Branch | Worktree | PID | Status | PR | Last activity |
-|---|-----------|--------|------|--------|----------|-----|--------|----|--------------|
-| 1 | {issue #123: title} | prp-issue | B | fix/issue-123 | ../repo--issue-123 | {pid} | running | - | {HH:MM} {event} |
+| # | Workstream | Engine | Agent ID | Branch | Status | PR | Last activity |
+|---|-----------|--------|----------|--------|--------|----|--------------|
+| 1 | {issue #123: title} | prp-issue | {agent-id or PID} | fix/issue-123 | running | - | {HH:MM} {event} |
 
 Status vocabulary: `pending` (queued, not launched) | `running` | `needs-gate` | `blocked` (draft PR / awaiting decision) | `pr-open` | `merged` | `failed` | `dropped`.
 
@@ -36,7 +36,8 @@ Source is always `user` (answered at a gate, or given up front) — only the use
 
 Append-only; one line per observed change, gate, or action.
 
-- {HH:MM} launched ws-1 (PID {pid})
+- {HH:MM} launched ws-1 (agent {id})
+- {HH:MM} sent to ws-2: {instruction}
 - {HH:MM} gate: {question} → {answer} (new SD-{n})
 - {HH:MM} auto: {action} per SD-{n}
 - {HH:MM} merged PR #{n}; rebased ws-{m}

@@ -1,60 +1,37 @@
-# Launching & Monitoring Workstreams
+# Launching, Steering & Monitoring Workstreams
 
-Mechanics for Lane B (detached headless sessions in worktrees) and Lane A (in-session subagents). All commands run from the orchestrator session.
+Mechanics for running workstreams as native background agents (the default), plus the detached headless fallback. All actions happen from the orchestrator session.
 
-## Worktree setup (Lane B)
+## Launching a workstream agent (default lane)
 
-One worktree + one branch per workstream, as siblings of the main checkout so globs and tooling inside the repo never see them:
+Spawn via the Agent/Task tool:
 
-```bash
-REPO_ROOT=$(git rev-parse --show-toplevel)
-REPO_NAME=$(basename "$REPO_ROOT")
-SLUG=<workstream-slug>                      # e.g. issue-123, auth-phase-2
-BRANCH=<branch-name>                        # e.g. fix/issue-123, feat/auth-phase-2
-WT="$REPO_ROOT/../$REPO_NAME--$SLUG"
+- **PR-producing workstream** — one agent, `run_in_background` (the default), **`isolation: "worktree"`** so the agent works in its own checkout and cannot collide with the main checkout or other agents. The agent creates its branch, commits, pushes, and opens the PR itself (that is part of its prompt's definition of done).
+- **Read-only workstream** (review, research, triage) — plain background agents, no isolation needed; launch several in a single message so they run concurrently. Prefer the pack's advisory agents (`prp-core:code-reviewer`, `prp-core:codebase-analyst`, …) when one matches.
+- Record the agent ID/name the tool returns — it is the handle for SendMessage, stop, and status, and goes in the run file's workstream row.
+- Respect the run's `--max-parallel`: completion notifications free slots; launch the next queued workstream then.
 
-git -C "$REPO_ROOT" worktree add -b "$BRANCH" "$WT" <base-branch>
-```
+## Workstream prompt template
 
-- Base each workstream on the integration branch (usually `development` or `main`), not on another workstream, unless a dependency edge demands stacking.
-- If the project needs per-checkout setup (env files, install), do it now — headless sessions won't stop to ask.
-
-## Launch command (Lane B, Claude Code)
-
-Launch from *inside the worktree* so the session's project root, skills, and artifacts are the worktree's own:
-
-```bash
-LOG="$WT/.claude/orchestrator-ws.log"
-cd "$WT" && nohup claude -p "<workstream prompt>" \
-  --dangerously-skip-permissions \
-  --output-format stream-json --verbose \
-  > "$LOG" 2>&1 &
-echo $!   # record this PID in the run file
-```
-
-- `stream-json` + `--verbose` makes the log tail-able for liveness; the final line carries the result object.
-- `--dangerously-skip-permissions` is what makes the session autonomous — this is why Lane B is reserved for work the user approved at the Phase-1 gate.
-- Prefer the harness's background-task facility (e.g. `run_in_background` Bash) over raw `nohup` when available — completion is then signalled instead of polled.
-- `.claude/orchestrator-ws.log` is per-worktree state; ensure it is not committed (add to `.gitignore` if the project doesn't already ignore it — check before the workstream's first commit sweeps it in).
-
-## Workstream prompt shape
-
-A headless session inherits nothing from the orchestrator's conversation. The prompt must carry everything:
+A spawned agent inherits nothing from the orchestrator's conversation. The prompt carries everything:
 
 ```
 Use the <prp-skill> skill to <task, one line>.
 
 Context:
 - Target: <issue #N / plan path / feature description>
-- Base branch: <base>. Work only on the current branch (<branch>); never switch or push to <base>.
+- Base branch: <base>. Create and work on branch <branch>; never commit to <base>.
 - Standing decisions that apply to you: <the SD entries scoped to this workstream, verbatim>
 
-Definition of done: <PR opened against <base> with validations green / plan file written / report written>.
-If blocked on a decision only a human can make, open the PR as a draft, describe the
-blocker in the PR body, and stop.
+Definition of done: <PR opened against <base> with validations green / plan file
+written / report written>. Report the PR number and a 3-line summary as your final message.
+
+If blocked on a decision only a human can make: STOP and report the blocker precisely
+(what you need decided, the options, your recommendation). You will receive the decision
+as a follow-up message — continue from where you stopped.
 ```
 
-The "if blocked" clause is the workstream's escalation path — a draft PR with a described blocker is an authoritative, monitorable signal (unlike words in a log).
+The STOP-and-report clause is the escalation path: the orchestrator gates the blocker, then **SendMessage the decision to the same agent** — it continues with full context. Never replace a blocked agent with a fresh one; the fresh one has no history.
 
 ## Engines per workstream type
 
@@ -62,49 +39,53 @@ The "if blocked" clause is the workstream's escalation path — a draft PR with 
 |---|---|
 | GitHub issue | `Use the prp-issue skill: first investigate #N, then fix #N.` |
 | Feature, plan exists | `Use the prp-implement skill to execute the plan at <path>, then use the prp-pr skill to open a PR.` |
-| Feature, autonomous | `Use the prp-loop skill for: <feature description>.` (the loop handles plan→implement→pr→review itself; the orchestrator then only gates the final merge) |
-| Plan only (staged) | `Use the prp-plan skill to create an implementation plan for: <feature>.` — orchestrator gates the plan, then relaunches with prp-implement |
+| Feature, autonomous | `Use the prp-loop skill for: <feature description>.` (the loop handles plan→implement→pr→review; the orchestrator then only gates the final merge) |
+| Plan only (staged) | `Use the prp-plan skill to create an implementation plan for: <feature>.` — gate the plan, then SendMessage the same agent to proceed with prp-implement |
 
-## Lane A — in-session subagents (Claude Code only)
+## Steering, stopping, status
 
-For read-only fan-out (parallel reviews, research, triage): launch subagents via the Task/Agent tool, all in a single message so they run concurrently. Use the pack's advisory agents (`prp-core:code-reviewer`, `prp-core:codebase-analyst`, …) or have a general agent run a read-only skill by name. Constraints: no commits, no pushes, no worktrees needed; results come back as the agent's report, which the orchestrator digests into the run file.
+- **Steer / continue**: SendMessage to the agent ID — mid-run corrections ("also update the docs"), new standing decisions that affect it, gate answers to a blocked agent, post-merge instructions ("rebase onto <base>, resolve, re-run validations, push"). Log every message in the Event Log.
+- **Stop**: the task-stop tool against the workstream's task. Record `dropped` + reason. Worktree and branch survive a stop — the work can be resumed later by a new agent pointed at the branch (tell it what exists and what remains).
+- **Status**: the task-list/status tools give live agent state; the run file gives the semantic state (gate history, decisions). Answer "status?" from both, and reconcile with `gh pr list` when they disagree — PR state wins.
 
-## Monitoring commands
+## Verifying completion (authority order)
+
+An agent's "done" report is a claim. Verify before marking `pr-open`/`merged`:
 
 ```bash
-gh pr list --head <branch> --json number,url,isDraft,state   # authoritative: PR exists / draft-blocked
-gh pr checks <number>                                        # authoritative: CI state
-git -C "$WT" log --oneline -3                                # progress: new commits
-for d in plans reports reviews issues; do                    # progress: new artifacts
-  ls -t "$WT/.claude/PRPs/$d" 2>/dev/null | head -3
-done
-kill -0 <PID> 2>/dev/null && echo alive || echo dead          # liveness
-tail -5 "$LOG"                                                # liveness/debug only — never status truth
+gh pr list --head <branch> --json number,url,isDraft,state   # PR exists, not draft
+gh pr checks <number>                                        # CI state
+git log --oneline <base>..<branch> | head -3                 # commits exist
 ```
 
-A **draft PR** from a workstream means "blocked, needs a human decision" (per the prompt shape) — treat it as a gate, read the PR body for the blocker.
+Plus artifacts where the engine promises them (plans/reports/reviews under the branch's `.claude/PRPs/`).
 
-## Restarting a stalled/failed workstream
+## Observability hooks (optional)
 
-The worktree and branch survive the session — restart with corrective feedback, same launch command, new prompt:
+For runs that need more than notifications + the run file (e.g. a log line or desktop notification whenever any agent stops), wire project hooks on the relevant events (e.g. SubagentStop) in `.claude/settings.json`. This is an extension point, not a requirement — consult the current Claude Code hooks docs for event names and payloads.
 
+## Detached fallback (headless CLI)
+
+Use only when work must **survive the orchestrator session** (overnight batches) or run on a **different harness** (Codex-style CLIs). Same protocol — one worktree + branch per workstream, artifacts and PR state as the only truth — but the launch is a detached process:
+
+```bash
+REPO_ROOT=$(git rev-parse --show-toplevel)
+WT="$REPO_ROOT/../$(basename "$REPO_ROOT")--<slug>"
+git -C "$REPO_ROOT" worktree add -b <branch> "$WT" <base>
+cd "$WT" && nohup claude -p "<workstream prompt>" \
+  --dangerously-skip-permissions --output-format stream-json --verbose \
+  > "$WT/.claude/orchestrator-ws.log" 2>&1 &
+echo $!   # record the PID in the run file (replaces the agent ID)
 ```
-Continue the work on the current branch. Previous attempt: <what the log/PR shows>.
-Problem: <the stall/failure>. <Corrective instruction.>
-<Original definition of done.>
-```
 
-Record the restart in the Event Log. Two failed restarts → stop restarting, raise at a gate.
+Differences from the default lane: no SendMessage (course-correct by restarting with feedback: "Continue the work on the current branch. Previous attempt: <state>. Problem: <issue>. <Correction.>"), no completion notifications (poll PR state and artifacts), the blocked-escalation signal is a **draft PR** describing the blocker instead of a stopped agent, and the log is liveness-only (`kill -0 <PID>`, `tail -5 <log>`) — never status truth. On non-Claude harnesses, swap the CLI and its permission flags; if the harness doesn't read `.claude/skills/`, inline the skill's instructions into the prompt.
 
 ## Cleanup (Phase 7 only)
 
+Agent-tool worktrees are auto-removed when unchanged; pushed branches survive regardless. For worktrees created manually (fallback lane):
+
 ```bash
-git -C "$REPO_ROOT" branch --merged <base> | grep <branch>   # verify merged FIRST
-git -C "$REPO_ROOT" worktree remove "$WT"                    # refuses if dirty — good; investigate before --force
-git -C "$REPO_ROOT" branch -d "$BRANCH"                      # -d not -D: refuses unmerged
+git branch --merged <base> | grep <branch>    # verify merged FIRST
+git worktree remove "$WT"                     # refuses if dirty — investigate before --force
+git branch -d <branch>                        # -d not -D: refuses unmerged
 ```
-
-## Per-harness notes
-
-- **Claude Code**: everything above works as written. Skills resolve inside worktrees from the checked-in `.claude/skills/` or the globally installed prp-core plugin.
-- **Other harnesses (Codex CLI, etc.)**: the protocol core is identical — worktree per workstream, headless CLI invocation, artifacts + PR state as the only truth, run file in the main checkout. Replace the launch command with the harness's headless equivalent and its permission flags. Two degradations: Lane A may not exist (do read-only fan-out as Lane B sessions or sequentially), and PRP skills may not auto-load from `.claude/skills/` — inline the skill's instructions into the prompt, or port the skills to the harness's format first.
