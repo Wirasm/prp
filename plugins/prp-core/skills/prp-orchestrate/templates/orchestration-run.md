@@ -12,9 +12,11 @@
 
 ## Workstreams
 
-| # | Workstream | Engine | Agent ID | Branch | Status | PR | Last activity |
-|---|-----------|--------|----------|--------|--------|----|--------------|
-| 1 | {issue #123: title} | prp-issue | {agent-id or PID} | fix/issue-123 | running | - | {HH:MM} {event} |
+| # | Workstream | Engine | Agent | Branch | Status | PR | Last activity |
+|---|-----------|--------|-------|--------|--------|----|--------------|
+| 1 | {issue #123: title} | prp-issue | ws1 | fix/issue-123 | running | - | {HH:MM} {event} |
+
+Agent column holds a run-local alias (ws1, ws2, …) — raw agent IDs are session-internal and never written to files; the orchestrator keeps the alias→handle mapping in-conversation. Fallback-lane workstreams record their PID here instead.
 
 Status vocabulary: `pending` (queued, not launched) | `running` | `needs-gate` | `blocked` (draft PR / awaiting decision) | `pr-open` | `merged` | `failed` | `dropped`.
 

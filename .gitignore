@@ -25,3 +25,6 @@ wheels/
 
 # prp-worktree managed worktrees (also self-excluded via .git/info/exclude)
 .worktrees/
+
+# Claude Code agent worktrees (harness-managed)
+.claude/worktrees/

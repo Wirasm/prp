@@ -39,6 +39,8 @@ Coordinate multiple PRP workstreams from one session. The orchestrator is the us
 
 ## Phase 3 — Launch
 
+**Pre-flight, before any spawn**: reconcile the base branch with origin — `git log origin/<base>..<base>` must be empty (push or resolve what isn't). Worktree agents branch from one tip while PRs diff against the other; a stale origin makes every PR carry the unpushed base commits as phantom scope.
+
 Launch each workstream as a **background agent** via the Agent/Task tool — see `references/launching.md` for the exact call shape and prompt template (read it before the first launch of a run):
 
 - **PR-producing work** → background agent with **worktree isolation**: the agent gets its own checkout, creates its branch, commits, pushes, opens the PR.

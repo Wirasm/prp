@@ -56,7 +56,10 @@ An agent's "done" report is a claim. Verify before marking `pr-open`/`merged`:
 gh pr list --head <branch> --json number,url,isDraft,state   # PR exists, not draft
 gh pr checks <number>                                        # CI state
 git log --oneline <base>..<branch> | head -3                 # commits exist
+git diff --name-only origin/<base>...origin/<branch>         # true PR scope (three-dot!)
 ```
+
+Scope-check with the **three-dot** (merge-base) diff only — a two-dot diff false-flags out-of-scope files whenever the agent based its branch on a different tip (local vs origin) than the one being compared, and both choices are legitimate.
 
 Plus artifacts where the engine promises them (plans/reports/reviews under the branch's `.claude/PRPs/`).
 
@@ -82,6 +85,8 @@ echo $!   # record the PID in the run file (replaces the agent ID)
 Differences from the default lane: no SendMessage (course-correct by restarting with feedback: "Continue the work on the current branch. Previous attempt: <state>. Problem: <issue>. <Correction.>"), no completion notifications (poll PR state and artifacts), the blocked-escalation signal is a **draft PR** describing the blocker instead of a stopped agent, and the log is liveness-only (`kill -0 <PID>`, `tail -5 <log>`) — never status truth. On non-Claude harnesses, swap the CLI and its permission flags; if the harness doesn't read `.claude/skills/`, inline the skill's instructions into the prompt.
 
 ## Cleanup (Phase 7 only)
+
+Order matters: **worktrees release branches, so worktrees go first.** An agent-tool worktree holds the PR branch checked out — `gh pr merge --delete-branch` fails on the local deletion while it exists, so merge *without* `--delete-branch` and clean up after: remove worktrees, then local branches (`-d`), then remote branches (`git push origin --delete <branch>`). A worktree locked by a live (resumable) agent stays until the session ends — leave it and only delete the remote branch.
 
 Agent-tool worktrees are auto-removed when unchanged; pushed branches survive regardless. For worktrees created via the prp-worktree skill (fallback lane), tear down with the same skill — its rails encode the safety order (refuses dirty worktrees and unmerged branch deletion):
 
