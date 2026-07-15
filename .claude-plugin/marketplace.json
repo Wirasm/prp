@@ -9,7 +9,7 @@
     {
       "name": "prp-core",
       "source": "./plugins/prp-core",
-      "description": "Complete PRP workflow automation - create, execute, commit, and PR commands with orchestration scripts"
+      "description": "Complete PRP workflow automation as agent skills - prd, plan, implement, review, commit, PR, an autonomous build loop, and specialized agents"
     }
   ]
 }

@@ -27,10 +27,9 @@ The principles that govern everything here:
 
 - **`.claude/skills/`** — the skills, and the working **source of truth**. Each is a self-contained Agent Skill: a `SKILL.md` spine plus optional `references/`, `templates/`, `scripts/`.
 - **`plugins/prp-core/`** — the same skills + agents (+ plugin-only hooks) packaged as a distributable plugin. Its `skills/` and `agents/` are **generated from `.claude/` by `scripts/sync_plugin.py`** — never edit them directly; edit the `.claude/` source and regenerate. The script owns the intentional differences: the `prp-loop` launcher path (`.claude/PRPs/scripts/prp_loop.py` → `${CLAUDE_PLUGIN_ROOT}/skills/prp-loop/scripts/prp_loop.py`), bundling `prp_loop.py` into the skill, and excluding personal agents (`gpui-researcher`). `hooks/`, `README.md`, and `.claude-plugin/` are plugin-only and hand-maintained.
-- **`.claude/agents/`, `plugins/prp-core/agents/`** — advisory (read-only) review/research subagents.
+- **`.claude/agents/`, `plugins/prp-core/agents/`** — advisory review/research subagents. Report-only by prompt (they never modify files or commit), not enforced via `tools:` allowlists.
 - **`claude_md_files/`** — framework-specific `CLAUDE.md` examples (Rust, Python, Node, React, …).
-- **`PRPs/templates/`, `PRPs/ai_docs/`** — PRP templates and curated reference docs.
-- **`old-prp-commands/`** — the retired slash-command generation. **Reference only — do not maintain or extend it.**
+- **`old-prp-commands/`** — the retired slash-command generation, including its old `PRPs/templates/` and `PRPs/ai_docs/`. **Reference only — do not maintain or extend it.**
 
 ## How to improve skills and assets
 

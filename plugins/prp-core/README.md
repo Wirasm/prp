@@ -49,7 +49,7 @@ Everything ships as **skills** (not slash commands), so each one is both **user-
 
 ## Agents
 
-Specialized, advisory (read-only) agents used by the review and planning skills.
+Specialized, advisory agents used by the review and planning skills. They are report-only by design — they analyze and report findings but never modify files or commit (enforced by their prompts, not by a `tools:` allowlist).
 
 ### Codebase analysis
 
@@ -72,6 +72,10 @@ Specialized, advisory (read-only) agents used by the review and planning skills.
 | `docs-impact-agent` | Flags stale documentation |
 
 Agents are invoked automatically by `/prp-core:prp-review --agents` and `/prp-core:prp-issue fix`, or manually via the Task tool.
+
+## Hooks
+
+The plugin ships one Stop hook, `hooks/prp-research-team-stop.sh`, which validates `prp-research-team` output. The skill writes its plan path to a sentinel file (`.claude/prp-research-team.state`); on Stop, the hook checks the plan for the six required sections and, if any are missing, blocks completion once with the list of what's absent. It cleans up the sentinel on success, ignores stale sentinels (older than 2 hours), and never blocks twice in a row. Note: the hook ships only with the plugin — if you copy the skill into `.claude/skills/` directly, this validation does not run.
 
 ## Workflows
 
@@ -132,9 +136,16 @@ Add to your project's `.claude/settings.json`:
 ```json
 {
   "extraKnownMarketplaces": {
-    "prp-marketplace": { "source": "Wirasm/PRPs-agentic-eng" }
+    "prp-marketplace": {
+      "source": {
+        "source": "github",
+        "repo": "Wirasm/PRPs-agentic-eng"
+      }
+    }
   },
-  "enabledPlugins": ["prp-core@prp-marketplace"]
+  "enabledPlugins": {
+    "prp-core@prp-marketplace": true
+  }
 }
 ```
 

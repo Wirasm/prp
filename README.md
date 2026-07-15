@@ -115,6 +115,14 @@ The `.claude/skills/` directory contains the core PRP workflow as Agent Skills �
 | ----------- | --------------------------------------------------------------------- |
 | `/prp-loop` | Autonomous cyclic pipeline: plan → implement → pr → review (review→fix loops until clean) |
 
+### Research & Authoring
+
+| Command                  | Description                                                              |
+| ------------------------ | ------------------------------------------------------------------------ |
+| `/prp-codebase-question` | Research how the codebase works using parallel agents                    |
+| `/prp-research-team`     | Design a multi-agent research team and executable research plan          |
+| `/prp-meta-skill`        | Author new skills, or refactor fat skills into lean SKILL.md + references |
+
 ---
 
 ## PRP Loop (Autonomous Execution)
@@ -251,11 +259,8 @@ PRDs include an Implementation Phases table for tracking progress:
 your-project/
 ├── .claude/
 │   ├── skills/              # PRP skills (or install the prp-core plugin)
-│   ├── PRPs/                # Generated artifacts
+│   ├── PRPs/                # Generated artifacts (prds, plans, reports, reviews)
 │   └── agents/              # Custom subagents
-├── PRPs/
-│   ├── templates/           # PRP templates
-│   └── ai_docs/             # Library documentation
 ├── CLAUDE.md                # Project-specific guidelines
 └── src/                     # Your source code
 ```
@@ -280,25 +285,15 @@ cd ../project-phase-4 && claude
 
 ## Resources
 
-### Templates (PRPs/templates/)
+### Legacy Commands, Templates & Docs
 
-- `prp_base.md` - Comprehensive PRP template
-- `prp_story_task.md` - Story/task template
-- `prp_planning.md` - Planning template
-
-### AI Documentation (PRPs/ai_docs/)
-
-Curated documentation for Claude Code context injection.
-
-### Legacy Commands
-
-Previous command versions are preserved in `old-prp-commands/` for reference.
+The previous slash-command generation is preserved in `old-prp-commands/` for reference only. That includes its PRP templates (`old-prp-commands/PRPs/templates/` — `prp_base.md`, `prp_story_task.md`, `prp_planning.md`) and curated AI documentation (`old-prp-commands/PRPs/ai_docs/`). The current skills carry their templates inline or in their own `templates/` directories.
 
 ---
 
 ## License
 
-MIT License
+MIT — see [LICENSE](LICENSE).
 
 ---
 

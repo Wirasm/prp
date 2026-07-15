@@ -59,6 +59,14 @@ Get the skills one of two ways (see the main `README.md` for details):
 | `/prp-pr`     | Create a pull request                     |
 | `/prp-review` | Review a pull request                     |
 
+### Research & Authoring
+
+| Command                  | What it does                                  |
+| ------------------------ | --------------------------------------------- |
+| `/prp-codebase-question` | Answer "how does the codebase do X?"          |
+| `/prp-research-team`     | Plan multi-agent research on a question       |
+| `/prp-meta-skill`        | Create new skills or slim down fat ones       |
+
 ---
 
 ## The Basic Flow
