@@ -24,6 +24,13 @@ Targets:
    converted from .claude/agents/*.md (frontmatter name/description; body ->
    developer_instructions), minus EXCLUDED_AGENTS.
 
+4. profiles/kild/skills/ — the kild-lane profile (primitives-audit slice 7):
+   only KILD_INCLUDED_SKILLS, each with a lane preamble that overrides
+   driver-owning steps (branches, worktrees, push/PR, artifact archival) and
+   pi-lane rewrites (inline analysis instead of Task-tool subagents, bare
+   agent names, no slash mentions). Deliberately outside .agents/ so it is
+   never discovered — the kild engine assigns it to sessions explicitly.
+
 The prp-research-team Stop hook is deliberately NOT ported: prp-research-team
 is Claude-only (agent teams), so the hook has nothing to validate in Codex.
 
@@ -50,6 +57,9 @@ PLUGIN_SKILLS = Path("plugins/prp-core/skills")
 PLUGIN_AGENTS = Path("plugins/prp-core/agents")
 CODEX_SKILLS = Path(".agents/skills")
 CODEX_AGENTS = Path(".codex/agents")
+# Deliberately NOT under .agents/ — the kild profile must never be discovered;
+# the kild engine hands it to sessions explicitly (ResourceLoader).
+KILD_SKILLS = Path("profiles/kild/skills")
 
 EXCLUDED_AGENTS = {"gpui-researcher.md"}  # personal, not part of the pack
 
@@ -136,6 +146,89 @@ CODEX_FORBIDDEN = (
     "@CLAUDE.md", "${CLAUDE_PLUGIN_ROOT}", ".claude/skills/",
 )
 
+# ---------- kild-lane profile (audit slice 7) ----------
+# The kild engine assigns this skill set to room sessions via an explicit
+# ResourceLoader — the driver grants capabilities; nothing here is discovered.
+# Driver-owning skills (worktrees, branches, push/PR, orchestration loops) are
+# structurally absent; the included skills get a lane preamble that overrides
+# their driver-owning steps until true process-primitive variants exist.
+
+KILD_INCLUDED_SKILLS = {
+    "prp-commit",             # rooms end committed — commit is in-lane
+    "prp-debug",
+    "prp-codebase-question",
+    "prp-prd",
+    "prp-plan",               # writes plan artifacts only
+    "prp-implement",          # lane note strips branch/push/archive behavior
+    "prp-review",             # lane note forbids gh pr checkout
+}
+
+KILD_LANE_NOTE = (
+    "> **Kild lane:** you are running inside a kild room, in a workspace "
+    "(worktree + branch) the kild engine assigned. The driver owns isolation and "
+    "publishing — SKIP any step below that creates or switches branches or "
+    "worktrees, pulls or rebases the base branch, pushes, opens PRs, or "
+    "moves/archives plan artifacts, and never run `gh pr checkout`. Your job ends "
+    "at implement → validate → commit in the current workspace, reporting "
+    "evidence. Where a step spawns subagents, do that analysis inline — or ask "
+    "the room's orchestrator to invite a helper agent.\n"
+)
+
+
+def _inline(m: re.Match) -> str:
+    verb = "Do" if m.group(1) == "U" else "do"
+    return f"{verb} the `{m.group(2)}` analysis below inline (kild lane: no subagents)"
+
+
+# Applied in order to every rendered kild-profile markdown file.
+KILD_REWRITES: list[tuple[re.Pattern, object]] = [
+    # Task-tool subagent dispatch -> inline execution in the room worker
+    (re.compile(r'([Uu])se Task tool with `subagent_type="prp-core:([a-z-]+)"`'), _inline),
+    (re.compile(r'\(subagent_type="prp-core:([a-z-]+)"\)'), r"(the `\1` analysis, done inline)"),
+    (re.compile(r"[Ll]aunch (two|three|the) specialized agents in parallel using multiple Task tool calls in a single message"),
+     r"Work through the \1 specialized analyses inline, one after another"),
+    (re.compile(r"using multiple Task tool calls in a single message"),
+     "by working through them inline, one after another"),
+    (re.compile(r"in a \*\*single message with multiple Task tool calls\*\*"),
+     "**inline, one after another**"),
+    (re.compile(r"in a \*\*single message with two Task tool calls\*\*"),
+     "**inline, one after the other**"),
+    (re.compile(r"When launching each agent via Task tool:"), "For each analysis, inline:"),
+    (re.compile(r"using Task tool subagents"), "inline"),
+    # pi/kild agent names are bare
+    (re.compile(r"prp-core:"), ""),
+    # pi loads AGENTS.md and CLAUDE.md natively as context files
+    (re.compile(r"CLAUDE\.md rules: @CLAUDE\.md"),
+     "Project rules: your loaded context files (AGENTS.md / CLAUDE.md) apply."),
+    # pi has no slash-skill mention in prose; name the skill instead
+    (re.compile(r"run: `/prp-([a-z-]+)( [^`]*)?`"), r"use the prp-\1 skill\2"),
+    (re.compile(r"(?<![\w/])/prp-([a-z-]+)"), r"the prp-\1 skill"),
+]
+
+KILD_FORBIDDEN = CODEX_FORBIDDEN
+
+
+def kild_render_md(text: str, skill: str, src: Path) -> str:
+    text = re.sub(r"^argument-hint:[^\n]*\n", "", text, flags=re.M)
+    for pattern, repl in KILD_REWRITES:
+        text = pattern.sub(repl, text)
+    notes = KILD_LANE_NOTE
+    if re.search(r"\$ARGUMENTS|\$\d", text):
+        notes += "\n" + ARGS_NOTE
+    text = _inject_after_frontmatter(text, notes)
+    for token in KILD_FORBIDDEN:
+        if token in text:
+            sys.exit(f"kild render of {src}: forbidden Claude-ism '{token}' survived the rewrite")
+    return text
+
+
+def _inject_after_frontmatter(text: str, note: str) -> str:
+    if text.startswith("---"):
+        end = text.index("\n---\n", 3) + len("\n---\n")
+        return text[:end] + "\n" + note + text[end:]
+    first_nl = text.index("\n") + 1
+    return text[:first_nl] + "\n" + note + text[first_nl:]
+
 
 def codex_render_md(text: str, skill: str, src: Path) -> str:
     # strip argument-hint from frontmatter (Codex ignores it; keep the render clean)
@@ -147,12 +240,7 @@ def codex_render_md(text: str, skill: str, src: Path) -> str:
     # Claude substitutes $ARGUMENTS at invocation; Codex has no templating, so
     # tell the model what the placeholder means.
     if re.search(r"\$ARGUMENTS|\$\d", text):
-        if text.startswith("---"):
-            end = text.index("\n---\n", 3) + len("\n---\n")
-            text = text[:end] + "\n" + ARGS_NOTE + text[end:]
-        else:
-            first_nl = text.index("\n") + 1
-            text = text[:first_nl] + "\n" + ARGS_NOTE + text[first_nl:]
+        text = _inject_after_frontmatter(text, ARGS_NOTE)
     for token in CODEX_FORBIDDEN:
         if token in text:
             sys.exit(f"codex render of {src}: forbidden Claude-ism '{token}' survived the rewrite")
@@ -244,12 +332,23 @@ def expected_files() -> dict[Path, bytes]:
             continue
         expected[CODEX_AGENTS / (src.stem + ".toml")] = agent_md_to_toml(src)
 
+    # 4. kild-lane profile (handed to sessions by the kild engine, never discovered)
+    for src in _walk(SRC_SKILLS):
+        rel = src.relative_to(SRC_SKILLS)
+        skill = rel.parts[0]
+        if skill not in KILD_INCLUDED_SKILLS:
+            continue
+        if src.suffix == ".md":
+            expected[KILD_SKILLS / rel] = kild_render_md(src.read_text(), skill, src).encode()
+        else:
+            expected[KILD_SKILLS / rel] = src.read_bytes()
+
     return expected
 
 
 def actual_files() -> dict[Path, bytes]:
     actual: dict[Path, bytes] = {}
-    for base_rel in (PLUGIN_SKILLS, PLUGIN_AGENTS, CODEX_SKILLS, CODEX_AGENTS):
+    for base_rel in (PLUGIN_SKILLS, PLUGIN_AGENTS, CODEX_SKILLS, CODEX_AGENTS, KILD_SKILLS):
         base = ROOT / base_rel
         if base.exists():
             for p in _walk(base):
