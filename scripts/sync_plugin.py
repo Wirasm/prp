@@ -64,9 +64,11 @@ KILD_SKILLS = Path("profiles/kild/skills")
 EXCLUDED_AGENTS = {"gpui-researcher.md"}  # personal, not part of the pack
 
 # Claude-harness-specific skills that have no meaningful Codex render (yet):
+# prp-orchestrate and prp-meta-skill ARE rendered — orchestrate's delegation
+# mechanics rewrite to harness-agnostic language (kild rooms / subagents /
+# headless fallback), and meta-skill's authored-skill paths map to the local
+# discovery dir (.agents/skills).
 CODEX_EXCLUDED_SKILLS = {
-    "prp-orchestrate",    # drives Claude Code's native agent tools end to end
-    "prp-meta-skill",     # authors Claude Code skills (.claude paths, Claude frontmatter)
     "prp-research-team",  # targets Claude Code's experimental agent-teams feature
 }
 
@@ -130,6 +132,10 @@ CODEX_REWRITES: list[tuple[re.Pattern, object]] = [
      ".agents/skills/prp-loop/scripts/prp_loop.py"),
     (re.compile(r"\.claude/skills/prp-worktree/scripts/worktree\.py"),
      ".agents/skills/prp-worktree/scripts/worktree.py"),
+    # any remaining skill-tree path: the local harness discovers .agents/skills
+    (re.compile(r"\.claude/skills/"), ".agents/skills/"),
+    # Claude Agent-tool spawn phrasing -> harness-neutral
+    (re.compile(r"the Agent/Task tool"), "your delegation tool"),
 ]
 
 # Per-skill extras, applied after the global list.
@@ -138,12 +144,71 @@ CODEX_SKILL_REWRITES: dict[str, list[tuple[re.Pattern, str]]] = {
         (re.compile(r'prp_loop\.py "\$ARGUMENTS"'), 'prp_loop.py "$ARGUMENTS" --cli codex'),
         (re.compile(r"prp_loop\.py --resume"), "prp_loop.py --resume --cli codex"),
     ],
+    # Orchestrate is written against Claude Code's native agent tools; render the
+    # mechanics harness-agnostic (kild rooms / subagents / headless fallback) while
+    # keeping the discipline (decompose, gate, verify, merge) verbatim.
+    "prp-orchestrate": [
+        (re.compile(r"launch and steer agents with the native agent tools"),
+         "launch and steer background agents with your harness's delegation tools"),
+        (re.compile(
+            r"\*\*Drive everything through the native agent tools\*\* — spawn with "
+            r"your delegation tool \(background, worktree isolation\), steer and continue "
+            r"with SendMessage, stop with the task-stop tool, check with the "
+            r"task-list/status tools\."),
+         "**Drive everything through your harness's delegation tools** — spawn background "
+         "workstream agents in isolated worktrees (kild rooms via the kild_* tools, or "
+         "your subagent mechanism), steer a running agent by sending it a follow-up "
+         "message, stop it and check status with the matching controls."),
+        (re.compile(r"via SendMessage with the answer"), "via a follow-up message with the answer"),
+        (re.compile(r"SendMessage the decision back to the same agent"),
+         "message the decision back to the same agent"),
+        (re.compile(r"\*\*SendMessage the decision to the same agent\*\*"),
+         "**message the decision to the same agent**"),
+        (re.compile(r"→ SendMessage to that agent"), "→ send a message to that agent"),
+        (re.compile(r"then SendMessage the same agent to proceed"),
+         "then message the same agent to proceed"),
+        (re.compile(r"and SendMessage them to running agents"), "and send them to running agents"),
+        (re.compile(r"either SendMessage a nudge"), "either send a nudge"),
+        (re.compile(r"convey it — SendMessage to the affected agent\(s\)"),
+         "convey it — message the affected agent(s)"),
+        (re.compile(r"prefer SendMessage to the owning agent"), "prefer messaging the owning agent"),
+        (re.compile(r"SendMessage continues an agent \*\*with its context intact\*\* — always prefer it"),
+         "A follow-up message continues an agent **with its context intact** — always prefer that"),
+        (re.compile(r"the handle for SendMessage, stop, and status"),
+         "the handle for messaging, stopping, and status checks"),
+        (re.compile(r"\*\*Steer / continue\*\*: SendMessage to the agent ID"),
+         "**Steer / continue**: send a message to the agent ID"),
+        (re.compile(r"no SendMessage \(course-correct"), "no live steering (course-correct"),
+        (re.compile(r"agent-tool call shapes, the workstream prompt template, SendMessage/stop/status patterns"),
+         "launch call shapes, the workstream prompt template, steering/stop/status patterns"),
+        (re.compile(r"one agent, `run_in_background` \(the default\), \*\*`isolation: \"worktree\"`\*\*"),
+         "one background agent with **worktree isolation**"),
+        (re.compile(r"\*\*Stop\*\*: the task-stop tool against the workstream's task\."),
+         "**Stop**: your harness's stop control against the workstream's agent."),
+        (re.compile(r"\*\*Status\*\*: the task-list/status tools give live agent state"),
+         "**Status**: the agent list/status controls give live agent state"),
+        (re.compile(r"wire project hooks on the relevant events \(e\.g\. SubagentStop\) in `\.claude/settings\.json`"),
+         "wire hooks on the relevant agent-stop events if your harness supports them"),
+        (re.compile(r" — consult the current Claude Code hooks docs for event names and payloads\."), "."),
+        (re.compile(r'nohup claude -p "<workstream prompt>" \\\n  --dangerously-skip-permissions --output-format stream-json --verbose \\\n'),
+         'nohup codex exec --dangerously-bypass-approvals-and-sandbox "<workstream prompt>" \\\n'),
+        (re.compile(r"Agent-tool worktrees are auto-removed when unchanged"),
+         "Harness-managed worktrees may be auto-removed when unchanged"),
+        (re.compile(r"An agent-tool worktree holds"), "An agent worktree holds"),
+    ],
+    # Meta-skill: only its meta-documentation of Claude-only mechanics needs a touch;
+    # authored-skill paths are handled by the global .claude/skills -> .agents/skills map.
+    "prp-meta-skill": [
+        (re.compile(r"Claude-only mechanics \(subagent fan-out, Stop-hook loops, `\$\{CLAUDE_PLUGIN_ROOT\}`\)"),
+         "Claude-only mechanics (subagent fan-out, Stop-hook loops, plugin-root path variables)"),
+    ],
 }
 
 # Nothing Claude-specific may survive in the Codex render.
 CODEX_FORBIDDEN = (
     "subagent_type", "Task tool", "prp-core:", "argument-hint:",
     "@CLAUDE.md", "${CLAUDE_PLUGIN_ROOT}", ".claude/skills/",
+    "SendMessage",
 )
 
 # ---------- kild-lane profile (audit slice 7) ----------
