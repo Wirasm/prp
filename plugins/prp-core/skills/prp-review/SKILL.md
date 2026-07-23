@@ -1,7 +1,7 @@
 ---
 name: prp-review
 description: Comprehensive PR code review - checks diff, patterns, runs validation, comments on PR. Single-pass by default; pass --agents for a multi-agent specialist fan-out (comments, tests, errors, types, code, docs, simplify). Use when the user wants to review a pull request, wants a thorough/multi-agent review, or invokes /prp-review.
-argument-hint: <pr-number|pr-url> [--approve|--request-changes] [--agents [aspects: comments|tests|errors|types|code|docs|simplify|all]]
+argument-hint: "<pr-number|pr-url> [--approve|--request-changes] [--agents [aspects: comments|tests|errors|types|code|docs|simplify|all]]"
 ---
 
 # PR Code Review

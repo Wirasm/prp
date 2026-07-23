@@ -1,7 +1,7 @@
 ---
 name: prp-commit
 description: Quick commit with natural language file targeting. Use when the user wants to commit changes, stage and commit specific files, or invokes /prp-commit.
-argument-hint: [target description] (blank = all changes)
+argument-hint: "[target description] (blank = all changes)"
 ---
 
 # Commit

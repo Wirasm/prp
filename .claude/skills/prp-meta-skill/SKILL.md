@@ -1,7 +1,7 @@
 ---
 name: prp-meta-skill
 description: Author new Claude Code skills PRP-style, and refactor existing fat skills into a lean SKILL.md plus references/. Use when the user wants to "create a skill", "write a new skill", "turn a command into a skill", "split a skill into references", "trim a SKILL.md", "extract output templates from a skill", "make a skill leaner", or invokes /prp-meta-skill.
-argument-hint: [create <name> | refactor <path/to/SKILL.md>] (blank = ask which)
+argument-hint: "[create <name> | refactor <path/to/SKILL.md>] (blank = ask which)"
 ---
 
 # PRP Meta-Skill — Author & Refactor Skills

@@ -1,7 +1,7 @@
 ---
 name: prp-pr
 description: Create a PR from current branch with unpushed commits. Use when the user wants to open or create a pull request, push and PR a branch, or invokes /prp-pr.
-argument-hint: [--base <branch>] (default: auto-detected)
+argument-hint: "[--base <branch>] (default: auto-detected)"
 ---
 
 # Create Pull Request
