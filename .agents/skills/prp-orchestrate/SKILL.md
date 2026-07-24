@@ -7,15 +7,25 @@ description: Turn the current session into an SDLC orchestrator that coordinates
 
 # PRP Orchestrate
 
-Coordinate multiple PRP workstreams from one session. The orchestrator is the user's proxy: it decomposes the goal, launches background agents that run PRP skills, steers them mid-flight, sits at review gates (deciding autonomously when a standing decision covers it, escalating a digest when it doesn't), and sequences the merges. The run is **live and dynamic** — the user can add work, stop work, redirect an agent, or ask for status at any moment, and the orchestrator absorbs it without restarting anything. The end artifacts are merged PRs plus a run file at `.claude/PRPs/orchestration/<run-id>.md` recording every workstream, decision, and merge.
+Coordinate multiple PRP workstreams from one session. The orchestrator is the user's proxy: it decomposes the goal, launches background agents that run PRP skills, steers them mid-flight, sits at review gates (deciding autonomously when a standing decision covers it, escalating a digest when it doesn't), and sequences the merges. The run is **live and dynamic** — the user can add work, stop work, redirect an agent, or ask for status at any moment, and the orchestrator absorbs it without restarting anything. The end artifacts are merged PRs plus a run file at `$PRP_DIR/orchestration/<run-id>.md` recording every workstream, decision, and merge.
 
 **Input**: $ARGUMENTS (if absent, infer the goal and workstreams from the conversation)
+
+```bash
+# --- PRP store resolver (canonical; keep byte-identical across skills) ---
+_gd="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"
+case "$_gd" in */.git) _root="${_gd%/.git}" ;; "") _root="$PWD" ;; *) _root="$_gd" ;; esac
+_root="$(cd "$_root" && pwd -P)"
+_name="$(basename "$_root" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9' '-' | sed 's/^-*//;s/-*$//')"
+PRP_DIR="${PRP_HOME:-$HOME/.prp}/${_name:-project}-$(printf %s "$_root" | git hash-object --stdin | cut -c1-8)"
+mkdir -p "$PRP_DIR"; [ -f "$PRP_DIR/project.json" ] || printf '{"path": "%s", "name": "%s"}\n' "$_root" "${_name:-project}" > "$PRP_DIR/project.json"
+```
 
 ## Role contract
 
 - **Orchestrate, don't implement.** Never write feature code in the orchestrator session — all product changes happen inside workstream agents. The orchestrator only touches the run file, branches/merges, and the agents themselves.
 - **Drive everything through your harness's delegation tools** — spawn background workstream agents in isolated worktrees (kild rooms via the kild_* tools, or your subagent mechanism), steer a running agent by sending it a follow-up message, stop it and check status with the matching controls. Shelling out to a headless CLI is the fallback lane, not the default (see `references/launching.md` → Detached fallback).
-- **Trust authoritative signals for "done"**: agent completion reports, artifacts under `.claude/PRPs/`, `gh pr view/checks`, git state. An agent saying "done" is a claim; a green PR is a fact.
+- **Trust authoritative signals for "done"**: artifacts under the project's PRP store, agent completion reports, `gh pr view/checks`, git state. An agent saying "done" is a claim; a green PR is a fact.
 - **The user is the principal.** Every gate decision is either covered by the Standing Decisions log (act, record it as `auto`) or escalated as a short digest (act on the answer, record it). Never guess on destructive or product-shape decisions.
 - **Compose skills by name only.** Agents are told to "use the prp-issue skill on #123", "use the prp-loop skill for <feature>" — never pointed at another skill's files.
 
@@ -34,7 +44,7 @@ Coordinate multiple PRP workstreams from one session. The orchestrator is the us
 
 ## Phase 2 — Initialize the run
 
-1. Read `templates/orchestration-run.md` and create `.claude/PRPs/orchestration/<run-id>.md` from it exactly (run-id: `YYYY-MM-DD-<slug>`).
+1. Read `templates/orchestration-run.md`, run `mkdir -p "$PRP_DIR/orchestration"`, and create `$PRP_DIR/orchestration/<run-id>.md` from it exactly (run-id: `YYYY-MM-DD-<slug>`); report the expanded absolute path.
 2. Seed the Standing Decisions log with everything the user has already decided, each with scope.
 3. The orchestrator maintains this file for the run's lifetime — update it on every launch, status change, gate, message sent, and merge. On `--resume`, reload the newest run file and re-verify against reality (task list, `gh pr list`, `git worktree list`) before acting.
 
@@ -91,7 +101,7 @@ When PRs are green and gate-approved:
 
 ## Gotchas
 
-- Worktree-isolated agents each check out their own `.claude/` — skills resolve normally. Workstream artifacts (plans, reports) commit on the workstream branch and travel with the PR: by design. The **run file lives only in the main checkout** and is never committed by a workstream.
+- Worktree-isolated agents each resolve the same project PRP store. Workstream artifacts (plans, reports) are shared there across worktrees without merging anything. The **run file lives in the project's store** and is never committed by a workstream.
 - A follow-up message continues an agent **with its context intact** — always prefer that over spawning a fresh agent to "fix" a live workstream; a fresh agent has none of the history.
 - Agents and tasks die with the orchestrator session. For work that must survive it (overnight runs, other harnesses), use the detached fallback lane in `references/launching.md` — same protocol, headless CLI, artifacts as truth.
 - Hooks are the observability extension point (e.g. notify or log on subagent stop); wire them per-project if the run file + notifications aren't enough — not required for the skill to work.

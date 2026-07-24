@@ -7,7 +7,7 @@
 ```markdown
 ## Plan Created
 
-**File**: `.claude/PRPs/plans/{feature-name}.plan.md`
+**File**: `{expanded absolute path to $PRP_DIR/plans/{feature-name}.plan.md}`
 
 {If from PRD:}
 **Source PRD**: `{prd-file-path}`
@@ -45,5 +45,5 @@ To start: `git worktree add -b phase-{X} ../project-phase-{X} && cd ../project-p
 **Confidence Score**: {1-10}/10 for one-pass implementation success
 - {Rationale for score}
 
-**Next Step**: To execute, use the prp-implement skill .claude/PRPs/plans/{feature-name}.plan.md
+**Next Step**: To execute, use the prp-implement skill {expanded absolute path to $PRP_DIR/plans/{feature-name}.plan.md}
 ```

@@ -294,12 +294,19 @@ Run any edge case tests specified in the plan.
 ### 5.1 Create Report Directory
 
 ```bash
-mkdir -p .claude/PRPs/reports
+# --- PRP store resolver (canonical; keep byte-identical across skills) ---
+_gd="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"
+case "$_gd" in */.git) _root="${_gd%/.git}" ;; "") _root="$PWD" ;; *) _root="$_gd" ;; esac
+_root="$(cd "$_root" && pwd -P)"
+_name="$(basename "$_root" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9' '-' | sed 's/^-*//;s/-*$//')"
+PRP_DIR="${PRP_HOME:-$HOME/.prp}/${_name:-project}-$(printf %s "$_root" | git hash-object --stdin | cut -c1-8)"
+mkdir -p "$PRP_DIR"; [ -f "$PRP_DIR/project.json" ] || printf '{"path": "%s", "name": "%s"}\n' "$_root" "${_name:-project}" > "$PRP_DIR/project.json"
+mkdir -p "$PRP_DIR/reports"
 ```
 
 ### 5.2 Generate Report
 
-**Path**: `.claude/PRPs/reports/{plan-name}-report.md`
+**Path**: `$PRP_DIR/reports/{plan-name}-report.md`
 
 ```markdown
 # Implementation Report
@@ -417,14 +424,22 @@ Older plans without these sections: skip this step.
 
 ### 5.5 Archive Plan
 
+Only archive a plan that already lives in the project's store; leave a plan supplied from any other path in place.
+
 ```bash
-mkdir -p .claude/PRPs/plans/completed
-mv $ARGUMENTS .claude/PRPs/plans/completed/
+PLAN_PATH="$(cd "$(dirname "$ARGUMENTS")" && pwd -P)/$(basename "$ARGUMENTS")"
+case "$PLAN_PATH" in
+  "$PRP_DIR"/plans/*)
+    mkdir -p "$PRP_DIR/plans/completed"
+    mv "$PLAN_PATH" "$PRP_DIR/plans/completed/"
+    ;;
+  *) echo "Plan is outside the PRP store; leaving it in place: $PLAN_PATH" ;;
+esac
 ```
 
 **PHASE_5_CHECKPOINT:**
 
-- [ ] Report created at `.claude/PRPs/reports/`
+- [ ] Report created at `$PRP_DIR/reports/`
 - [ ] PRD updated (if applicable) - phase marked complete
 - [ ] Plan Lifecycle/Amendments updated (if the plan uses them)
 - [ ] Plan moved to completed folder
@@ -463,8 +478,8 @@ mv $ARGUMENTS .claude/PRPs/plans/completed/
 
 ### Artifacts
 
-- Report: `.claude/PRPs/reports/{name}-report.md`
-- Plan archived to: `.claude/PRPs/plans/completed/`
+- Report: `{expanded absolute path to $PRP_DIR/reports/{name}-report.md}`
+- Plan archived to: `{expanded absolute path to $PRP_DIR/plans/completed/}` (only when the input plan already lives in the store)
 
 {If from PRD:}
 ### PRD Progress

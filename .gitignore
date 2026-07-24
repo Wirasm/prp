@@ -13,16 +13,6 @@ wheels/
 
 .ruff_cache
 
-# PRP loop runtime state
-.claude/prp-loop.state.json
-.claude/prp-loop.run.log
-
-# PRP loop review verdict artifacts
-.claude/PRPs/reviews/*.verdict.json
-
-# PRP research-team stop-hook sentinel
-.claude/prp-research-team.state
-
 # prp-worktree managed worktrees (also self-excluded via .git/info/exclude)
 .worktrees/
 

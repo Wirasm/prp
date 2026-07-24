@@ -123,17 +123,18 @@ After all agents complete, aggregate findings into the canonical summary format.
 **Always write the aggregated summary to a local file** (same artifact contract as single-pass mode):
 
 ```bash
-mkdir -p .claude/PRPs/reviews
+# PRP_DIR is resolved by the canonical resolver in the parent skill.
+mkdir -p "$PRP_DIR/reviews"
 ```
 
-**Path**: `.claude/PRPs/reviews/pr-{NUMBER}-review.md`
+**Path**: `$PRP_DIR/reviews/pr-{NUMBER}-review.md` (report the expanded absolute path to the user).
 
 ## Post to GitHub
 
 **Always post the summary to the PR when a PR number is provided**:
 
 ```bash
-gh pr comment <PR_NUMBER> --body-file .claude/PRPs/reviews/pr-<PR_NUMBER>-review.md
+gh pr comment <PR_NUMBER> --body-file "$PRP_DIR/reviews/pr-<PR_NUMBER>-review.md"
 ```
 
 ## Usage Examples
@@ -182,4 +183,4 @@ the prp-review skill 42 --agents simplify
 - Agents analyze git diff by default (changed files only)
 - Each agent returns detailed report with file:line references
 - All agents are advisory — they report findings but do not modify files or commit
-- Summary always written to `.claude/PRPs/reviews/pr-{NUMBER}-review.md`, and posted as PR comment when PR number provided
+- Summary always written to the expanded absolute path `$PRP_DIR/reviews/pr-{NUMBER}-review.md`, and posted as PR comment when PR number provided

@@ -241,16 +241,26 @@ NOT_BUILDING (explicit scope limits):
 
 ## Phase 6: GENERATE - Implementation Plan File
 
-**OUTPUT_PATH**: `.claude/PRPs/plans/{kebab-case-feature-name}.plan.md`
+```bash
+# --- PRP store resolver (canonical; keep byte-identical across skills) ---
+_gd="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"
+case "$_gd" in */.git) _root="${_gd%/.git}" ;; "") _root="$PWD" ;; *) _root="$_gd" ;; esac
+_root="$(cd "$_root" && pwd -P)"
+_name="$(basename "$_root" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9' '-' | sed 's/^-*//;s/-*$//')"
+PRP_DIR="${PRP_HOME:-$HOME/.prp}/${_name:-project}-$(printf %s "$_root" | git hash-object --stdin | cut -c1-8)"
+mkdir -p "$PRP_DIR"; [ -f "$PRP_DIR/project.json" ] || printf '{"path": "%s", "name": "%s"}\n' "$_root" "${_name:-project}" > "$PRP_DIR/project.json"
+```
 
-Create directory if needed: `mkdir -p .claude/PRPs/plans`
+**OUTPUT_PATH**: `$PRP_DIR/plans/{kebab-case-feature-name}.plan.md`
+
+Create directory if needed: `mkdir -p "$PRP_DIR/plans"`
 
 **PLAN_STRUCTURE**: Read `templates/plan-template.md` now (mandatory) — it is the exact plan document to fill and save. Keep every section heading; fill every `{placeholder}` with real, project-specific content (the template's remaining snippets and table entries are illustrative examples from one TypeScript project, not content to keep). Before writing the plan's Step-by-Step Tasks section, read `references/task-block-format.md` (mandatory) for the task-block field detail and worked examples; before filling its Validation Commands section, read `references/validation-commands.md` (mandatory) for the per-language commands to embed.
 
 </process>
 
 <output>
-**OUTPUT_FILE**: `.claude/PRPs/plans/{kebab-case-feature-name}.plan.md`
+**OUTPUT_FILE**: `$PRP_DIR/plans/{kebab-case-feature-name}.plan.md`
 
 **If input was from PRD file**, also update the PRD:
 
