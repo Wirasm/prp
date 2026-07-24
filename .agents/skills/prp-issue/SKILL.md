@@ -9,6 +9,16 @@ description: Investigate a GitHub issue and implement the fix - analyze codebase
 
 **Input**: $ARGUMENTS
 
+```bash
+# --- PRP store resolver (canonical; keep byte-identical across skills) ---
+_gd="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"
+case "$_gd" in */.git) _root="${_gd%/.git}" ;; "") _root="$PWD" ;; *) _root="$_gd" ;; esac
+_root="$(cd "$_root" && pwd -P)"
+_name="$(basename "$_root" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9' '-' | sed 's/^-*//;s/-*$//')"
+PRP_DIR="${PRP_HOME:-$HOME/.prp}/${_name:-project}-$(printf %s "$_root" | git hash-object --stdin | cut -c1-8)"
+mkdir -p "$PRP_DIR"; [ -f "$PRP_DIR/project.json" ] || printf '{"path": "%s", "name": "%s"}\n' "$_root" "${_name:-project}" > "$PRP_DIR/project.json"
+```
+
 Two-phase issue workflow: **investigate** an issue into an implementation artifact, then **fix** it from that artifact (code, PR, self-review).
 
 ---
@@ -29,6 +39,6 @@ Read the first token of `$ARGUMENTS` to choose the workflow. Everything after th
 
 ## Notes
 
-- `investigate` is read-mostly: it analyzes, writes an artifact under `.claude/PRPs/issues/`, commits it, and (for GitHub issues) posts a comment.
+- `investigate` is read-mostly: it analyzes, writes an artifact under `$PRP_DIR/issues/`, and (for GitHub issues) posts a comment.
 - `fix` is **side-effecting**: it creates a branch, commits, opens a PR, and posts a self-review. Only run it once an investigation artifact exists.
 - Typical flow: `prp-issue investigate <number>` → review the artifact → `prp-issue fix <number>`.

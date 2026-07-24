@@ -204,7 +204,14 @@ basename $(git rev-parse --show-toplevel)
 ### 5.2 Create Research Directory
 
 ```bash
-mkdir -p .claude/PRPs/research
+# --- PRP store resolver (canonical; keep byte-identical across skills) ---
+_gd="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"
+case "$_gd" in */.git) _root="${_gd%/.git}" ;; "") _root="$PWD" ;; *) _root="$_gd" ;; esac
+_root="$(cd "$_root" && pwd -P)"
+_name="$(basename "$_root" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9' '-' | sed 's/^-*//;s/-*$//')"
+PRP_DIR="${PRP_HOME:-$HOME/.prp}/${_name:-project}-$(printf %s "$_root" | git hash-object --stdin | cut -c1-8)"
+mkdir -p "$PRP_DIR"; [ -f "$PRP_DIR/project.json" ] || printf '{"path": "%s", "name": "%s"}\n' "$_root" "${_name:-project}" > "$PRP_DIR/project.json"
+mkdir -p "$PRP_DIR/research"
 ```
 
 ### 5.3 Determine Filename
@@ -213,7 +220,7 @@ mkdir -p .claude/PRPs/research
 
 **If new research**:
 
-**Path**: `.claude/PRPs/research/{YYYY-MM-DD}-{kebab-case-topic}.md`
+**Path**: `$PRP_DIR/research/{YYYY-MM-DD}-{kebab-case-topic}.md`
 
 Examples:
 - `2025-01-08-authentication-flow.md`
@@ -312,7 +319,7 @@ If `--follow-up` flag and existing research file:
 ## Research Complete
 
 **Question**: {original question}
-**Document**: `.claude/PRPs/research/{filename}.md`
+**Document**: `{expanded absolute path to $PRP_DIR/research/{filename}.md}`
 
 ### Summary
 
@@ -381,6 +388,6 @@ $prp-codebase-question where are all the command templates and how are they stru
 - **QUESTION_ANSWERED**: User's question addressed with concrete evidence
 - **AGENTS_USED**: Specialized agents spawned for each research area
 - **EVIDENCE_COMPLETE**: Every finding has `file:line` references
-- **DOCUMENT_CREATED**: Research file saved at `.claude/PRPs/research/`
+- **DOCUMENT_CREATED**: Research file saved at `{expanded absolute path to $PRP_DIR/research/}`
 - **NO_OPINIONS**: Document describes what exists, not what should change
 - **PERMALINKS_ADDED**: GitHub links included when possible

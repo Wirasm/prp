@@ -48,8 +48,15 @@ Determine the base branch for branching, syncing, and PR creation:
 **If input looks like a number** (`123`, `#123`):
 
 ```bash
-# Look for artifact
-ls .claude/PRPs/issues/issue-{number}.md
+# Look for the new store artifact first. A legacy hit requires migration.
+if [ -f "$PRP_DIR/issues/issue-{number}.md" ]; then
+  artifact_path="$PRP_DIR/issues/issue-{number}.md"
+elif [ -f ".claude/PRPs/issues/issue-{number}.md" ]; then
+  artifact_path=".claude/PRPs/issues/issue-{number}.md"
+  echo "Legacy investigation artifact found; run the PRP home-store migration."
+else
+  echo "Artifact not found at $PRP_DIR/issues/issue-{number}.md"
+fi
 ```
 
 **If input is a path**:
@@ -76,9 +83,9 @@ cat {artifact-path}
 **If artifact not found:**
 
 ```
-❌ Artifact not found at .claude/PRPs/issues/issue-{number}.md
+❌ Artifact not found at `$PRP_DIR/issues/issue-{number}.md` (or the legacy `.claude/PRPs/issues/issue-{number}.md`).
 
-Run `/prp-issue investigate {number}` first to create the implementation plan.
+Run `/prp-issue investigate {number}` first to create the implementation plan. If only the legacy path exists, run the PRP home-store migration first.
 ```
 
 **PHASE_1_CHECKPOINT:**
@@ -410,7 +417,7 @@ Fixes #{number}
 
 ### Implementation followed artifact:
 
-`.claude/PRPs/issues/issue-{number}.md`
+`{expanded absolute path to $PRP_DIR/issues/issue-{number}.md}`
 
 ### Deviations from plan:
 
@@ -522,22 +529,19 @@ EOF
 ### 9.1 Move Artifact to Completed
 
 ```bash
-mkdir -p .claude/PRPs/issues/completed
-mv .claude/PRPs/issues/issue-{number}.md .claude/PRPs/issues/completed/
+mkdir -p "$PRP_DIR/issues/completed"
+mv "$PRP_DIR/issues/issue-{number}.md" "$PRP_DIR/issues/completed/"
 ```
 
-### 9.2 Commit and Push Archive
+If the artifact was loaded from the legacy fallback, stop and ask the user to migrate it rather than archiving it in place.
 
-```bash
-git add .claude/PRPs/issues/
-git commit -m "Archive investigation for issue #{number}"
-git push
-```
+### 9.2 Confirm Archive
+
+Do **not** stage, commit, or push the archive; it is stored outside the repository.
 
 **PHASE_9_CHECKPOINT:**
 
-- [ ] Artifact moved to completed folder
-- [ ] Archive committed and pushed
+- [ ] Artifact moved to the PRP store's completed folder
 
 ---
 
@@ -571,7 +575,7 @@ git push
 
 ### Artifact
 
-📄 Archived to `.claude/PRPs/issues/completed/issue-{number}.md`
+📄 Archived to `{expanded absolute path to $PRP_DIR/issues/completed/issue-{number}.md}`
 
 ### Next Steps
 
@@ -629,4 +633,4 @@ git push
 - **PR_CREATED**: PR exists and linked to issue
 - **REVIEW_POSTED**: Self-review comment on PR
 - **ARTIFACT_ARCHIVED**: Moved to completed folder
-- **AUDIT_TRAIL**: Full history in git and GitHub
+- **AUDIT_TRAIL**: GitHub comment and PRP-store artifact history

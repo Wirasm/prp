@@ -7,7 +7,6 @@ Targets:
    - skills/  <- .claude/skills/, verbatim except SKILL.md launcher paths in
      LAUNCHER_REWRITES (scripts invoked from a .claude/ path locally) are
      rewritten to their ${CLAUDE_PLUGIN_ROOT} form
-   - prp-loop/scripts/prp_loop.py is added, copied from .claude/PRPs/scripts/
    - agents/  <- .claude/agents/, minus EXCLUDED_AGENTS
    Everything else under plugins/prp-core/ (.claude-plugin/, hooks/, README.md)
    is plugin-only and never touched.
@@ -49,7 +48,15 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 SRC_SKILLS = ROOT / ".claude" / "skills"
 SRC_AGENTS = ROOT / ".claude" / "agents"
-SRC_LOOP_SCRIPT = ROOT / ".claude" / "PRPs" / "scripts" / "prp_loop.py"
+
+PRP_RESOLVER_BLOCK = """# --- PRP store resolver (canonical; keep byte-identical across skills) ---
+_gd="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"
+case "$_gd" in */.git) _root="${_gd%/.git}" ;; "") _root="$PWD" ;; *) _root="$_gd" ;; esac
+_root="$(cd "$_root" && pwd -P)"
+_name="$(basename "$_root" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9' '-' | sed 's/^-*//;s/-*$//')"
+PRP_DIR="${PRP_HOME:-$HOME/.prp}/${_name:-project}-$(printf %s "$_root" | git hash-object --stdin | cut -c1-8)"
+mkdir -p "$PRP_DIR"; [ -f "$PRP_DIR/project.json" ] || printf '{"path": "%s", "name": "%s"}\\n' "$_root" "${_name:-project}" > "$PRP_DIR/project.json"
+"""
 
 # Generated roots (repo-relative). Everything under these paths is owned by
 # this script; stale files are deleted on regeneration.
@@ -77,7 +84,7 @@ CODEX_EXCLUDED_SKILLS = {
 LAUNCHER_REWRITES: dict[str, tuple[str, str, str]] = {
     # skill dir -> (local path, plugin path, codex path)
     "prp-loop": (
-        ".claude/PRPs/scripts/prp_loop.py",
+        ".claude/skills/prp-loop/scripts/prp_loop.py",
         "${CLAUDE_PLUGIN_ROOT}/skills/prp-loop/scripts/prp_loop.py",
         ".agents/skills/prp-loop/scripts/prp_loop.py",
     ),
@@ -128,8 +135,6 @@ CODEX_REWRITES: list[tuple[re.Pattern, object]] = [
     # slash invocation -> Codex $skill mention (lookbehind protects file paths)
     (re.compile(r"(?<![\w/])/prp-"), "$prp-"),
     # bundled-script launcher paths
-    (re.compile(r"\.claude/PRPs/scripts/prp_loop\.py"),
-     ".agents/skills/prp-loop/scripts/prp_loop.py"),
     (re.compile(r"\.claude/skills/prp-worktree/scripts/worktree\.py"),
      ".agents/skills/prp-worktree/scripts/worktree.py"),
     # any remaining skill-tree path: the local harness discovers .agents/skills
@@ -355,6 +360,13 @@ def expected_files() -> dict[Path, bytes]:
     """Map of repo-relative path -> expected content, across all targets."""
     expected: dict[Path, bytes] = {}
 
+    for src in _walk(SRC_SKILLS):
+        if src.suffix != ".md":
+            continue
+        text = src.read_text()
+        if "# --- PRP store resolver" in text and PRP_RESOLVER_BLOCK not in text:
+            sys.exit(f"{src}: PRP store resolver differs from the canonical block")
+
     # 1. Claude Code plugin
     for src in _walk(SRC_SKILLS):
         rel = src.relative_to(SRC_SKILLS)
@@ -367,7 +379,6 @@ def expected_files() -> dict[Path, bytes]:
                 sys.exit(f"{src}: expected launcher path '{local}' not found")
             content = text.replace(local, plugin).encode()
         expected[PLUGIN_SKILLS / rel] = content
-    expected[PLUGIN_SKILLS / "prp-loop/scripts/prp_loop.py"] = SRC_LOOP_SCRIPT.read_bytes()
     for src in _walk(SRC_AGENTS):
         if src.name in EXCLUDED_AGENTS:
             continue
@@ -389,7 +400,6 @@ def expected_files() -> dict[Path, bytes]:
             expected[CODEX_SKILLS / rel] = codex_render_md(text, skill, src).encode()
         else:
             expected[CODEX_SKILLS / rel] = src.read_bytes()
-    expected[CODEX_SKILLS / "prp-loop/scripts/prp_loop.py"] = SRC_LOOP_SCRIPT.read_bytes()
 
     # 3. Codex custom agents (TOML)
     for src in _walk(SRC_AGENTS):

@@ -28,7 +28,7 @@ Design a dynamic team of research agents and a structured research plan for any 
 |----------|--------|---------|
 | `$ARGUMENTS` | User input | — (required) |
 | `ORCHESTRATION` | `--orchestration "..."` flag in $ARGUMENTS | Empty (auto-compose) |
-| `OUTPUT_DIR` | Fixed | `.claude/PRPs/research-plans/` |
+| `OUTPUT_DIR` | Fixed | `$PRP_DIR/research-plans/` |
 
 ---
 
@@ -267,7 +267,15 @@ Identify shared standards across all researchers:
 ### 6.1 Create Output Directory
 
 ```bash
-mkdir -p .claude/PRPs/research-plans
+# --- PRP store resolver (canonical; keep byte-identical across skills) ---
+_gd="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"
+case "$_gd" in */.git) _root="${_gd%/.git}" ;; "") _root="$PWD" ;; *) _root="$_gd" ;; esac
+_root="$(cd "$_root" && pwd -P)"
+_name="$(basename "$_root" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9' '-' | sed 's/^-*//;s/-*$//')"
+PRP_DIR="${PRP_HOME:-$HOME/.prp}/${_name:-project}-$(printf %s "$_root" | git hash-object --stdin | cut -c1-8)"
+mkdir -p "$PRP_DIR"; [ -f "$PRP_DIR/project.json" ] || printf '{"path": "%s", "name": "%s"}\n' "$_root" "${_name:-project}" > "$PRP_DIR/project.json"
+
+mkdir -p "$PRP_DIR/research-plans"
 ```
 
 ### 6.2 Determine Output Filename
@@ -276,14 +284,15 @@ Convert the research topic to kebab-case, truncate to 50 chars max:
 - "What are the best approaches for real-time collaboration?" → `real-time-collaboration`
 - "Compare React vs Vue vs Svelte for enterprise apps" → `react-vs-vue-vs-svelte-enterprise`
 
-**Output path**: `.claude/PRPs/research-plans/{topic-slug}.research-plan.md`
+**Output path**: `$PRP_DIR/research-plans/{topic-slug}.research-plan.md` (report the expanded absolute path to the user).
 
 ### 6.3 Write State Sentinel
 
-Write the output path to `.claude/prp-research-team.state` so the Stop hook can validate:
+Write the expanded absolute output path to `$PRP_DIR/state/prp-research-team.state` so the Stop hook can validate:
 
-```
-.claude/PRPs/research-plans/{topic-slug}.research-plan.md
+```bash
+mkdir -p "$PRP_DIR/state"
+printf '%s\n' "$PRP_DIR/research-plans/{topic-slug}.research-plan.md" > "$PRP_DIR/state/prp-research-team.state"
 ```
 
 Just the file path, one line, no extra content.
@@ -454,7 +463,7 @@ The final research report (produced during execution, not in this plan) should f
 
 **PHASE_6_CHECKPOINT:**
 - [ ] Output directory exists
-- [ ] State sentinel file written with output path
+- [ ] State sentinel file written with the expanded absolute output path
 - [ ] Research plan file written with ALL required sections
 - [ ] All researcher spawn prompts are self-contained
 - [ ] All tasks have acceptance criteria

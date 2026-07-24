@@ -13,7 +13,7 @@ Pipeline:
 Design:
 - Headless: each stage is one CLI call in a fresh session — `claude -p "<prompt>"` by
   default, or `codex exec "<prompt>"` with --cli codex (the CLI choice persists in state).
-- State lives in .claude/prp-loop.state.json (resumable: re-run with --resume).
+- State lives in ~/.prp/<key>/state/prp-loop.state.json (resumable: re-run with --resume).
 - Fully autonomous (permission/sandbox bypass flags per CLI).
 - Self-contained: this script owns both loops itself and detects "green" from each
   stage's `VALIDATION: GREEN` sentinel (parsed from the clean result text) and/or an
@@ -25,9 +25,9 @@ Design:
   single plan to green and stops before opening a PR (replaces the old Ralph loop).
 
 Usage:
-    uv run .claude/PRPs/scripts/prp_loop.py "implement feature X" [--base main]
-    uv run .claude/PRPs/scripts/prp_loop.py "implement feature X" --until implement  # green, no PR
-    uv run .claude/PRPs/scripts/prp_loop.py --resume
+    uv run .claude/skills/prp-loop/scripts/prp_loop.py "implement feature X" [--base main]
+    uv run .claude/skills/prp-loop/scripts/prp_loop.py "implement feature X" --until implement  # green, no PR
+    uv run .claude/skills/prp-loop/scripts/prp_loop.py --resume
 """
 
 from __future__ import annotations
@@ -35,6 +35,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -43,7 +44,7 @@ from pathlib import Path
 def _project_root() -> Path:
     """The project being operated on — the user's repo, NOT where this script lives.
     Location-agnostic: derive the root from git (else cwd), so the identical script
-    works whether it sits in .claude/PRPs/scripts/ or is bundled inside a plugin skill."""
+    works whether it sits in a local skill or is bundled inside a plugin skill."""
     try:
         top = subprocess.run(
             ["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True
@@ -55,10 +56,53 @@ def _project_root() -> Path:
     return Path.cwd()
 
 
-ROOT = _project_root()  # the user's project root (git toplevel, else cwd)
-STATE_FILE = ROOT / ".claude" / "prp-loop.state.json"
-PLANS_DIR = ROOT / ".claude" / "PRPs" / "plans"
-REVIEW_DIR = ROOT / ".claude" / "PRPs" / "reviews"
+def _prp_dir() -> Path:
+    """Resolve the per-project PRP store shared by the main checkout and worktrees."""
+    common = subprocess.run(
+        ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
+        capture_output=True,
+        text=True,
+    )
+    gd = common.stdout.strip() if common.returncode == 0 else ""
+    if gd.endswith("/.git"):
+        root = Path(gd[:-5]).resolve()
+    elif gd:
+        root = Path(gd).resolve()
+    else:
+        root = Path.cwd().resolve()
+
+    name = re.sub(r"[^a-z0-9]+", "-", root.name.lower()).strip("-") or "project"
+    hashed = subprocess.run(
+        ["git", "hash-object", "--stdin"],
+        input=str(root),
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.strip()[:8]
+    prp_dir = Path(os.environ.get("PRP_HOME", Path.home() / ".prp")) / f"{name}-{hashed}"
+    prp_dir.mkdir(parents=True, exist_ok=True)
+    registration = prp_dir / "project.json"
+    if registration.exists():
+        try:
+            registered_path = json.loads(registration.read_text()).get("path")
+        except (json.JSONDecodeError, OSError) as exc:
+            sys.exit(f"invalid PRP project registration at {registration}: {exc}")
+        if registered_path != str(root):
+            sys.exit(
+                f"PRP project-key collision: {registration} belongs to {registered_path!r}, "
+                f"not {str(root)!r}"
+            )
+    else:
+        registration.write_text(json.dumps({"path": str(root), "name": name}) + "\n")
+    return prp_dir
+
+
+ROOT = _project_root()  # worktree being operated on (git toplevel, else cwd)
+PRP_DIR = _prp_dir()  # store shared by all worktrees of the main checkout
+STATE_FILE = PRP_DIR / "state" / "prp-loop.state.json"
+PLANS_DIR = PRP_DIR / "plans"
+REVIEW_DIR = PRP_DIR / "state"
+LEGACY_STATE_FILE = ROOT / ".claude" / "prp-loop.state.json"
 
 GREEN = "VALIDATION: GREEN"
 PROTECTED_BRANCHES = {"main", "master", "development", "develop"}
@@ -109,7 +153,7 @@ def halt(state: dict, reason: str) -> None:
     state["halt_reason"] = reason
     save_state(state)
     log(f"HALTED: {reason}")
-    log(f"State preserved at {STATE_FILE.relative_to(ROOT)}. Fix, then re-run with --resume.")
+    log(f"State preserved at {STATE_FILE}. Fix, then re-run with --resume.")
     sys.exit(1)
 
 
@@ -192,7 +236,7 @@ def newest_plan(before: dict[str, float]) -> str | None:
     ]
     if not fresh:
         return None
-    return str(max(fresh, key=lambda p: p.stat().st_mtime).relative_to(ROOT))
+    return str(max(fresh, key=lambda p: p.stat().st_mtime))
 
 
 def current_pr() -> tuple[int | None, str | None]:
@@ -276,7 +320,7 @@ def stage_plan(state: dict) -> None:
     run_agent(f"Use the prp-plan skill to create an implementation plan for: {state['feature']}")
     plan = newest_plan(before)
     if not plan:
-        halt(state, "plan stage produced no new .plan.md under .claude/PRPs/plans/")
+        halt(state, f"plan stage produced no new .plan.md under {PLANS_DIR}/")
     state["artifacts"]["plan_path"] = plan
     record(state, "plan", "ok")
     state["stage"] = "implement"
@@ -326,27 +370,26 @@ def stage_review(state: dict) -> None:
     cycle = state["cycle"]
     REVIEW_DIR.mkdir(parents=True, exist_ok=True)
     verdict_path = REVIEW_DIR / f"pr-{num}-cycle-{cycle}.verdict.json"
-    rel = verdict_path.relative_to(ROOT)
     bar = state["clean_bar"]
     prompt = (
         f"Use the prp-review skill with --agents to review PR #{num}. "
         "After the review is complete, decide whether the PR is CLEAN, where clean means "
-        f"there are zero {bar} issues. Then write a JSON file to {rel} with exactly this "
+        f"there are zero {bar} issues. Then write a JSON file to {verdict_path} with exactly this "
         'shape and nothing else:\n'
         '{"clean": <true|false>, "blocking": ["<one line per blocking finding>"]}'
     )
     verdict_path.unlink(missing_ok=True)  # never trust a stale verdict from a prior attempt
     run_agent(prompt)
     if not verdict_path.exists():
-        halt(state, f"review stage did not write the verdict file {rel}")
+        halt(state, f"review stage did not write the verdict file {verdict_path}")
     try:
         text = verdict_path.read_text().strip()
         if text.startswith("```"):  # tolerate a markdown-fenced verdict
             text = text.split("\n", 1)[-1].rsplit("```", 1)[0].strip()
         verdict = json.loads(text)
     except (json.JSONDecodeError, ValueError) as e:
-        halt(state, f"verdict file {rel} is not valid JSON: {e}")
-    state["artifacts"].setdefault("review_verdicts", []).append(str(rel))
+        halt(state, f"verdict file {verdict_path} is not valid JSON: {e}")
+    state["artifacts"].setdefault("review_verdicts", []).append(str(verdict_path))
 
     clean = verdict.get("clean")
     if not isinstance(clean, bool):  # a string "false" is truthy — never trust raw truthiness
@@ -430,6 +473,12 @@ def main() -> None:
                          "a resumed loop keeps its original CLI unless overridden).")
     args = ap.parse_args()
 
+    if not STATE_FILE.exists() and LEGACY_STATE_FILE.exists():
+        sys.exit(
+            f"legacy loop state found at {LEGACY_STATE_FILE}; finish it with the previous "
+            f"version or move it to {STATE_FILE}"
+        )
+
     state = load_state()
     if args.resume:
         if not state:
@@ -444,7 +493,7 @@ def main() -> None:
         if state and state.get("status") in ("running", "halted"):
             sys.exit(
                 f"a loop with status '{state.get('status')}' exists "
-                f"({STATE_FILE.relative_to(ROOT)}); use --resume or delete it"
+                f"({STATE_FILE}); use --resume or delete it"
             )
         if not args.feature:
             sys.exit("a feature description is required to start a new loop")

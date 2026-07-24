@@ -238,12 +238,13 @@ git blame -L {start},{end} {affected-file}
 ### 4.1 Artifact Path
 
 ```bash
-mkdir -p .claude/PRPs/issues
+# PRP_DIR is resolved by the canonical resolver in the parent skill.
+mkdir -p "$PRP_DIR/issues"
 ```
 
-**Path:** `.claude/PRPs/issues/issue-{number}.md`
+**Path:** `$PRP_DIR/issues/issue-{number}.md`
 
-If free-form (no issue number): `.claude/PRPs/issues/investigation-{timestamp}.md`
+If free-form (no issue number): `$PRP_DIR/issues/investigation-{timestamp}.md`
 
 ### 4.2 Artifact Template
 
@@ -432,7 +433,7 @@ describe("{feature}", () => {
 
 - **Investigated by**: Claude
 - **Timestamp**: {ISO timestamp}
-- **Artifact**: `.claude/PRPs/issues/issue-{number}.md`
+- **Artifact**: `{expanded absolute path to $PRP_DIR/issues/issue-{number}.md}`
 
 ````
 
@@ -444,22 +445,13 @@ describe("{feature}", () => {
 
 ---
 
-## Phase 5: COMMIT - Save Artifact
+## Phase 5: SAVE - Store Artifact
 
-```bash
-git add .claude/PRPs/issues/
-git status
-```
-
-**If changes to commit:**
-
-```bash
-git commit -m "Investigate issue #{number}: {brief title}"
-```
+The artifact is personal PRP-store state. Do **not** stage or commit it; the GitHub issue comment is the shared record.
 
 **PHASE_5_CHECKPOINT:**
 
-- [ ] Artifact committed to git
+- [ ] Artifact saved at its expanded absolute `$PRP_DIR/issues/` path
 
 ---
 
@@ -571,7 +563,7 @@ EOF
 
 ### Artifact
 
-`.claude/PRPs/issues/issue-{number}.md`
+`{expanded absolute path to $PRP_DIR/issues/issue-{number}.md}`
 
 ### GitHub
 
@@ -617,4 +609,4 @@ Run `$prp-issue fix {number}` to execute the plan.
 - **EVIDENCE_BASED**: Every claim has file:line reference or proof
 - **IMPLEMENTABLE**: Another agent can execute without questions
 - **GITHUB_POSTED**: Comment visible on issue (if GH issue)
-- **COMMITTED**: Artifact saved in git
+- **STORED**: Artifact saved in the PRP store

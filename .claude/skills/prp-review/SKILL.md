@@ -10,6 +10,16 @@ argument-hint: "<pr-number|pr-url> [--approve|--request-changes] [--agents [aspe
 
 ---
 
+```bash
+# --- PRP store resolver (canonical; keep byte-identical across skills) ---
+_gd="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"
+case "$_gd" in */.git) _root="${_gd%/.git}" ;; "") _root="$PWD" ;; *) _root="$_gd" ;; esac
+_root="$(cd "$_root" && pwd -P)"
+_name="$(basename "$_root" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9' '-' | sed 's/^-*//;s/-*$//')"
+PRP_DIR="${PRP_HOME:-$HOME/.prp}/${_name:-project}-$(printf %s "$_root" | git hash-object --stdin | cut -c1-8)"
+mkdir -p "$PRP_DIR"; [ -f "$PRP_DIR/project.json" ] || printf '{"path": "%s", "name": "%s"}\n' "$_root" "${_name:-project}" > "$PRP_DIR/project.json"
+```
+
 ## Mode Select
 
 This skill has two modes:
@@ -126,15 +136,17 @@ ls -la docs/ 2>/dev/null
 Look for implementation artifacts:
 
 ```bash
-# Find implementation report by branch name
-ls .claude/PRPs/reports/*{branch-name}*.md 2>/dev/null
+# Find implementation report by branch name. Legacy hits require migration.
+ls "$PRP_DIR"/reports/*{branch-name}*.md 2>/dev/null || ls .claude/PRPs/reports/*{branch-name}*.md 2>/dev/null
 
-# Find completed plans
-ls .claude/PRPs/plans/completed/ 2>/dev/null
+# Find completed plans. Legacy hits require migration.
+ls "$PRP_DIR"/plans/completed/ 2>/dev/null || ls .claude/PRPs/plans/completed/ 2>/dev/null
 
-# Find issue investigations
-ls .claude/PRPs/issues/completed/ 2>/dev/null
+# Find issue investigations. Legacy hits require migration.
+ls "$PRP_DIR"/issues/completed/ 2>/dev/null || ls .claude/PRPs/issues/completed/ 2>/dev/null
 ```
+
+If a legacy in-repo path is found, tell the user to run the PRP home-store migration before continuing.
 
 **If implementation report exists:**
 1. Read the implementation report
@@ -344,12 +356,12 @@ npm test -- {relevant-test-pattern}
 ### 6.1 Create Report Directory
 
 ```bash
-mkdir -p .claude/PRPs/reviews
+mkdir -p "$PRP_DIR/reviews"
 ```
 
 ### 6.2 Generate Report File
 
-**Path**: `.claude/PRPs/reviews/pr-{NUMBER}-review.md`
+**Path**: `$PRP_DIR/reviews/pr-{NUMBER}-review.md` (report the expanded absolute path to the user).
 
 ```markdown
 ---
@@ -447,7 +459,7 @@ recommendation: {approve|request-changes|block}
 ---
 
 *Reviewed by Claude*
-*Report: `.claude/PRPs/reviews/pr-{NUMBER}-review.md`*
+*Report: `{expanded absolute path to $PRP_DIR/reviews/pr-{NUMBER}-review.md}`*
 ```
 
 **PHASE_6_CHECKPOINT:**
@@ -464,13 +476,13 @@ Based on recommendation and flags:
 
 ```bash
 # If --approve flag AND no Critical/Important issues
-gh pr review {NUMBER} --approve --body-file .claude/PRPs/reviews/pr-{NUMBER}-review.md
+gh pr review {NUMBER} --approve --body-file "$PRP_DIR/reviews/pr-{NUMBER}-review.md"
 
 # If --request-changes flag OR Important issues found
-gh pr review {NUMBER} --request-changes --body-file .claude/PRPs/reviews/pr-{NUMBER}-review.md
+gh pr review {NUMBER} --request-changes --body-file "$PRP_DIR/reviews/pr-{NUMBER}-review.md"
 
 # Otherwise just comment
-gh pr comment {NUMBER} --body-file .claude/PRPs/reviews/pr-{NUMBER}-review.md
+gh pr comment {NUMBER} --body-file "$PRP_DIR/reviews/pr-{NUMBER}-review.md"
 ```
 
 ### 7.2 Get Comment URL
@@ -514,7 +526,7 @@ gh pr view {NUMBER} --json reviews,comments --jq '.reviews[-1].url // .comments[
 
 ### Artifacts
 
-- Report: `.claude/PRPs/reviews/pr-{NUMBER}-review.md`
+- Report: `{expanded absolute path to $PRP_DIR/reviews/pr-{NUMBER}-review.md}`
 - PR Comment: {comment_url}
 
 ### Next Steps

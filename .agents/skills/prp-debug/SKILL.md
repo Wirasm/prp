@@ -197,12 +197,19 @@ For deep mode, document why other hypotheses were rejected:
 ### 5.1 Create Report Directory
 
 ```bash
-mkdir -p .claude/PRPs/debug
+# --- PRP store resolver (canonical; keep byte-identical across skills) ---
+_gd="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"
+case "$_gd" in */.git) _root="${_gd%/.git}" ;; "") _root="$PWD" ;; *) _root="$_gd" ;; esac
+_root="$(cd "$_root" && pwd -P)"
+_name="$(basename "$_root" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9' '-' | sed 's/^-*//;s/-*$//')"
+PRP_DIR="${PRP_HOME:-$HOME/.prp}/${_name:-project}-$(printf %s "$_root" | git hash-object --stdin | cut -c1-8)"
+mkdir -p "$PRP_DIR"; [ -f "$PRP_DIR/project.json" ] || printf '{"path": "%s", "name": "%s"}\n' "$_root" "${_name:-project}" > "$PRP_DIR/project.json"
+mkdir -p "$PRP_DIR/debug"
 ```
 
 ### 5.2 Generate Report
 
-**Path**: `.claude/PRPs/debug/rca-{issue-slug}.md`
+**Path**: `$PRP_DIR/debug/rca-{issue-slug}.md`
 
 ```markdown
 # Root Cause Analysis
@@ -283,7 +290,7 @@ WHY: {First level cause}
 **Root Cause**: {cause}
 **Confidence**: {High/Medium/Low}
 
-**Report**: `.claude/PRPs/debug/rca-{issue-slug}.md`
+**Report**: `{expanded absolute path to $PRP_DIR/debug/rca-{issue-slug}.md}`
 
 ### Summary
 

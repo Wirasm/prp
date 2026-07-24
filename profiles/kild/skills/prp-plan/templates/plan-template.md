@@ -2,7 +2,7 @@
 
 > **Kild lane:** you are running inside a kild room, in a workspace (worktree + branch) the kild engine assigned. The driver owns isolation and publishing — SKIP any step below that creates or switches branches or worktrees, pulls or rebases the base branch, pushes, opens PRs, or moves/archives plan artifacts, and never run `gh pr checkout`. Your job ends at implement → validate → commit in the current workspace, reporting evidence. Where a step spawns subagents, do that analysis inline — or ask the room's orchestrator to invite a helper agent.
 
-**MANDATORY**: This is the exact document to fill and save as `.claude/PRPs/plans/{kebab-case-feature-name}.plan.md`. Keep every section heading — downstream tooling (prp-implement, prp-loop, update-references) reads this structure. The task entries and code snippets are illustrative examples from one TypeScript project; replace their content entirely with the target project's real files, patterns, and commands.
+**MANDATORY**: This is the exact document to fill and save as `$PRP_DIR/plans/{kebab-case-feature-name}.plan.md`. Keep every section heading — downstream tooling (prp-implement, prp-loop, update-references) reads this structure. The task entries and code snippets are illustrative examples from one TypeScript project; replace their content entirely with the target project's real files, patterns, and commands.
 
 ---
 

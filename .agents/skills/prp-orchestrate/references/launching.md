@@ -61,7 +61,7 @@ git diff --name-only origin/<base>...origin/<branch>         # true PR scope (th
 
 Scope-check with the **three-dot** (merge-base) diff only — a two-dot diff false-flags out-of-scope files whenever the agent based its branch on a different tip (local vs origin) than the one being compared, and both choices are legitimate.
 
-Plus artifacts where the engine promises them (plans/reports/reviews under the branch's `.claude/PRPs/`).
+Plus artifacts where the engine promises them (plans/reports/reviews under the project's PRP store — shared across all worktrees, so the orchestrator sees workstream artifacts without merging anything).
 
 ## Observability hooks (optional)
 

@@ -214,9 +214,19 @@ Ask final clarifying questions:
 
 ## Phase 7: GENERATE - Write PRD
 
-**Output path**: `.claude/PRPs/prds/{kebab-case-name}.prd.md`
+```bash
+# --- PRP store resolver (canonical; keep byte-identical across skills) ---
+_gd="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"
+case "$_gd" in */.git) _root="${_gd%/.git}" ;; "") _root="$PWD" ;; *) _root="$_gd" ;; esac
+_root="$(cd "$_root" && pwd -P)"
+_name="$(basename "$_root" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9' '-' | sed 's/^-*//;s/-*$//')"
+PRP_DIR="${PRP_HOME:-$HOME/.prp}/${_name:-project}-$(printf %s "$_root" | git hash-object --stdin | cut -c1-8)"
+mkdir -p "$PRP_DIR"; [ -f "$PRP_DIR/project.json" ] || printf '{"path": "%s", "name": "%s"}\n' "$_root" "${_name:-project}" > "$PRP_DIR/project.json"
+```
 
-Create directory if needed: `mkdir -p .claude/PRPs/prds`
+**Output path**: `$PRP_DIR/prds/{kebab-case-name}.prd.md`
+
+Create directory if needed: `mkdir -p "$PRP_DIR/prds"`
 
 ### PRD Template
 
@@ -383,7 +393,7 @@ After generating, report:
 ```markdown
 ## PRD Created
 
-**File**: `.claude/PRPs/prds/{name}.prd.md`
+**File**: `{expanded absolute path to $PRP_DIR/prds/{name}.prd.md}`
 
 ### Summary
 
@@ -416,7 +426,7 @@ After generating, report:
 
 ### To Start Implementation
 
-Run: `$prp-plan .claude/PRPs/prds/{name}.prd.md`
+Run: `$prp-plan {expanded absolute path to $PRP_DIR/prds/{name}.prd.md}`
 
 This will automatically select the next pending phase and create an implementation plan.
 ```
@@ -451,7 +461,7 @@ This will automatically select the next pending phase and create an implementati
 └─────────────────────────────────────────────────────────┘
                           ↓
 ┌─────────────────────────────────────────────────────────┐
-│  GENERATE: Write PRD to .claude/PRPs/prds/              │
+│  GENERATE: Write PRD to $PRP_DIR/prds/                  │
 └─────────────────────────────────────────────────────────┘
 ```
 

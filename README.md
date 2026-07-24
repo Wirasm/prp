@@ -128,7 +128,7 @@ The `.claude/skills/` directory contains the core PRP workflow as Agent Skills �
 
 ## PRP Loop (Autonomous Execution)
 
-`/prp-loop` drives the full pipeline (`plan → implement → pr → review`) headlessly, running one `claude -p` session per stage and looping `review → fix` until the PR review comes back clean. Progress is tracked in `.claude/prp-loop.state.json`.
+`/prp-loop` drives the full pipeline (`plan → implement → pr → review`) headlessly, running one `claude -p` session per stage and looping `review → fix` until the PR review comes back clean. Progress is tracked in the project's PRP store at `~/.prp/<project-key>/state/prp-loop.state.json`.
 
 ### How It Works
 
@@ -136,7 +136,7 @@ The `.claude/skills/` directory contains the core PRP workflow as Agent Skills �
 /prp-loop "add user authentication with JWT"
 ```
 
-1. **plan** — writes `.claude/PRPs/plans/<feature>.plan.md`
+1. **plan** — writes `~/.prp/<project-key>/plans/<feature>.plan.md`
 2. **implement** — executes the plan, looping until all validations pass, then commits
 3. **pr** — pushes the branch and opens the PR
 4. **review** — reviews the PR and writes a `{clean, blocking}` verdict
@@ -161,7 +161,7 @@ The `.claude/skills/` directory contains the core PRP workflow as Agent Skills �
 - Defaults: `--max-cycles 3`, `--max-implement-iterations 10`; base branch is auto-detected
 - Pass `--validate "<cmd>"` to give the loop an authoritative green check (exit 0 = pass)
 - Works best with plans that have clear, testable validation commands
-- State is tracked in `.claude/prp-loop.state.json`; inspect or resume from there
+- State is tracked in `~/.prp/<project-key>/state/prp-loop.state.json`; inspect or resume from there
 
 ---
 
@@ -174,11 +174,11 @@ The `.claude/skills/` directory contains the core PRP workflow as Agent Skills �
     ↓
 Creates PRD with Implementation Phases table
     ↓
-/prp-plan .claude/PRPs/prds/user-auth.prd.md
+/prp-plan ~/.prp/<project-key>/prds/user-auth.prd.md
     ↓
 Auto-selects next pending phase, creates plan
     ↓
-/prp-implement .claude/PRPs/plans/user-auth-phase-1.plan.md
+/prp-implement ~/.prp/<project-key>/plans/user-auth-phase-1.plan.md
     ↓
 Executes plan, updates PRD progress, archives plan
     ↓
@@ -192,7 +192,7 @@ Repeat /prp-plan for next phase
     ↓
 Creates implementation plan from description
     ↓
-/prp-implement .claude/PRPs/plans/add-pagination.plan.md
+/prp-implement ~/.prp/<project-key>/plans/add-pagination.plan.md
 ```
 
 ### Bug Fixes: Issue Workflow
@@ -211,18 +211,26 @@ Implements fix, creates PR
 
 ## Artifacts Structure
 
-All artifacts are stored in `.claude/PRPs/`:
+Artifacts and runtime state are stored outside the repository in a per-project directory:
 
 ```
-.claude/PRPs/
+~/.prp/<project-key>/
+├── project.json       # Canonical project path and name
 ├── prds/              # Product requirement documents
 ├── plans/             # Implementation plans
 │   └── completed/     # Archived completed plans
+├── research/          # Codebase research
+├── research-plans/    # Multi-agent research plans
 ├── reports/           # Implementation reports
+├── reviews/           # Human-readable PR reviews
 ├── issues/            # Issue investigation artifacts
 │   └── completed/     # Archived completed investigations
-└── reviews/           # PR review reports
+├── debug/             # Root-cause analysis reports
+├── orchestration/     # Parallel-workstream run files
+└── state/             # Loop state, verdicts, logs, and hook sentinels
 ```
+
+The project key is derived from the canonical main-checkout path, so all linked worktrees share the same store. Set `PRP_HOME` to override the default `~/.prp` root.
 
 ---
 
@@ -260,7 +268,6 @@ PRDs include an Implementation Phases table for tracking progress:
 your-project/
 ├── .claude/
 │   ├── skills/              # PRP skills (or install the prp-core plugin)
-│   ├── PRPs/                # Generated artifacts (prds, plans, reports, reviews)
 │   └── agents/              # Custom subagents
 ├── CLAUDE.md                # Project-specific guidelines
 └── src/                     # Your source code
