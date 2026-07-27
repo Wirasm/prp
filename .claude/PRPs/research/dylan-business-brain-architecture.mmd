@@ -1,0 +1,29 @@
+flowchart LR
+  subgraph Inputs["Capture and business signals"]
+    DR["Dylan Record<br/>meetings and transcripts"]
+    INT["Deterministic integrations<br/>email, calendar, Slack, Circle, GitHub"]
+    HUMAN["Rasmus<br/>goals, decisions, approvals"]
+  end
+
+  subgraph Truth["Canonical source of truth"]
+    VAULT["Dylan Brain workspace<br/>Obsidian files, projects, clients,<br/>decisions, policies, operating rhythms"]
+  end
+
+  subgraph Runtime["Brain runtime"]
+    HERMES["Hermes pilot<br/>goals, cron, Kanban, profiles,<br/>delegation, messaging"]
+  end
+
+  subgraph Execution["Specialized execution"]
+    KILD["Kild<br/>coding fleet and worktrees"]
+    BIZ["Business tools<br/>drafts, reporting, CRM updates,<br/>research and follow-ups"]
+  end
+
+  DR --> VAULT
+  INT --> VAULT
+  HUMAN --> HERMES
+  VAULT <--> HERMES
+  HERMES -->|"bounded coding brief"| KILD
+  KILD -->|"status and evidence"| HERMES
+  HERMES -->|"approved actions"| BIZ
+  BIZ -->|"results and audit trail"| VAULT
+  HERMES -->|"briefings and approval requests"| HUMAN
