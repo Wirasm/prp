@@ -9,13 +9,31 @@ set -euo pipefail
 # Read hook input from stdin
 HOOK_INPUT=$(cat)
 
-# --- PRP store resolver (canonical; keep byte-identical across skills) ---
-_gd="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"
+# --- PRP store resolver, READ-ONLY variant (hooks must NEVER create a store) ---
+# Derivation is identical to the canonical block in artifact-writing skills, but
+# without the mkdir/project.json write, and it bails instead of failing.
+#
+# Why this variant exists: a Stop hook fires on EVERY stop, in whatever directory
+# the session happens to be in. The writing resolver therefore minted a store for
+# any folder a session ever passed through — vendored dependencies, throwaway
+# checkouts, temp dirs — each left holding nothing but a project.json. Only a
+# skill that is actually writing an artifact may create a store.
+#
+# It also bails on an unreadable root: `cd` into a directory deleted mid-session
+# (a removed worktree is the common case) used to abort the whole script under
+# `set -e`, surfacing as a hook failure with no stderr.
+# `|| true` is load-bearing: outside a git repo `git rev-parse` exits 128, and
+# under `set -e` that aborted the whole hook on its first line — surfacing as a
+# Stop-hook failure with no stderr, on every stop, in any non-repo directory.
+_gd="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null || true)"
 case "$_gd" in */.git) _root="${_gd%/.git}" ;; "") _root="$PWD" ;; *) _root="$_gd" ;; esac
-_root="$(cd "$_root" && pwd -P)"
+_root="$(cd "$_root" 2>/dev/null && pwd -P)" || exit 0
+[ -n "$_root" ] || exit 0
 _name="$(basename "$_root" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9' '-' | sed 's/^-*//;s/-*$//')"
 PRP_DIR="${PRP_HOME:-$HOME/.prp}/${_name:-project}-$(printf %s "$_root" | git hash-object --stdin | cut -c1-8)"
-mkdir -p "$PRP_DIR"; [ -f "$PRP_DIR/project.json" ] || printf '{"path": "%s", "name": "%s"}\n' "$_root" "${_name:-project}" > "$PRP_DIR/project.json"
+
+# No store means this command never ran here — nothing to validate.
+[ -d "$PRP_DIR" ] || exit 0
 
 SENTINEL_FILE="$PRP_DIR/state/prp-research-team.state"
 
