@@ -1,6 +1,6 @@
 ---
 name: prp-issue
-description: Investigate a GitHub issue and implement the fix - analyze codebase, create a plan, then code, PR, and self-review. Use when the user wants to investigate or triage a GitHub issue or bug report, fix an investigated issue, implement an issue fix, or invokes $prp-issue.
+description: Investigate a GitHub issue and implement the fix - analyze codebase, create a plan, then code, PR, review by the review agents, and act on their findings. Use when the user wants to investigate or triage a GitHub issue or bug report, fix an investigated issue, implement an issue fix, or invokes $prp-issue.
 ---
 
 > **Arguments:** `$ARGUMENTS` (and `$1`, `$2`, ...) refer to the arguments given when this skill was invoked. Take them from the user's request; if absent, infer them from the conversation.
@@ -19,7 +19,7 @@ PRP_DIR="${PRP_HOME:-$HOME/.prp}/${_name:-project}-$(printf %s "$_root" | git ha
 mkdir -p "$PRP_DIR"; [ -f "$PRP_DIR/project.json" ] || printf '{"path": "%s", "name": "%s"}\n' "$_root" "${_name:-project}" > "$PRP_DIR/project.json"
 ```
 
-Two-phase issue workflow: **investigate** an issue into an implementation artifact, then **fix** it from that artifact (code, PR, self-review).
+Two-phase issue workflow: **investigate** an issue into an implementation artifact, then **fix** it from that artifact (code, PR, agent review, act on findings).
 
 ---
 
@@ -40,5 +40,5 @@ Read the first token of `$ARGUMENTS` to choose the workflow. Everything after th
 ## Notes
 
 - `investigate` is read-mostly: it analyzes, writes an artifact under `$PRP_DIR/issues/`, and (for GitHub issues) posts a comment.
-- `fix` is **side-effecting**: it creates a branch, commits, opens a PR, and posts a self-review. Only run it once an investigation artifact exists.
+- `fix` is **side-effecting**: it creates a branch, commits, opens a PR, has the review agents review it, and pushes fixes for what they find. Only run it once an investigation artifact exists.
 - Typical flow: `prp-issue investigate <number>` → review the artifact → `prp-issue fix <number>`.

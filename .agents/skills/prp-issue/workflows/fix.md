@@ -15,7 +15,7 @@ Execute the implementation plan from `prp-issue investigate`:
 3. Implement the changes exactly as specified
 4. Run validation
 5. Create PR linked to issue
-6. Run self-review and post findings
+6. Have the PR reviewed by the review agents, then act on what they report
 7. Archive the artifact
 
 **Golden Rule**: Follow the artifact. If something seems wrong, validate it first - don't silently deviate.
@@ -450,79 +450,83 @@ PR_NUMBER=$(gh pr view --json number -q '.number')
 
 ---
 
-## Phase 8: REVIEW - Self Code Review
+## Phase 8: REVIEW - Review the PR, then act on it
 
-### 8.1 Run Self-Review Agents (in parallel)
+**Do not review your own diff.** You just wrote it, so you are the worst available reader of it —
+you will re-derive the reasoning that produced the bug instead of noticing the bug. Dispatch the
+review, then spend your turn on what it finds.
 
-Launch both agents as **two parallel subagents spawned in one step** so they run concurrently. Both are advisory and read the same diff — there is no reason to serialize them.
+### 8.1 Run the general review
 
-**code-reviewer** (spawn as the `code-reviewer` subagent):
-
-```
-Review the changes in this PR for issue #{number}.
-
-Focus on:
-1. Does the fix address the root cause from the investigation?
-2. Code quality - matches codebase patterns?
-3. Test coverage - are the new tests sufficient?
-4. Edge cases - are they handled?
-5. Security - any concerns?
-6. Potential bugs - anything that could break?
-
-Review only the diff, not the entire codebase.
-```
-
-**code-simplifier** (spawn as the `code-simplifier` subagent):
+Invoke the review skill against the PR you just opened:
 
 ```
-Identify simplification opportunities in the changes for issue #{number}.
-Focus only on the diff. Prefer explicit over clever; no nested ternaries.
-Report findings with before/after suggestions. Advisory only — do not modify files or commit.
+$prp-review {pr-number} --agents code simplify
 ```
 
-### 8.2 Post Review to PR
+That is the whole of this step. It dispatches the reviewers, writes
+`$PRP_DIR/reviews/pr-{pr-number}-review.md`, and posts the summary to the PR.
+
+- **Two agents, named on purpose — not `all`.** `code` and `simplify` are `code-reviewer`
+  and `code-simplifier`. This workflow ships one artifact-sized fix, and the full aspect
+  stack costs more than that fix is worth. Reach for `--agents all` by hand on a PR that earns it.
+- **Do not post your own review comment.** The review skill already posted one, and a second
+  summary written by the author of the code is exactly the self-review this phase exists to avoid.
+
+### 8.2 Act on the findings
+
+A review nobody acts on is a comment. Work the report:
+
+- **Critical and Important — fix them**, unless the finding is wrong. If it is wrong, say why in
+  8.3; do not fix it silently and do not ignore it silently.
+- **Suggestions — judge each one, and expect to decline some.** Apply what makes the change simpler
+  or more correct. Decline anything that adds a capability nobody asked for (YAGNI), generalizes
+  for a second caller that does not exist, adds a layer, an option, or a config knob to a thing
+  with one use, or trades a plain implementation for a clever one.
+- **Out of scope is a real answer.** A finding about code this PR did not touch belongs in an
+  issue, not in this diff. File it or name it; do not widen the PR to swallow it.
+
+When the finding is genuine but the proposed remedy is over-built, fix the finding the small way
+rather than declining it.
+
+After applying anything: **re-run Phase 6's validation**, then commit and push. A review fix that
+breaks the gate is worse than the finding it addressed.
 
 ```bash
-gh pr comment --body "$(cat <<'EOF'
-## 🔍 Automated Code Review
+git add -A
+git commit -m "fix(scope): address review findings on #{number}"
+git push
+```
 
-### Summary
+### 8.3 Say what you did with it
 
-{1-2 sentence assessment}
+One short comment on the PR, so the declines are visible rather than silent:
 
-### Findings
+```bash
+gh pr comment {pr-number} --body "$(cat <<'EOF'
+### Review findings — applied
 
-#### ✅ Strengths
-- {Good thing 1}
-- {Good thing 2}
+- `{file}:{line}` — {what changed}
 
-#### ⚠️ Suggestions (non-blocking)
-- `{file}:{line}` - {suggestion}
-- {other suggestions}
+### Declined
 
-#### 🧹 Simplification (from code-simplifier)
-- `{file}:{line}` - {simplification, or "No simplifications identified"}
+- {finding} — {why: YAGNI / out of scope / disagreed, and on what grounds}
 
-#### 🔒 Security
-- {Any concerns or "No security concerns identified"}
-
-### Checklist
-
-- [x] Fix addresses root cause from investigation
-- [x] Code follows codebase patterns
-- [x] Tests cover the change
-- [x] No obvious bugs introduced
-
----
-*Self-reviewed by Claude • Ready for human review*
+Validation re-run after the changes: {result}
 EOF
 )"
 ```
 
+If nothing was declined, drop that section rather than writing "none" — and if nothing needed
+fixing at all, say that in one line instead of posting the template.
+
 **PHASE_8_CHECKPOINT:**
 
-- [ ] Code review + simplification completed (run in parallel)
-- [ ] Review posted to PR
+- [ ] `prp-review --agents` dispatched against the PR; report written and posted by it
+- [ ] Critical and Important findings fixed, or explicitly rejected with a reason
+- [ ] Suggestions judged individually; over-engineered ones declined
+- [ ] Validation re-run and green after any change; commits pushed
+- [ ] Applied/declined comment posted
 
 ---
 
@@ -571,9 +575,9 @@ Do **not** stage, commit, or push the archive; it is stored outside the reposito
 | Tests      | ✅ Pass |
 | Lint       | ✅ Pass |
 
-### Self-Review
+### Review
 
-{Summary of review findings}
+{What the review found, what was applied, what was declined and why}
 
 ### Artifact
 
@@ -633,6 +637,7 @@ Do **not** stage, commit, or push the archive; it is stored outside the reposito
 - **PLAN_EXECUTED**: All artifact steps completed
 - **VALIDATION_PASSED**: All checks green
 - **PR_CREATED**: PR exists and linked to issue
-- **REVIEW_POSTED**: Self-review comment on PR
+- **REVIEWED_BY_AGENTS**: `prp-review --agents` run against the PR, its report posted
+- **FINDINGS_ACTIONED**: Every Critical/Important fixed or rejected with a reason; declines stated on the PR
 - **ARTIFACT_ARCHIVED**: Moved to completed folder
 - **AUDIT_TRAIL**: GitHub comment and PRP-store artifact history
