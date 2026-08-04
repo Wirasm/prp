@@ -20,8 +20,15 @@ Use the <prp-skill> skill to <task, one line>.
 
 Context:
 - Target: <issue #N / plan path / feature description>
-- Base branch: <base>. Create and work on branch <branch>; never commit to <base>.
+- Base branch: branch from origin/<base> (not the local <base>, which may be behind).
+  Work on <branch>; never commit to <base>.
 - Standing decisions that apply to you: <the SD entries scoped to this workstream, verbatim>
+- Bootstrap: <what a FRESH checkout needs before it can build — generated files, a
+  patch/vendor step, an install. Omit only if a clean clone builds as-is.>
+- Validation gate: <the exact command(s)>. Capture each stage's own exit code.
+- Known-noisy tests / environment: <named flaky tests and their signature, plus
+  "re-run rather than investigate, and do not fix them in your diff">
+- Other work in flight: <branches/PRs touching nearby files, and to stay off them>
 
 Definition of done: <PR opened against <base> with validations green / plan file
 written / report written>. Report the PR number and a 3-line summary as your final message.
@@ -30,6 +37,15 @@ If blocked on a decision only a human can make: STOP and report the blocker prec
 (what you need decided, the options, your recommendation). You will receive the decision
 as a follow-up message — continue from where you stopped.
 ```
+
+The four added lines each replace a failure the orchestrator otherwise pays for once per agent:
+
+- **Bootstrap** — a fresh worktree is not a working checkout wherever a build prerequisite is gitignored (a vendored/patched dependency, a generated file). The agent's first build fails and it debugs the environment instead of the task. Say the step; do not let it be discovered.
+- **Validation gate** — naming it stops each agent inventing its own definition of green.
+- **Known-noisy tests** — parallel workstreams share one machine, so `--max-parallel` *raises* the odds of load-dependent flakes. An agent that meets one cold will investigate it, and may "fix" it inside an unrelated diff. Name it, give its signature, and say it is not theirs.
+- **Other work in flight** — the orchestrator knows the overlap map from Phase 1; the agent knows nothing. Cheap to pass, and it prevents two branches editing one file.
+
+**Worktree location**: if the repo has its own convention (a `.worktrees/` directory, a worktree skill/CLI, existing sibling worktrees), tell the agent to follow it rather than relying on the isolation default. Some projects list, prune or build against their worktrees, and one parked outside that convention is invisible to those tools.
 
 The STOP-and-report clause is the escalation path: the orchestrator gates the blocker, then **message the decision to the same agent** — it continues with full context. Never replace a blocked agent with a fresh one; the fresh one has no history.
 
@@ -53,11 +69,15 @@ The STOP-and-report clause is the escalation path: the orchestrator gates the bl
 An agent's "done" report is a claim. Verify before marking `pr-open`/`merged`:
 
 ```bash
-gh pr list --head <branch> --json number,url,isDraft,state   # PR exists, not draft
-gh pr checks <number>                                        # CI state
-git log --oneline <base>..<branch> | head -3                 # commits exist
-git diff --name-only origin/<base>...origin/<branch>         # true PR scope (three-dot!)
+gh pr list --head <branch> --state all --json number,url,isDraft,state   # PR exists, not draft
+gh pr checks <number>                                                    # CI state, if any
+git log --oneline <base>..<branch> | head -3                             # commits exist
+git diff --name-only origin/<base>...origin/<branch>                     # true PR scope (three-dot!)
 ```
+
+`--state all` is not optional: **`gh pr list` returns only open PRs by default**, so it goes empty — with no error — the moment a PR merges. Omitting it makes the lookup fail for exactly the terminal state it is meant to confirm, and a `merged` workstream reads as "no PR found".
+
+**No CI is not the same as passing CI.** If `gh pr checks` reports nothing (or only a secret scanner), there is no external fact here — run the project's own validation gate against the branch yourself before marking `pr-open`, per the Role contract. Capture each stage's own exit code; a gate piped into `tail`/`head` reports the *pager's* status, so an `&&` chain sails past a failing stage and the run looks green.
 
 Scope-check with the **three-dot** (merge-base) diff only — a two-dot diff false-flags out-of-scope files whenever the agent based its branch on a different tip (local vs origin) than the one being compared, and both choices are legitimate.
 

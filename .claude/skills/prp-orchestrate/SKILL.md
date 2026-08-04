@@ -25,6 +25,7 @@ mkdir -p "$PRP_DIR"; [ -f "$PRP_DIR/project.json" ] || printf '{"path": "%s", "n
 - **Orchestrate, don't implement.** Never write feature code in the orchestrator session — all product changes happen inside workstream agents. The orchestrator only touches the run file, branches/merges, and the agents themselves.
 - **Drive everything through the native agent tools** — spawn with the Agent/Task tool (background, worktree isolation), steer and continue with SendMessage, stop with the task-stop tool, check with the task-list/status tools. Shelling out to a headless CLI is the fallback lane, not the default (see `references/launching.md` → Detached fallback).
 - **Trust authoritative signals for "done"**: artifacts under the project's PRP store, agent completion reports, `gh pr view/checks`, git state. An agent saying "done" is a claim; a green PR is a fact.
+- **Where the project has no CI, there is no fact to trust — so the orchestrator re-runs the gate.** Check once per run whether the repo actually has checks (`gh pr checks <n>`; a secret-scanner alone is not a build). If it does not, a workstream's "validations green" is a self-report, and accepting it makes the orchestrator a relay for whatever the agent believed. Run the project's own gate against the branch before marking `pr-open`. Re-run more than once where the suite has known flakes — one green run does not distinguish a fix from a lucky sample.
 - **The user is the principal.** Every gate decision is either covered by the Standing Decisions log (act, record it as `auto`) or escalated as a short digest (act on the answer, record it). Never guess on destructive or product-shape decisions.
 - **Compose skills by name only.** Agents are told to "use the prp-issue skill on #123", "use the prp-loop skill for <feature>" — never pointed at another skill's files.
 
@@ -49,7 +50,14 @@ mkdir -p "$PRP_DIR"; [ -f "$PRP_DIR/project.json" ] || printf '{"path": "%s", "n
 
 ## Phase 3 — Launch
 
-**Pre-flight, before any spawn**: reconcile the base branch with origin — `git log origin/<base>..<base>` must be empty (push or resolve what isn't). Worktree agents branch from one tip while PRs diff against the other; a stale origin makes every PR carry the unpushed base commits as phantom scope.
+**Pre-flight, before any spawn**: `git fetch`, then reconcile the base with origin in **both directions** — `git rev-list --left-right --count origin/<base>...<base>` must read `0	0`.
+
+```
+0	3   → local is AHEAD: 3 unpushed commits. Every PR carries them as phantom scope.
+3	0   → local is BEHIND: agents branching from it silently omit 3 merged commits.
+```
+
+Worktree agents branch from one tip while PRs diff against the other, and **both directions break that** — but only the ahead case is visible in the PR. A base that is merely behind produces branches that build, test and merge cleanly while missing work that already landed; the cost surfaces later as a conflict, a duplicated fix, or a regression re-introduced. Tell agents the exact ref to branch from (`origin/<base>`, not `<base>`) rather than trusting the local tip.
 
 Launch each workstream as a **background agent** via the Agent/Task tool — see `references/launching.md` for the exact call shape and prompt template (read it before the first launch of a run):
 
