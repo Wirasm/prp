@@ -14,6 +14,9 @@ Investigate the issue/problem and produce a comprehensive implementation plan th
 
 **Golden Rule**: The artifact you produce IS the specification. The implementing agent should be able to work from it without asking questions.
 
+**If the operator asked to investigate *and* fix, this file is only your first half** — see "If the
+invocation also asked for the fix" below before you stop or start editing code.
+
 ---
 
 ## Phase 1: PARSE - Understand Input
@@ -574,6 +577,28 @@ Run `/prp-issue fix {number}` to execute the plan.
 
 ---
 
+## If the invocation also asked for the fix
+
+Investigation ends here **only** when the operator asked to investigate. If they asked for both —
+`investigate and fix`, `investigate this and fix it`, or any phrasing carrying both — you are half
+done, and the next thing you do is:
+
+**Read `workflows/fix.md` and execute it end-to-end, with the artifact you just wrote as its input.**
+
+Read the file. Do not implement from what is in your head right now.
+
+You are holding a fresh, detailed, correct plan, which is exactly what makes this the moment the
+step gets skipped: implementing feels like the obvious next move and the file feels redundant. It
+is not. `fix.md` is seven phases you have not seen — artifact drift check, branch discipline, the
+validation gate, commit and PR, review by the review agents and acting on their findings, and the
+archive. An agent that goes straight to editing performs none of them and produces a plausible diff
+with no PR, no review and no artifact archived. That is a real run, not a hypothetical.
+
+The "Next Step" line above is what you print for the operator when they asked only to investigate.
+It is not permission to stop when they asked for more.
+
+---
+
 ## Handling Edge Cases
 
 ### Issue is already closed
@@ -608,3 +633,4 @@ Run `/prp-issue fix {number}` to execute the plan.
 - **IMPLEMENTABLE**: Another agent can execute without questions
 - **GITHUB_POSTED**: Comment visible on issue (if GH issue)
 - **STORED**: Artifact saved in the PRP store
+- **HANDED OFF**: If the invocation asked for the fix too, `workflows/fix.md` has been READ and is being executed — not improvised from the plan you just wrote
