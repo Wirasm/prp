@@ -69,7 +69,9 @@ Run in two steps: **decide which agents apply, then dispatch them in parallel.**
 
 ### Step 1 — Decide which agents apply
 
-Using the Aspect Selection Logic above (and any aspects passed in `$ARGUMENTS`), build the final list of agents to run:
+**If `$ARGUMENTS` names aspects, they ARE the list — run exactly those and nothing else.** `--agents code simplify` means two agents, not two plus whatever the diff would otherwise have attracted. A caller naming aspects has already decided how much review this PR is worth, and quietly adding to their list spends their tokens on a decision they did not make. `all` is the only aspect that means "apply the logic below".
+
+Otherwise — no aspects named, or `all` — use the Aspect Selection Logic above to build the list:
 
 - Always include `code-reviewer`.
 - Add `docs-impact-agent` unless the PR is trivial (see skip rules).
