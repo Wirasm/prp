@@ -31,9 +31,19 @@ Read the first token of `$ARGUMENTS` to choose the workflow. Everything after th
 |-------------|----------|-------------|
 | `investigate` | `workflows/investigate.md` | issue number / URL / free-form description |
 | `fix` | `workflows/fix.md` | issue number / artifact path (`+ optional --base <branch>`) |
+| **both verbs** — `investigate and fix`, `investigate then fix` | `workflows/investigate.md`, **then** `workflows/fix.md` | the issue; the artifact the first phase writes is the second phase's input |
 | _no verb_ (a bare issue number, URL, or description) | `workflows/investigate.md` | the whole argument — investigation is the entry point; you investigate before you fix |
 
-**Action**: strip the leading verb (if present), then follow the matching workflow file end-to-end. Do not blend the two — pick one and execute it fully.
+**Action**: strip the verb(s), then follow each matching workflow file end-to-end, in the order above.
+
+**Read the workflow file for every phase you run — including the second one.** Both phases asked for
+means both files read. Finishing an investigation leaves you holding a plan and feeling ready to
+implement it, and implementing from that feeling is the failure this line exists to stop: `fix.md`
+carries the branch discipline, the validation gate, the PR, the agent review and the archive, and an
+agent that never opened it silently does none of them. It has happened.
+
+**Do not blend them.** Sequential, each run to its end — not interleaved, and not one phase
+improvising the other's steps from memory.
 
 ---
 
