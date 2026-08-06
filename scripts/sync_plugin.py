@@ -125,6 +125,9 @@ CODEX_REWRITES: list[tuple[re.Pattern, object]] = [
      "as **two parallel subagents spawned in one step**"),
     (re.compile(r"When launching each agent via Task tool:"), "When spawning each subagent:"),
     (re.compile(r"using Task tool subagents"), "using parallel subagents"),
+    # Skill-tool dispatch -> Codex skill invocation (must precede the prp-core: strip)
+    (re.compile(r'Skill tool, `skill: "prp-core:([a-z-]+)"`, `args: "([^"]*)"`\.'),
+     r"Run the `\1` skill with arguments `\2`."),
     # Codex custom-agent names are flat — drop the plugin namespace
     (re.compile(r"prp-core:"), ""),
     # Claude @-mention context include -> Codex AGENTS.md reality
@@ -211,7 +214,7 @@ CODEX_SKILL_REWRITES: dict[str, list[tuple[re.Pattern, str]]] = {
 
 # Nothing Claude-specific may survive in the Codex render.
 CODEX_FORBIDDEN = (
-    "subagent_type", "Task tool", "prp-core:", "argument-hint:",
+    "subagent_type", "Task tool", "Skill tool", "prp-core:", "argument-hint:",
     "@CLAUDE.md", "${CLAUDE_PLUGIN_ROOT}", ".claude/skills/",
     "SendMessage",
 )
@@ -265,6 +268,9 @@ KILD_REWRITES: list[tuple[re.Pattern, object]] = [
      "**inline, one after the other**"),
     (re.compile(r"When launching each agent via Task tool:"), "For each analysis, inline:"),
     (re.compile(r"using Task tool subagents"), "inline"),
+    # Skill-tool dispatch -> named skill (must precede the prp-core: strip)
+    (re.compile(r'Skill tool, `skill: "prp-core:([a-z-]+)"`, `args: "([^"]*)"`\.'),
+     r"Use the `\1` skill with arguments `\2`."),
     # pi/kild agent names are bare
     (re.compile(r"prp-core:"), ""),
     # pi loads AGENTS.md and CLAUDE.md natively as context files
