@@ -31,6 +31,8 @@ Not for work whose feasibility is already settled — that is `prp-plan` then `p
 
 Convert the request into a claim that can fail, and fix the kill criteria before touching code.
 
+**Reconnaissance before framing is allowed, and usually required.** A hypothesis that names a version, a field, a threshold, or a mechanism cannot be written cold — read the issue, the source, and the environment until the claim can be stated precisely. The line is the **falsifier**: never let findings produced by the thing built to test the claim reshape the claim. Recon sharpens the question; results must only answer it.
+
 Produce four things:
 
 - **Hypothesis** — one sentence, falsifiable, specific enough that two people would agree on whether it held.
@@ -116,6 +118,8 @@ Reach one verdict:
 | **CONDITIONAL** | Holds only if a named constraint changes. Name the constraint, the cost of changing it, and what else that change would unlock. |
 
 **CONDITIONAL is the verdict most spikes should reach and most reports dodge.** "Impossible" is usually shorthand for "impossible without changing something we were treating as fixed" — a primitive, a schema, a dependency, a product rule. Surfacing that trade is the point: it converts a dead end into a priced decision. Never collapse it into DISPROVEN. Never let it drift into PROVEN by quietly assuming the change is free.
+
+**Label each verdict `proved` or `inferred`, and record the seat it was proved from** — which process, layer or surface, under which mode. Then re-run the inferred ones before finalizing: the setup already exists by this point, and an inference is where a spike is most confidently wrong. `references/evidence.md` carries the craft, including what to do when a kill criterion turns out to have named the wrong observation points.
 
 Complete `$PRP_DIR/spikes/spike-<slug>.md` — read `templates/spike-report.md` again (mandatory) and fill every remaining section, replacing `(pending)` with the verdict. Keep every heading; drop only the CONDITIONAL section when the verdict is not CONDITIONAL.
 
