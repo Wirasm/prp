@@ -15,7 +15,8 @@ Drop the CONDITIONAL section when the verdict is not CONDITIONAL. Keep every oth
 **Hypothesis**: {the falsifiable claim, as committed before the build}
 **Date**: {YYYY-MM-DD}
 **Under test**: {exact versions of everything the result depends on — runtime, dependency, protocol, OS, arch. This is what makes the verdict re-checkable when one of them moves. Omit only if nothing external can change under it.}
-**Evidence**: `{spike/<slug>}` {or, under --here: `spikes/spike-<slug>.patch` — no branch}
+**Evidence**: `{spikes/<slug>/ — the store directory the verdict rests on. Name a branch instead only
+if it exists and carries a commit; under --here, the patch path. Verified before finishing.}`
 
 ## Verdict
 

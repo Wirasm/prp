@@ -70,9 +70,11 @@ Read `templates/spike-report.md` now (mandatory) and create `$PRP_DIR/spikes/spi
 
 Spike code is disposable and often invasive. Keep it away from the working checkout.
 
-Use the prp-worktree skill to create a worktree named `spike/<slug>`, and work there. The branch is the spike's home; it is never merged.
+**If already in an isolated worktree** — spawned there by an orchestrator — stay put and do not nest a second one. `EnterWorktree` is unavailable to a pinned agent; where a branch name is wanted, plain `git switch -c spike/<slug>` inside the current worktree is enough.
 
-`--here` skips the worktree — use it only when a fresh checkout cannot run the project (gitignored build prerequisites, an expensive bootstrap, a running local stack). It changes how the spike is captured and torn down; see Phase 7. Record in the report that it was used and why.
+Otherwise use the prp-worktree skill to create a worktree named `spike/<slug>` and work there. A spike branch is never merged.
+
+`--here` skips isolation entirely — use it only when a fresh checkout cannot run the project (gitignored build prerequisites, an expensive bootstrap, a running local stack). Record in the report that it was used and why, and leave the checkout as it was found.
 
 ## Phase 3 — Research
 
@@ -122,16 +124,21 @@ Reach one verdict:
 
 Complete `$PRP_DIR/spikes/spike-<slug>.md` — read `templates/spike-report.md` again (mandatory) and fill every remaining section, replacing `(pending)` with the verdict. Keep every heading; drop only the CONDITIONAL section when the verdict is not CONDITIONAL.
 
+**One report, at that path.** The Phase 1 file *is* the report — finish it in place. Do not write a second copy under `research/`, `reports/`, or anywhere else: a stub pointing at a fuller document elsewhere splits the record, and nothing keeps the two in agreement.
+
 ## Phase 7 — Dispose
 
-Commit the spike to its branch, and push it if the repo has a remote. The branch **is** the artifact — the evidence behind the verdict, re-runnable by whoever doubts the result.
+**The evidence's permanent home is the store, not a branch.** Copy whatever the verdict rests on — harness scripts, fixtures, captured output — into `$PRP_DIR/spikes/<slug>/`. It survives a discarded worktree, is shared across every worktree of the project, and needs no git operation an isolated agent may be unable to perform.
+
+A branch is optional and secondary. **Claim one only if it carries a commit** — an agent-tool worktree is auto-removed and its generated branch name means nothing, so a branch named in the report and never committed to is a pointer at nothing. Where the spike code is substantial enough to re-run, commit it and push if the repo has a remote.
 
 - **Never open a PR.** Every other terminal skill in this pack ends in one; this one ends in a verdict.
 - Do not fold spike code into production. A validated approach gets **rewritten** under normal standards, by `prp-plan` and `prp-implement`.
-- Leave the worktree in place if the user may want to poke at it; otherwise tear it down with the prp-worktree skill. The branch survives either way.
-- **Under `--here` there is no spike branch.** Never commit to the branch that was already checked out. Capture the work as a patch — `git diff > "$PRP_DIR/spikes/spike-<slug>.patch"` (add `git diff --cached` and untracked files if either exists) — then restore the checkout to the state it was found in, and record the patch path where the report asks for a branch.
+- **Verify the Evidence pointer before calling the report done.** If it names a branch, that branch must exist and carry a commit; otherwise point it at the store directory. Evidence that cannot be followed is a claim, not a result.
+- Leave the worktree in place if the user may want to poke at it; otherwise tear it down with the prp-worktree skill.
+- Under `--here` there is no branch: capture `git diff > "$PRP_DIR/spikes/spike-<slug>.patch"` (add `git diff --cached` and untracked files if either exists), restore the checkout to the state it was found in, and point Evidence at the patch.
 
-Report to the user: the hypothesis, the verdict, the two or three pieces of evidence that decided it, the branch or patch path, and the report path. Lead with the verdict.
+Report to the user: the hypothesis, the verdict, the two or three pieces of evidence that decided it, where the evidence lives, and the report path. Lead with the verdict.
 
 ## Gotchas
 

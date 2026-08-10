@@ -18,7 +18,9 @@
 
 Agent column holds a run-local alias (ws1, ws2, …) — raw agent IDs are session-internal and never written to files; the orchestrator keeps the alias→handle mapping in-conversation. Fallback-lane workstreams record their PID here instead.
 
-Status vocabulary: `pending` (queued, not launched) | `running` | `needs-gate` | `blocked` (draft PR / awaiting decision) | `pr-open` | `merged` | `failed` | `dropped`.
+Status vocabulary: `pending` (queued, not launched) | `running` | `needs-gate` | `blocked` (draft PR / awaiting decision) | `pr-open` | `merged` | `verdict:<PROVEN\|DISPROVEN\|CONDITIONAL>` | `failed` | `dropped`.
+
+`verdict:*` is the terminal status for a spike workstream — it produces a verdict and no PR, so it never reaches `pr-open` or `merged`, and `dropped` would read as abandoned when a DISPROVEN spike in fact succeeded. Put the report path in the PR column.
 
 ## Standing Decisions
 

@@ -61,6 +61,9 @@ The STOP-and-report clause is the escalation path: the orchestrator gates the bl
 | Feature, plan exists | `Use the prp-implement skill to execute the plan at <path>, then use the prp-pr skill to open a PR.`                                                     |
 | Feature, autonomous  | `Use the prp-loop skill for: <feature description>.` (the loop handles plan→implement→pr→review; the orchestrator then only gates the final merge)       |
 | Plan only (staged)   | `Use the prp-plan skill to create an implementation plan for: <feature>.` — gate the plan, then message the same agent to proceed with prp-implement |
+| Feasibility unknown  | `Use the prp-spike skill to settle: <the question>.` — ends in a PROVEN / DISPROVEN / CONDITIONAL verdict and **no PR**; gate the verdict, then launch or drop the workstreams that depended on it |
+
+A spike workstream does not reach Phase 6 — there is nothing to merge. Its terminal status is `verdict: <PROVEN|DISPROVEN|CONDITIONAL>` plus the report path; do not record it as `merged` (false) or `dropped`, which reads as abandoned and inverts the meaning of a successful DISPROVEN. A CONDITIONAL verdict names a constraint, and deciding whether to pay for that change is itself a Phase 5 gate — often the most consequential one in the run.
 
 ## Steering, stopping, status
 
