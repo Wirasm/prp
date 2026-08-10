@@ -37,7 +37,7 @@ mkdir -p "$PRP_DIR"; [ -f "$PRP_DIR/project.json" ] || printf '{"path": "%s", "n
    - Issue → `prp-issue` (investigate, then fix)
    - Feature with an existing plan → `prp-implement` (+ `prp-pr`)
    - Feature from a description → `prp-loop`, or staged `prp-plan` → gate → `prp-implement` when the user should see plans before code
-   - Review-only / research-only → `prp-review` / `prp-codebase-question` (plain background agents, no worktree)
+   - Review-only → `prp-review` (worktree — it runs `gh pr checkout`); research-only → `prp-codebase-question` (plain background agent)
 3. Map dependencies and conflict risk: predict the files each workstream touches. Disjoint → parallel; overlapping → serialize or merge into one workstream.
 4. Size the batch. Default `--max-parallel 3`; raise only when workstreams are provably disjoint. More parallel agents = more merge surface and more gates.
 
@@ -62,8 +62,9 @@ Worktree agents branch from one tip while PRs diff against the other, and **both
 
 Launch each workstream as a **background agent** via your delegation tool — see `references/launching.md` for the exact call shape and prompt template (read it before the first launch of a run):
 
-- **PR-producing work** → background agent with **worktree isolation**: the agent gets its own checkout, creates its branch, commits, pushes, opens the PR.
-- **Read-only work** (review, research, triage) → plain background agents, several in one message so they run concurrently.
+- **Worktree isolation is the default** — every workstream that touches the working tree gets its own checkout. The test is *"does it touch the working tree"*, not *"does it open a PR"*: `prp-review` looks read-only but runs `gh pr checkout`, so it gets a worktree too.
+- **PR-producing work** → background agent, worktree-isolated: the agent creates its branch, commits, pushes, opens the PR.
+- **Store-only work** — reads files and writes to the PRP store (`prp-codebase-question`, `prp-debug`, `prp-plan`, `prp-prd`) → plain background agents, several in one message so they run concurrently.
 - Record each agent's ID/name and workstream row in the run file at launch. Respect `--max-parallel`: queue the rest, launch as slots free.
 
 Prompts must be self-sufficient (agents inherit nothing from this conversation) and must end with the escalation rule: *if blocked on a decision only a human can make, stop and report the blocker* — the orchestrator relays it to a gate and resumes the same agent via a follow-up message with the answer, context intact.
