@@ -25,8 +25,13 @@ Drop the CONDITIONAL section when the verdict is not CONDITIONAL. Keep every oth
 
 {Why this was worth a spike: the decision waiting on it, and what each outcome would change.}
 
+**Sub-claims** {only where the question has several sharing one falsifier — drop this block
+otherwise. The mix of verdicts is the output; a DISPROVEN sub-claim is a result, not a gap}:
+- {C1 …}
+- {C2 …}
+
 **Kill criteria** (committed before building):
-- {observation that would have disproven it}
+- {observation that would have disproven it, and which sub-claim it kills}
 - {…}
 
 **Verdict boundaries** (committed before building):

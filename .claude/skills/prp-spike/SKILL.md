@@ -21,7 +21,7 @@ Not for work whose feasibility is already settled — that is `prp-plan` then `p
 
 ## The contract
 
-1. A spike answers **one falsifiable question**. No falsifiable question, no spike.
+1. A spike answers **one falsifiable question** — or several sub-claims that share a single falsifier. No falsifiable question, no spike.
 2. Kill criteria are written **before** the build. Deciding what counts as failure after seeing results turns a spike into a rationalization.
 3. **DISPROVEN is a success.** It bought a decision with evidence and closed a path that would otherwise have cost weeks.
 4. Spike code is throwaway by construction and **never opens a PR**.
@@ -39,7 +39,7 @@ Produce four things:
 - **Kill criteria** — the specific observations that would end this as DISPROVEN, fixed now rather than after results exist.
 - **Boundaries between verdicts** — what separates PROVEN from CONDITIONAL, and CONDITIONAL from DISPROVEN. The kill criteria say what failure looks like; this says which *kind* of failure it is. Deciding that boundary after seeing results is how CONDITIONAL gets rounded to whichever verdict is more convenient.
 
-If the idea carries several independent risks, split it and spike the **riskiest first** — a cheap disproof there saves the rest. One spike run answers one question: take the riskiest here, and list the rest in the report's Recommendation as follow-up spikes. For the framing craft (vague-to-falsifiable rewrites, constraint questions, splitting, sizing), read `references/framing.md`.
+**Split on the falsifier, not the claim count.** Sub-claims one artifact can test together are **one** spike — build it once, list them in the frame, and report a verdict per sub-claim, because the mix is the output. Sub-claims each needing their own setup are separate spikes: take the **riskiest first** here, and list the rest in the report's Recommendation as follow-up spikes. For the framing craft (vague-to-falsifiable rewrites, constraint questions, splitting, sizing), read `references/framing.md`.
 
 If the spike compares approaches, read `references/evidence.md` → **Fair comparison now**. The winning metric must be fixed and recorded here, before either variant exists — a metric chosen afterwards will be the one the favourite happens to win.
 
