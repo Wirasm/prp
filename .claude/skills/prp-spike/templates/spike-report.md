@@ -14,7 +14,9 @@ Drop the CONDITIONAL section when the verdict is not CONDITIONAL. Keep every oth
 **Verdict**: {(pending) until Phase 6 — then PROVEN | DISPROVEN | CONDITIONAL}
 **Hypothesis**: {the falsifiable claim, as committed before the build}
 **Date**: {YYYY-MM-DD}
-**Evidence**: `{spike/<slug>}` {or, under --here: `spikes/spike-<slug>.patch` — no branch}
+**Under test**: {exact versions of everything the result depends on — runtime, dependency, protocol, OS, arch. This is what makes the verdict re-checkable when one of them moves. Omit only if nothing external can change under it.}
+**Evidence**: `{spikes/<slug>/ — the store directory the verdict rests on. Name a branch instead only
+if it exists and carries a commit; under --here, the patch path. Verified before finishing.}`
 
 ## Verdict
 
@@ -24,14 +26,32 @@ Drop the CONDITIONAL section when the verdict is not CONDITIONAL. Keep every oth
 
 {Why this was worth a spike: the decision waiting on it, and what each outcome would change.}
 
+**Sub-claims** {only where the question has several sharing one falsifier — drop this block
+otherwise. The mix of verdicts is the output; a DISPROVEN sub-claim is a result, not a gap}:
+- {C1 …}
+- {C2 …}
+
 **Kill criteria** (committed before building):
-- {observation that would have disproven it}
+- {observation that would have disproven it, and which sub-claim it kills}
 - {…}
 
 **Verdict boundaries** (committed before building):
 - PROVEN if {…} · CONDITIONAL if {…} · DISPROVEN if {…}
 
-{In Phase 6: which kill criteria fired, or that none did.}
+{In Phase 6: which kill criteria fired, or that none did. If one turned out to name the wrong
+observation points, say so here as its own finding — do not rewrite the criterion.}
+
+## Where each verdict was proved from
+
+{One row per verdict. `Seat` = the process, layer or surface it was observed at, and under which
+mode. `Basis` = proved (this spike observed it) or inferred (reasoned from elsewhere). Re-run the
+inferred ones before finalizing; anything left inferred stays labelled and says why it could not be
+converted.}
+
+| Claim | Verdict | Seat | Basis |
+|---|---|---|---|
+| {A1 …} | {PROVEN} | {at the hook, default mode} | proved |
+| {A2 …} | {CONDITIONAL} | {sender side, --flag set} | inferred — {why not converted} |
 
 ## What was built
 
@@ -59,6 +79,9 @@ Drop the CONDITIONAL section when the verdict is not CONDITIONAL. Keep every oth
 
 ## Limits of this result
 
+- **By seat**: {what is untested *from a given vantage point* — a claim proved at the hook says
+  nothing about the sender's side. Keep these separate from the overall limits below; collapsing
+  them hides the narrower hole.}
 - **Stubbed**: {every fake, and whether any of them covered part of the question}
 - **Scale tried**: {vs the scale expected in production}
 - **Not exercised**: {concurrency, dependency failure, cold start, hostile input, duration}

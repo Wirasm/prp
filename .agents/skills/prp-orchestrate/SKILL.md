@@ -38,6 +38,7 @@ mkdir -p "$PRP_DIR"; [ -f "$PRP_DIR/project.json" ] || printf '{"path": "%s", "n
    - Feature with an existing plan → `prp-implement` (+ `prp-pr`)
    - Feature from a description → `prp-loop`, or staged `prp-plan` → gate → `prp-implement` when the user should see plans before code
    - Review-only → `prp-review` (worktree — it runs `gh pr checkout`); research-only → `prp-codebase-question` (plain background agent)
+   - **Feasibility unknown** — "can this be built here", "what would it cost to allow it" → `prp-spike` (worktree). It ends in a verdict, not a PR; what it gates is whether the downstream workstreams should exist at all, so schedule it *before* the work it informs
 3. Map dependencies and conflict risk: predict the files each workstream touches. Disjoint → parallel; overlapping → serialize or merge into one workstream.
 4. Size the batch. Default `--max-parallel 3`; raise only when workstreams are provably disjoint. More parallel agents = more merge surface and more gates.
 

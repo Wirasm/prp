@@ -15,6 +15,25 @@ A spike's authority comes entirely from its evidence. A confident verdict with w
 
 Every claim in the report traces to something observed. Where reasoning fills a gap, mark it as reasoning — the reader needs to know which parts would survive scrutiny.
 
+## Proved or inferred — label every verdict, re-run the inferred
+
+A verdict is **proved** when it rests on something this spike observed, and **inferred** when it rests on reasoning from what was observed elsewhere. Both are legitimate; presenting the second as the first is not. Label each one.
+
+Then go back and **re-run the inferred ones**. An inference is a cheap placeholder for an experiment that was never worth interrupting the flow for — but by the end the setup already exists, so the experiment that looked expensive mid-run usually costs minutes. Inferences are where a spike is most confidently wrong, because nothing pushed back.
+
+Where an inferred verdict genuinely cannot be converted — the condition is unreachable, the hardware is absent — say so and leave it labelled. A report with two proved verdicts and one openly inferred is worth more than three that all look the same.
+
+## Record the seat every verdict was proved from
+
+A verdict is only true from somewhere. The same claim can hold at one observation point and fail at another, so a result without its vantage point is unreproducible and quietly overclaims.
+
+State, for each verdict, **where it was observed** — which process, which layer, which surface, under which mode. A wake that is legible in an agent's own context and invisible at the hook is two different answers to one question, and the seat is what keeps them apart.
+
+Two consequences worth building in:
+
+- **Bound the limits by seat, not just overall.** "Untested at scale" and "untested from the sender's side" are different holes, and collapsing them hides the second.
+- **A criterion that names its observation points can be under-specified.** If the real answer turns out to live at a point the criterion never listed, do not widen the criterion — it was committed before the results existed and rewriting it now destroys the only thing pre-commitment was for. Honour it exactly as written, report that it fired at the level it named, and report the missed seat as a **separate finding**. The gap in the criterion is itself a result.
+
 ## "It ran" is not "it works"
 
 A running artifact proves the hypothesis held **under the conditions tried**. The distance between those conditions and production is the real finding, and naming it is the report's honesty test.

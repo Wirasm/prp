@@ -60,16 +60,22 @@ The report has to price the change, not just prove it works:
 
 A constraint spike that reports "we should change C" without blast radius has done half the work. The decision is a trade, so the evidence must cover both sides.
 
-## Splitting
+## Splitting — on the falsifier, not the claim count
 
-When an idea carries several independent risks, one spike answering all of them is slow and hard to read. Split into 2–5 questions, each independently falsifiable, and **run the riskiest first** — disproving it makes the rest unnecessary.
+**The unit of a spike is one falsifier, not one sentence.** A question with several sub-claims that a *single* artifact can test is one spike. Sub-claims each needing their own setup are separate spikes.
 
-Order by *probability of failure*, not by build order or by which is easiest. The cheapest spike is the one never run because an earlier one closed the path.
+Getting this backwards is expensive in both directions. Split what shares a falsifier and every agent redoes the same setup — N times the cost, not a fraction of it. Merge what does not and one artifact grows until it tests nothing sharply.
 
-Signals that a spike is really several:
-- The hypothesis needs "and" between two technical claims.
-- Different parts would be disproven by unrelated evidence.
+**One falsifier, several claims → one spike.** Build it once and report **a verdict per sub-claim**; the mix is the output, and it is normal for a mechanism probe to come back part PROVEN, part DISPROVEN, part CONDITIONAL. List the sub-claims in the frame so each has something to be judged against, and record the seat each was proved from (`evidence.md`) — sub-claims usually differ in *where* they were observed, not in what was built.
+
+**Separate setups → separate spikes.** Split into 2–5, each independently falsifiable, and **run the riskiest first** — disproving it makes the rest unnecessary. Order by *probability of failure*, not by build order or by what is easiest. The cheapest spike is the one never run because an earlier one closed the path. One run answers one falsifier: take the riskiest here and list the rest in the report's Recommendation as follow-up spikes.
+
+Signals a spike is genuinely several:
+- The sub-claims need **different artifacts**, environments or fixtures to test.
+- One sub-claim cannot be reached until another has been answered — that is a sequence, not a set.
 - One part is nearly certain and another is a coin flip — the certain part is padding.
+
+A long hypothesis is **not** a signal by itself. "A and B and C" about one mechanism, testable by one artifact, is one spike with three sub-claims.
 
 ## Sizing
 
