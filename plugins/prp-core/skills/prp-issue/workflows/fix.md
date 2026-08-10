@@ -450,26 +450,23 @@ PR_NUMBER=$(gh pr view --json number -q '.number')
 
 ## Phase 8: REVIEW - Review the PR, then act on it
 
-**Do not review your own diff.** You just wrote it, so you are the worst available reader of it —
-you will re-derive the reasoning that produced the bug instead of noticing the bug. Dispatch the
-review, then spend your turn on what it finds.
+The review agents read the diff; you read what they report. Dispatch the review first, then spend
+the rest of this phase acting on its findings.
 
-### 8.1 Run the general review
+### 8.1 Run the review
 
-Invoke the review skill against the PR you just opened:
-
-```
-/prp-core:prp-review {pr-number} --agents code simplify
-```
+Skill tool, `skill: "prp-core:prp-review"`, `args: "{pr-number} --agents code simplify"`.
 
 That is the whole of this step. It dispatches the reviewers, writes
 `$PRP_DIR/reviews/pr-{pr-number}-review.md`, and posts the summary to the PR.
 
-- **Two agents, named on purpose — not `all`.** `code` and `simplify` are `prp-core:code-reviewer`
-  and `prp-core:code-simplifier`. This workflow ships one artifact-sized fix, and the full aspect
-  stack costs more than that fix is worth. Reach for `--agents all` by hand on a PR that earns it.
-- **Do not post your own review comment.** The review skill already posted one, and a second
-  summary written by the author of the code is exactly the self-review this phase exists to avoid.
+- **`code` is mandatory.** It is `prp-core:code-reviewer`, and it is what makes this phase a review
+  rather than a formality. Keep it in the aspect list on every run.
+- **`simplify` rides along** — `prp-core:code-simplifier`, cheap on a diff this size. This workflow
+  ships one artifact-sized fix, so the full aspect stack costs more than the fix is worth; reach for
+  `--agents all` by hand on a PR that earns it.
+- **The review comment on the PR is written by the review skill.** Your own comment comes later, in
+  8.3, and it records what you applied and what you declined.
 
 ### 8.2 Act on the findings
 
@@ -520,7 +517,8 @@ fixing at all, say that in one line instead of posting the template.
 
 **PHASE_8_CHECKPOINT:**
 
-- [ ] `prp-review --agents` dispatched against the PR; report written and posted by it
+- [ ] `prp-review --agents` dispatched against the PR with `code` among the aspects; report written and posted by it
+- [ ] `$PRP_DIR/reviews/pr-{pr-number}-review.md` exists on disk
 - [ ] Critical and Important findings fixed, or explicitly rejected with a reason
 - [ ] Suggestions judged individually; over-engineered ones declined
 - [ ] Validation re-run and green after any change; commits pushed
@@ -529,6 +527,21 @@ fixing at all, say that in one line instead of posting the template.
 ---
 
 ## Phase 9: ARCHIVE - Clean Up
+
+### 9.0 Gate: the review left a file
+
+Phase 8 writes a report to a known path. Check for it before archiving anything:
+
+```bash
+ls -1 "$PRP_DIR/reviews/pr-{pr-number}-review.md"
+```
+
+**Exit 0 — the review ran.** Continue to 9.1.
+
+**Non-zero — Phase 8 did not run.** Go back to Phase 8, run it, act on the findings, and return
+here. This is a file check rather than a question you answer from memory, because by this point in
+the run the memory is the unreliable part: the PR is open, the diff is green, and the work reads as
+finished several phases before it is. Archiving is the last step of a reviewed fix.
 
 ### 9.1 Move Artifact to Completed
 
@@ -545,6 +558,7 @@ Do **not** stage, commit, or push the archive; it is stored outside the reposito
 
 **PHASE_9_CHECKPOINT:**
 
+- [ ] Review report confirmed present on disk before archiving
 - [ ] Artifact moved to the PRP store's completed folder
 
 ---
@@ -635,7 +649,7 @@ Do **not** stage, commit, or push the archive; it is stored outside the reposito
 - **PLAN_EXECUTED**: All artifact steps completed
 - **VALIDATION_PASSED**: All checks green
 - **PR_CREATED**: PR exists and linked to issue
-- **REVIEWED_BY_AGENTS**: `prp-review --agents` run against the PR, its report posted
+- **REVIEWED_BY_AGENTS**: `prp-review --agents` run against the PR with `code` among the aspects; `$PRP_DIR/reviews/pr-{pr-number}-review.md` exists and its summary is posted
 - **FINDINGS_ACTIONED**: Every Critical/Important fixed or rejected with a reason; declines stated on the PR
 - **ARTIFACT_ARCHIVED**: Moved to completed folder
 - **AUDIT_TRAIL**: GitHub comment and PRP-store artifact history

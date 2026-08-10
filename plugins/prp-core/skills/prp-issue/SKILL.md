@@ -1,7 +1,7 @@
 ---
 name: prp-issue
-description: Investigate a GitHub issue and implement the fix - analyze codebase, create a plan, then code, PR, review by the review agents, and act on their findings. Use when the user wants to investigate or triage a GitHub issue or bug report, fix an investigated issue, implement an issue fix, or invokes /prp-issue.
-argument-hint: "investigate <issue-number|url|\"description\"> | fix <issue-number|artifact-path> [--base <branch>]"
+description: Investigate a GitHub issue and implement the fix - analyze codebase, create a plan, then code, PR, review by the review agents, and act on their findings. Use when the user wants to investigate or triage a GitHub issue or bug report, fix an investigated issue, implement an issue fix, run the full cycle on an issue end to end, or invokes /prp-issue.
+argument-hint: "investigate <issue-number|url|\"description\"> | fix <issue-number|artifact-path> | full <issue-number|url> [--base <branch>]"
 ---
 
 # PRP Issue
@@ -18,7 +18,7 @@ PRP_DIR="${PRP_HOME:-$HOME/.prp}/${_name:-project}-$(printf %s "$_root" | git ha
 mkdir -p "$PRP_DIR"; [ -f "$PRP_DIR/project.json" ] || printf '{"path": "%s", "name": "%s"}\n' "$_root" "${_name:-project}" > "$PRP_DIR/project.json"
 ```
 
-Two-phase issue workflow: **investigate** an issue into an implementation artifact, then **fix** it from that artifact (code, PR, agent review, act on findings).
+Two-phase issue workflow: **investigate** an issue into an implementation artifact, then **fix** it from that artifact (code, PR, agent review, act on findings). `full` runs both in one pass.
 
 ---
 
@@ -30,10 +30,22 @@ Read the first token of `$ARGUMENTS` to choose the workflow. Everything after th
 |-------------|----------|-------------|
 | `investigate` | `workflows/investigate.md` | issue number / URL / free-form description |
 | `fix` | `workflows/fix.md` | issue number / artifact path (`+ optional --base <branch>`) |
-| **both verbs** — `investigate and fix`, `investigate then fix` | `workflows/investigate.md`, **then** `workflows/fix.md` | the issue; the artifact the first phase writes is the second phase's input |
+| `full` — and every equivalent: `all`, `everything`, `end to end`, `investigate and fix`, `investigate then fix`, `fix it too`, `ship it` | `workflows/investigate.md`, **then** `workflows/fix.md` | the issue; the artifact the first phase writes is the second phase's input |
 | _no verb_ (a bare issue number, URL, or description) | `workflows/investigate.md` | the whole argument — investigation is the entry point; you investigate before you fix |
 
 **Action**: strip the verb(s), then follow each matching workflow file end-to-end, in the order above.
+
+### Where a run is allowed to stop
+
+Two routes end early, and they are the only two:
+
+- **`investigate`**, or a bare issue with no verb — ends at the artifact.
+- **`fix`** — starts from the artifact an earlier investigation already wrote.
+
+Every other invocation runs the full cycle: investigate → implement → validate → commit → PR →
+review by the review agents → findings posted → the worthwhile ones fixed → committed and pushed.
+The verb list above is illustrative, not exhaustive; when the wording does not plainly limit you to
+one of the two early-stopping routes, run the full cycle.
 
 **Read the workflow file for every phase you run — including the second one.** Both phases asked for
 means both files read. Finishing an investigation leaves you holding a plan and feeling ready to
@@ -50,4 +62,6 @@ improvising the other's steps from memory.
 
 - `investigate` is read-mostly: it analyzes, writes an artifact under `$PRP_DIR/issues/`, and (for GitHub issues) posts a comment.
 - `fix` is **side-effecting**: it creates a branch, commits, opens a PR, has the review agents review it, and pushes fixes for what they find. Only run it once an investigation artifact exists.
-- Typical flow: `prp-issue investigate <number>` → review the artifact → `prp-issue fix <number>`.
+- `full` is both, back to back, in one run — no stop between the artifact and the branch.
+- Staged flow, to read the plan before any code is written: `prp-issue investigate <number>` → read the artifact → `prp-issue fix <number>`.
+- One-shot flow: `prp-issue full <number>`.
