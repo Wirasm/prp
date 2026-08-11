@@ -128,17 +128,22 @@ Complete `$PRP_DIR/spikes/spike-<slug>.md` — read `templates/spike-report.md` 
 
 ## Phase 7 — Dispose
 
-**The evidence's permanent home is the store, not a branch.** Copy whatever the verdict rests on — harness scripts, fixtures, captured output — into `$PRP_DIR/spikes/<slug>/`. It survives a discarded worktree, is shared across every worktree of the project, and needs no git operation an isolated agent may be unable to perform.
+**The evidence's permanent home is the store.** Copy whatever the verdict rests on — harness scripts, fixtures, captured output — into `$PRP_DIR/spikes/<slug>/`. It survives a discarded worktree, is shared across the project's worktrees, and needs no git operation an isolated agent may be unable to perform.
 
-A branch is optional and secondary. **Claim one only if it carries a commit** — an agent-tool worktree is auto-removed and its generated branch name means nothing, so a branch named in the report and never committed to is a pointer at nothing. Where the spike code is substantial enough to re-run, commit it and push if the repo has a remote.
+But `$PRP_DIR` is **local-only**, so a store path is unfollowable by anyone else. Read `references/handoff.md` for the routes that make evidence followable off this machine — a secret gist when the verdict travels somewhere others read, a branch only when the spike code is substantial enough to re-run — and for the `--here` patch capture.
 
 - **Never open a PR.** Every other terminal skill in this pack ends in one; this one ends in a verdict.
 - Do not fold spike code into production. A validated approach gets **rewritten** under normal standards, by `prp-plan` and `prp-implement`.
-- **Verify the Evidence pointer before calling the report done.** If it names a branch, that branch must exist and carry a commit; otherwise point it at the store directory. Evidence that cannot be followed is a claim, not a result.
+- **Verify the Evidence pointer before calling the report done.** A named branch must exist and carry a commit; otherwise point at the store directory. Evidence that cannot be followed is a claim, not a result.
 - Leave the worktree in place if the user may want to poke at it; otherwise tear it down with the prp-worktree skill.
-- Under `--here` there is no branch: capture `git diff > "$PRP_DIR/spikes/spike-<slug>.patch"` (add `git diff --cached` and untracked files if either exists), restore the checkout to the state it was found in, and point Evidence at the patch.
 
-Report to the user: the hypothesis, the verdict, the two or three pieces of evidence that decided it, where the evidence lives, and the report path. Lead with the verdict.
+## Phase 8 — Route the verdict
+
+A spike that ends in the operator's terminal changes nothing. Propose where the verdict should land — a comment on the issue that commissioned it, a new item when the spike started from free text and nothing fits, or nothing at all when the question is closed and no work follows.
+
+**Propose; do not act.** Creating or commenting on a tracker item is outward-facing, and this skill's terminal act is a verdict — never a merge, a PR, or an unrequested ticket. `references/handoff.md` has the routing table and what each verdict should ask for; a CONDITIONAL in particular must be framed as a decision, not filed as a task.
+
+Report to the user: the hypothesis, the verdict, the two or three pieces of evidence that decided it, where the evidence lives, the report path, and the proposed destination. Lead with the verdict.
 
 ## Gotchas
 
@@ -151,4 +156,5 @@ Report to the user: the hypothesis, the verdict, the two or three pieces of evid
 
 - `references/framing.md` — turning a vague idea into a falsifiable hypothesis with kill criteria; constraint and comparison questions; splitting and sizing
 - `references/evidence.md` — evidence standards, fair comparisons, proving a negative, the traps that make spikes lie (mandatory read in Phase 1 for a comparison spike, before either variant is built; otherwise read in Phase 5)
+- `references/handoff.md` — making evidence followable off this machine (store / gist / branch), and routing the verdict to where it changes something. Read in Phase 7–8
 - `templates/spike-report.md` — the report to fill (mandatory read in Phase 1 to record the frame, and again in Phase 6 to complete it)

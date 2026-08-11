@@ -15,8 +15,9 @@ Drop the CONDITIONAL section when the verdict is not CONDITIONAL. Keep every oth
 **Hypothesis**: {the falsifiable claim, as committed before the build}
 **Date**: {YYYY-MM-DD}
 **Under test**: {exact versions of everything the result depends on — runtime, dependency, protocol, OS, arch. This is what makes the verdict re-checkable when one of them moves. Omit only if nothing external can change under it.}
-**Evidence**: `{spikes/<slug>/ — the store directory the verdict rests on. Name a branch instead only
-if it exists and carries a commit; under --here, the patch path. Verified before finishing.}`
+**Evidence**: `{spikes/<slug>/ — the store directory the verdict rests on. Name a branch too only if
+it exists and carries a commit; under --here, the patch path. Add the gist URL when the verdict
+travels anywhere other people read — a store path is unfollowable to them. Verified before finishing.}`
 
 ## Verdict
 
@@ -94,6 +95,9 @@ converted.}
 ## Recommendation
 
 {What to do next, and what NOT to do. If PROVEN: the plan-and-implement path, and the parts of the real build this spike did not touch. If DISPROVEN: the path now closed, and what to try instead. If CONDITIONAL: the trade, stated as a decision someone can make.}
+
+**Where this belongs**: {the proposed destination — a comment on the issue that commissioned this, a
+new item, or nothing at all when the question is closed and no work follows. Proposed, not done.}
 
 **Effort**: this spike took {duration} without tests, error handling, or edge cases. That is not an estimate for the real build. {What the real one additionally needs.}
 
