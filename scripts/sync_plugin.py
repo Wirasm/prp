@@ -11,8 +11,15 @@ Targets:
    Everything else under plugins/prp-core/ (.claude-plugin/, hooks/, README.md)
    is plugin-only and never touched.
 
-2. .agents/skills/ — the OpenAI Codex CLI render (Codex auto-discovers a repo's
-   .agents/skills; copy the directory to ~/.agents/skills for user-level use).
+2. .agents/skills/ — the OpenAI Codex CLI render. Codex auto-discovers a repo's
+   .agents/skills; for user-level use, SYMLINK rather than copy:
+       ln -s <repo>/.agents/skills ~/.agents/skills
+   A symlink stays current on every sync; a copy silently goes stale. Two
+   consequences of the symlink, both load-bearing: ~/.agents/skills IS this
+   repo's directory, so a globally-installed Codex skill lands inside the git
+   repo (see the .gitignore rule), and the stale prune below deletes anything
+   here not generated from .claude/skills. Keep ~/.agents/skills exclusively
+   prp's — route other skills through ~/.codex/skills instead.
    Skills from .claude/skills/ minus CODEX_EXCLUDED_SKILLS, with Claude-isms
    rewritten (CODEX_REWRITES): Task-tool subagent dispatch -> explicit
    "spawn the X subagent" delegation, prp-core: namespace dropped (Codex agent
@@ -21,7 +28,8 @@ Targets:
 
 3. .codex/agents/*.toml — the pack's subagents as Codex custom agents,
    converted from .claude/agents/*.md (frontmatter name/description; body ->
-   developer_instructions), minus EXCLUDED_AGENTS.
+   developer_instructions), minus EXCLUDED_AGENTS. Symlink for user-level use
+   the same way: ln -s <repo>/.codex/agents ~/.codex/agents
 
 4. profiles/kild/skills/ — the kild-lane profile (primitives-audit slice 7):
    only KILD_INCLUDED_SKILLS, each with a lane preamble that overrides
