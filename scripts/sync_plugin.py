@@ -11,15 +11,19 @@ Targets:
    Everything else under plugins/prp-core/ (.claude-plugin/, hooks/, README.md)
    is plugin-only and never touched.
 
-2. .agents/skills/ — the OpenAI Codex CLI render. Codex auto-discovers a repo's
-   .agents/skills; for user-level use, SYMLINK rather than copy:
-       ln -s <repo>/.agents/skills ~/.agents/skills
-   A symlink stays current on every sync; a copy silently goes stale. Two
-   consequences of the symlink, both load-bearing: ~/.agents/skills IS this
-   repo's directory, so a globally-installed Codex skill lands inside the git
-   repo (see the .gitignore rule), and the stale prune below deletes anything
-   here not generated from .claude/skills. Keep ~/.agents/skills exclusively
-   prp's — route other skills through ~/.codex/skills instead.
+2. .agents/skills/ — the render Codex consumes. NOTE the discovery path: Codex
+   reads $CODEX_HOME/skills (~/.codex/skills when CODEX_HOME is unset). It does
+   NOT read ~/.agents/skills — in Codex, .agents/ is the *plugin* location
+   (~/.agents/plugins/marketplace.json). Verified against codex-cli 0.147.0.
+   For user-level use, symlink each rendered skill into the discovery dir; a
+   symlink tracks every sync, a copy silently goes stale:
+       for d in <repo>/.agents/skills/prp-*; do
+         ln -s "$d" ~/.codex/skills/"$(basename "$d")"
+       done
+   Per-skill rather than linking the whole directory, because ~/.codex/skills
+   is shared with every other Codex skill the user installs. That sharing cuts
+   both ways: the stale prune below deletes anything in .agents/skills that
+   .claude/skills did not generate, so nothing foreign should be parked there.
    Skills from .claude/skills/ minus CODEX_EXCLUDED_SKILLS, with Claude-isms
    rewritten (CODEX_REWRITES): Task-tool subagent dispatch -> explicit
    "spawn the X subagent" delegation, prp-core: namespace dropped (Codex agent
