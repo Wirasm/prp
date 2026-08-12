@@ -159,6 +159,13 @@ CODEX_REWRITES: list[tuple[re.Pattern, object]] = [
 ]
 
 # Per-skill extras, applied after the global list.
+# Which per-skill rewrites actually matched something this run. A rewrite that
+# never fires is obsolete or mistyped, and until it is reported it fails silently:
+# the Claude-ism it was written to remove simply survives into the Codex render.
+# That is how `run_in_background` and an `isolation: "worktree"` spawn parameter —
+# neither of which exists on Codex — reached the rendered orchestrate skill.
+FIRED_REWRITES: set[tuple[str, str]] = set()
+
 CODEX_SKILL_REWRITES: dict[str, list[tuple[re.Pattern, str]]] = {
     "prp-loop": [
         (re.compile(r'prp_loop\.py "\$ARGUMENTS"'), 'prp_loop.py "$ARGUMENTS" --cli codex'),
@@ -201,8 +208,28 @@ CODEX_SKILL_REWRITES: dict[str, list[tuple[re.Pattern, str]]] = {
         (re.compile(r"no SendMessage \(course-correct"), "no live steering (course-correct"),
         (re.compile(r"agent-tool call shapes, the workstream prompt template, SendMessage/stop/status patterns"),
          "launch call shapes, the workstream prompt template, steering/stop/status patterns"),
-        (re.compile(r"one agent, `run_in_background` \(the default\), \*\*`isolation: \"worktree\"`\*\*"),
-         "one background agent with **worktree isolation**"),
+        # Isolation is a spawn *parameter* on Claude Code and does not exist as one
+        # elsewhere; on other harnesses the checkout has to be made before the spawn.
+        (re.compile(r"\*\*`isolation: \"worktree\"` is the default\.\*\* Spawn every workstream that "
+                    r"touches the working tree into its own checkout"),
+         "**Isolation is the default, and here it is explicit.** Your spawn tool has no isolation "
+         "parameter, so create the checkout first — use the prp-worktree skill to create the "
+         "workstream's branch, then pass the agent its absolute path and tell it to work there. "
+         "Every workstream that touches the working tree gets one"),
+        (re.compile(r"one agent, `run_in_background` \(the default\), worktree-isolated\."),
+         "one background agent in its own pre-created worktree."),
+        # No harness-managed worktrees here: everything was created explicitly, so
+        # everything needs explicit teardown. The Claude text says the opposite.
+        (re.compile(r"A worktree under `\.worktrees/` was created by the prp-worktree skill and "
+                    r"needs explicit teardown; anything else is the agent tool's and cleans up "
+                    r"after itself\."),
+         "Every worktree here was created explicitly, so every one needs explicit teardown — "
+         "nothing is reclaimed for you."),
+        (re.compile(r"Agent-tool worktrees are auto-removed when unchanged; pushed branches "
+                    r"survive regardless\. For worktrees created via the prp-worktree skill "
+                    r"\(fallback lane\), tear down"),
+         "Nothing here is auto-removed; pushed branches survive regardless. Tear every worktree "
+         "down"),
         (re.compile(r"\*\*Stop\*\*: the task-stop tool against the workstream's task\."),
          "**Stop**: your harness's stop control against the workstream's agent."),
         (re.compile(r"\*\*Status\*\*: the task-list/status tools give live agent state"),
@@ -212,8 +239,8 @@ CODEX_SKILL_REWRITES: dict[str, list[tuple[re.Pattern, str]]] = {
         (re.compile(r" — consult the current Claude Code hooks docs for event names and payloads\."), "."),
         (re.compile(r'nohup claude -p "<workstream prompt>" \\\n  --dangerously-skip-permissions --output-format stream-json --verbose \\\n'),
          'nohup codex exec --dangerously-bypass-approvals-and-sandbox "<workstream prompt>" \\\n'),
-        (re.compile(r"Agent-tool worktrees are auto-removed when unchanged"),
-         "Harness-managed worktrees may be auto-removed when unchanged"),
+        # (the old "Harness-managed worktrees may be auto-removed" hedge lived here;
+        #  the rewrite above now replaces that whole sentence with the flat truth)
         (re.compile(r"An agent-tool worktree holds"), "An agent worktree holds"),
     ],
     # Meta-skill: only its meta-documentation of Claude-only mechanics needs a touch;
@@ -324,6 +351,8 @@ def codex_render_md(text: str, skill: str, src: Path) -> str:
     for pattern, repl in CODEX_REWRITES:
         text = pattern.sub(repl, text)
     for pattern, repl in CODEX_SKILL_REWRITES.get(skill, []):
+        if pattern.search(text):
+            FIRED_REWRITES.add((skill, pattern.pattern))
         text = pattern.sub(repl, text)
     # Claude substitutes $ARGUMENTS at invocation; Codex has no templating, so
     # tell the model what the placeholder means.
@@ -470,6 +499,20 @@ def main() -> None:
     missing = sorted(set(expected) - set(actual))
     changed = sorted(r for r in set(expected) & set(actual) if expected[r] != actual[r])
 
+    dead = [
+        (skill, pat.pattern)
+        for skill, rules in CODEX_SKILL_REWRITES.items()
+        for pat, _ in rules
+        if (skill, pat.pattern) not in FIRED_REWRITES
+    ]
+    for skill, pattern in dead:
+        print(f"dead rewrite ({skill}): {pattern[:90]}")
+    if dead:
+        print(
+            f"{len(dead)} Codex rewrite(s) matched nothing — the source moved under them, so "
+            "whatever each was written to remove is now in the render verbatim. Fix or delete."
+        )
+
     if args.check:
         for rel in missing:
             print(f"missing: {rel}")
@@ -477,7 +520,7 @@ def main() -> None:
             print(f"stale (not in source): {rel}")
         for rel in changed:
             print(f"differs: {rel}")
-        if missing or stale or changed:
+        if missing or stale or changed or dead:
             sys.exit("targets are out of sync — run: python3 scripts/sync_plugin.py")
         print("all targets in sync")
         return
