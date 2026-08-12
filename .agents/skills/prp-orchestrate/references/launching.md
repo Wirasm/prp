@@ -6,11 +6,11 @@ Mechanics for running workstreams as native background agents (the default), plu
 
 Spawn via your delegation tool:
 
-**`isolation: "worktree"` is the default.** Spawn every workstream that touches the working tree into its own checkout — it cannot then collide with the operator's checkout or with another agent. The exception is narrow, and you must be able to name it: a workstream that only reads files and writes to the PRP store (`prp-codebase-question`, `prp-debug`, `prp-plan`, `prp-prd`) can be a plain background agent. Launch several of those in a single message so they run concurrently.
+**Isolation is the default, and here it is explicit.** Your spawn tool has no isolation parameter, so create the checkout first — use the prp-worktree skill to create the workstream's branch, then pass the agent its absolute path and tell it to work there. Every workstream that touches the working tree gets one — it cannot then collide with the operator's checkout or with another agent. The exception is narrow, and you must be able to name it: a workstream that only reads files and writes to the PRP store (`prp-codebase-question`, `prp-debug`, `prp-plan`, `prp-prd`) can be a plain background agent. Launch several of those in a single message so they run concurrently.
 
 - The test is **"does it touch the working tree"**, not "does it open a PR". `prp-review` reads as read-only and is not: it runs `gh pr checkout`, which switches branches in whatever checkout it lands in. Run it in the operator's and you have moved their HEAD out from under them mid-session. It gets a worktree.
 - When in doubt, isolate. A worktree costs a few hundred milliseconds and some disk; a workstream that mutates the shared checkout costs the operator their session.
-- **PR-producing workstream** — one agent, `run_in_background` (the default), worktree-isolated. The agent creates its branch, commits, pushes, and opens the PR itself (that is part of its prompt's definition of done).
+- **PR-producing workstream** — one background agent in its own pre-created worktree. The agent creates its branch, commits, pushes, and opens the PR itself (that is part of its prompt's definition of done).
 - Prefer the pack's advisory agents (`code-reviewer`, `codebase-analyst`, …) when one matches the workstream.
 - Record the agent ID/name the tool returns — it is the handle for messaging, stopping, and status checks, and goes in the run file's workstream row.
 - Respect the run's `--max-parallel`: completion notifications free slots; launch the next queued workstream then.
@@ -114,9 +114,9 @@ Differences from the default lane: no live steering (course-correct by restartin
 
 Order matters: **worktrees release branches, so worktrees go first.** An agent worktree holds the PR branch checked out — `gh pr merge --delete-branch` fails on the local deletion while it exists, so merge _without_ `--delete-branch` and clean up after: remove worktrees, then local branches (`-d`), then remote branches (`git push origin --delete <branch>`). A worktree locked by a live (resumable) agent stays until the session ends — leave it and only delete the remote branch.
 
-**`git worktree list` tells you which teardown a worktree needs — read the path, not your memory of the run.** A worktree under `.worktrees/` was created by the prp-worktree skill and needs explicit teardown; anything else is the agent tool's and cleans up after itself. The run file records no isolation column on purpose: the filesystem already answers this, and it keeps answering after a resume or a compaction, when your memory of which lane you launched into is exactly what has gone missing.
+**`git worktree list` tells you which teardown a worktree needs — read the path, not your memory of the run.** Every worktree here was created explicitly, so every one needs explicit teardown — nothing is reclaimed for you. The run file records no isolation column on purpose: the filesystem already answers this, and it keeps answering after a resume or a compaction, when your memory of which lane you launched into is exactly what has gone missing.
 
-Harness-managed worktrees may be auto-removed when unchanged; pushed branches survive regardless. For worktrees created via the prp-worktree skill (fallback lane), tear down with the same skill — its rails encode the safety order (refuses dirty worktrees and unmerged branch deletion):
+Nothing here is auto-removed; pushed branches survive regardless. Tear every worktree down with the same skill — its rails encode the safety order (refuses dirty worktrees and unmerged branch deletion):
 
 ```
 $prp-worktree remove <branch> --delete-branch    # --force only after investigating what would be lost
