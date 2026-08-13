@@ -1,196 +1,105 @@
-# Comprehensive PR Review with Specialized Agents
+# Agent Review Workflow
 
 > **Kild lane:** you are running inside a kild room, in a workspace (worktree + branch) the kild engine assigned. The driver owns isolation and publishing — SKIP any step below that creates or switches branches or worktrees, pulls or rebases the base branch, pushes, opens PRs, or moves/archives plan artifacts, and never run `gh pr checkout`. Your job ends at implement → validate → commit in the current workspace, reporting evidence. Where a step spawns subagents, do that analysis inline — or ask the room's orchestrator to invite a helper agent.
 
-> **Arguments:** `$ARGUMENTS` (and `$1`, `$2`, ...) refer to the arguments given when this skill was invoked. Take them from the user's request; if absent, infer them from the conversation.
+Review the target PR through specialist agents, then publish one evidence-based summary.
 
-Run a multi-agent review on a pull request, with each agent focusing on a specific aspect of code quality. This is the `--agents` mode of `prp-review`.
+## 1. Resolve the PR and context
 
-**Target**: $ARGUMENTS
+Resolve a number, URL, branch, or the current branch's PR with `gh pr view` / `gh pr list`. Read its
+title, body, author, state, base, head, files, reviews, comments, and complete diff.
 
-## Pre-Review Setup
+- Stop when the PR is merged. Warn before reviewing a closed PR.
+- Review a draft normally, but post a comment rather than approving or requesting changes.
+- Check out the PR branch with `gh pr checkout` unless it is already checked out.
+- Read repository guidance, the full changed files, and directly relevant tests and precedents.
+- Read matching implementation reports, completed plans, or issue artifacts under `$PRP_DIR` when
+  they exist. Treat documented deviations as context, not automatic defects.
+- If the only matching artifact is under a legacy `.claude/PRPs/` path, stop and tell the user to
+  run the PRP home-store migration.
 
-Before running reviews:
+Do not edit files, resolve conflicts, rebase, commit, or push. Review the PR as it exists.
 
-1. **Identify the PR**
-   - If PR number provided: `gh pr view <number>`
-   - If no number: `gh pr view` (current branch's PR)
-   - Get PR branch name and changed files
+## 2. Run repository validation
 
-2. **Check PR State**
-   - Is rebase needed? Check if behind base branch
-   - Are there conflicts? Resolve intelligently if needed
-   - Never push to main without explicit user approval
+Discover authoritative checks from repository guidance, package scripts, task runners, and CI.
+Run the applicable type check, lint, tests, build, and any focused validation the changed behavior
+requires. Do not invent a generic command merely to fill a category.
 
-3. **Get Changed Files**
-   ```bash
-   gh pr diff <number> --name-only
-   ```
+Record the exact command, result, and decisive output. A missing or inapplicable check is `not run`,
+not a pass. Distinguish a PR-caused failure from an unrelated or pre-existing failure when evidence
+allows; otherwise report the uncertainty.
 
-## Review Aspects
+## 3. Select scopes
 
-| Aspect | Agent | When to Run |
-|--------|-------|-------------|
-| `code` | code-reviewer | Always - general quality and guidelines |
-| `docs` | docs-impact-agent | Almost always - identifies stale docs |
-| `tests` | pr-test-analyzer | When test files or tested code changed |
-| `comments` | comment-analyzer | When comments/docstrings added |
-| `errors` | silent-failure-hunter | When error handling changed |
-| `types` | type-design-analyzer | When types added/modified |
-| `seams` | seam-analyzer | When structure crosses or is reconstructed across a boundary |
-| `simplify` | code-simplifier | When `all` or `simplify` requested - advisory polish |
-| `all` | All applicable | Default if no aspects specified |
+Always select `code` and `seams`. Add only scopes explicitly named by the user or calling workflow:
 
-## Aspect Selection Logic
+| Scope | Agent | Focus |
+|---|---|---|
+| `code` | `code-reviewer` | Correctness, repository rules, high-confidence defects |
+| `seams` | `seam-analyzer` | Missing types, counterpart drift, bypassed boundaries |
+| `tests` | `pr-test-analyzer` | Behavioral coverage and valuable regression protection |
+| `comments` | `comment-analyzer` | Accuracy and long-term value of changed comments |
+| `errors` | `silent-failure-hunter` | Swallowed failures, fallbacks, and actionable errors |
+| `types` | `type-design-analyzer` | Invariant expression and enforcement in changed types |
+| `docs` | `docs-impact-agent` | Stale or missing user and contributor documentation |
+| `simplify` | `code-simplifier` | Behavior-preserving clarity improvements |
 
-**Always run**:
-- `code-reviewer` - Core quality check
+`all` adds all six optional scopes. Explicit `code` or `seams` is redundant but valid. Ignore
+`--agents`; it exists only so older callers still receive the new default review.
 
-**Almost always run** (skip only for trivial PRs):
-- `docs-impact-agent` - Identifies stale or missing docs
+## 4. Launch reviewers
 
-**Skip docs-impact-agent only when**:
-- Typo-only fixes (comments, strings)
-- Test-only changes (no production code)
-- Documentation-only changes
-- Config tweaks (CI, linting)
-
-**Run based on changes**:
-- Test files changed → `pr-test-analyzer`
-- Comments/docstrings added → `comment-analyzer`
-- Try-catch or error handling → `silent-failure-hunter`
-- New types or type modifications → `type-design-analyzer`
-- Payloads, serialization, persisted/resume paths, IPC/FFI or cross-language bridges, syntax forms and their consumers, validators with multiple routes, or synchronized enumerations → `seam-analyzer`
-
-**Include when in scope** (`all` or `simplify` requested):
-- `code-simplifier` - Advisory polish; runs in the same parallel batch as the others
-
-## Execution
-
-Run in two steps: **decide which agents apply, then dispatch them in parallel.**
-
-### Step 1 — Decide which agents apply
-
-**If `$ARGUMENTS` names aspects, they ARE the list — run exactly those and nothing else.** `--agents code simplify` means two agents, not two plus whatever the diff would otherwise have attracted. A caller naming aspects has already decided how much review this PR is worth, and quietly adding to their list spends their tokens on a decision they did not make. `all` is the only aspect that means "apply the logic below".
-
-Otherwise — no aspects named, or `all` — use the Aspect Selection Logic above to build the list:
-
-- Always include `code-reviewer`.
-- Add `docs-impact-agent` unless the PR is trivial (see skip rules).
-- Add change-based specialists (`pr-test-analyzer`, `comment-analyzer`, `silent-failure-hunter`, `type-design-analyzer`, `seam-analyzer`) based on what the diff touches.
-- Include `code-simplifier` when `all` or `simplify` is in scope.
-
-### Step 2 — Launch all selected agents in parallel (default)
-
-Dispatch **every** selected agent **inline, one after another** so they run concurrently. Do not run them one at a time.
-
-- All agents are advisory and analyze the same git diff, so they have no ordering dependencies — there is no reason to serialize them.
-- Wait for all agents to return, then aggregate their findings (see Result Aggregation).
-
-### Sequential (opt-in only)
-
-Run agents one at a time **only if the user explicitly asks for "sequential"** — e.g., to step through a single aspect for debugging.
-
-## Agent Instructions
+Dispatch every selected agent in parallel in one message. Wait for all of them before aggregation.
+All agents are advisory and must not modify files or post their own PR comments.
 
 For each analysis, inline:
 
 **code-reviewer**:
-> Review PR #<number> for project guideline compliance, bugs, and quality issues. Focus on the diff. Report only high-confidence issues (80+).
-
-**docs-impact-agent**:
-> Review PR #<number> and identify any documentation affected by these changes. Check CLAUDE.md, README.md, and docs/ for stale, incorrect, or missing content. Report findings with specific file locations and suggested fixes. Do not modify files or commit.
-
-**pr-test-analyzer**:
-> Analyze test coverage for PR #<number>. Focus on behavioral coverage, identify critical gaps, rate recommendations by criticality.
-
-**comment-analyzer**:
-> Analyze code comments in PR #<number> for accuracy, completeness, and long-term value. Verify comments match actual code behavior.
-
-**silent-failure-hunter**:
-> Hunt for silent failures in PR #<number>. Check all error handling for proper logging, user feedback, and specific catch blocks.
-
-**type-design-analyzer**:
-> Analyze type design in PR #<number>. Rate encapsulation, invariant expression, usefulness, and enforcement. Focus on new or modified types.
+> Review PR #<number> against its actual base for project guideline compliance, bugs, and quality issues. Read the repository guidance and relevant code outside the diff. Report only high-confidence findings with evidence and file:line locations. Do not modify files, commit, or post comments.
 
 **seam-analyzer**:
-> Analyze PR #<number> for missing types at seams. For changed payloads, wire formats, persisted or resumed values, IPC/FFI and cross-language boundaries, syntax forms, validators, or synchronized enumerations, leave the diff and inspect direct counterparts. Report only findings that satisfy the agent's two-sided evidence bar and apply documented build-boundary carve-outs. Do not modify files or commit.
+> Analyze PR #<number> for missing types at seams. Leave the diff to inspect direct counterparts of changed payloads, wire formats, persisted or resumed values, IPC/FFI and cross-language boundaries, syntax forms, validators, and synchronized enumerations. Enforce the two-sided evidence bar and documented carve-outs. Do not modify files, commit, or post comments.
+
+**pr-test-analyzer**:
+> Analyze behavioral test coverage for PR #<number>. Identify only gaps that protect meaningful behavior or prevent realistic regressions. Account for existing integration coverage. Do not modify files, commit, or post comments.
+
+**comment-analyzer**:
+> Analyze comments changed by PR #<number> for factual accuracy and long-term value. Verify them against actual behavior. Do not modify files, commit, or post comments.
+
+**silent-failure-hunter**:
+> Hunt for silent failures in PR #<number>, including swallowed errors, unjustified fallbacks, and non-actionable failure handling. Ground findings in reachable behavior. Do not modify files, commit, or post comments.
+
+**type-design-analyzer**:
+> Analyze new or modified types in PR #<number> for pragmatic invariant expression and enforcement. Recommend added complexity only when it prevents a concrete failure. Do not modify files, commit, or post comments.
+
+**docs-impact-agent**:
+> Review documentation affected by PR #<number>. Find statements made stale by the change and genuinely necessary user-facing additions. Do not treat steering files as changelogs. Do not modify files, commit, or post comments.
 
 **code-simplifier**:
-> Identify simplification opportunities in PR #<number> for clarity while preserving functionality. No nested ternaries, prefer explicit over clever. Report findings with before/after suggestions. Do not modify files or commit.
+> Identify behavior-preserving simplifications in PR #<number>. Prefer clarity and fewer moving parts; do not optimize for line count or propose speculative abstractions. Do not modify files, commit, or post comments.
 
-## Result Aggregation
+## 5. Aggregate without re-reviewing
 
-After all agents complete, aggregate findings into the canonical summary format.
+Read `../templates/review-report.md` before writing. Merge duplicate findings, preserve meaningful
+disagreement, and map agent language into the canonical severity categories. Do not invent findings,
+raise severity without evidence, or perform another code review during aggregation.
 
-**MANDATORY READ**: `../templates/review-report.md` — use its Categories and Summary Format exactly. Do not improvise a different shape.
+Verdict rules:
 
-## Write Local Report
+- `READY TO MERGE`: no Critical or Important findings and all required validation passed.
+- `NEEDS FIXES`: at least one Critical or Important finding, or a PR-caused required validation failure.
+- `REVIEW INCOMPLETE`: required validation or decisive evidence could not be obtained.
+- Suggestions, including every `simplify` finding, never block by themselves.
 
-**Always write the aggregated summary to a local file** (same artifact contract as single-pass mode):
+Write the report to the expanded absolute path `$PRP_DIR/reviews/pr-{NUMBER}-review.md`.
 
-```bash
-# PRP_DIR is resolved by the canonical resolver in the parent skill.
-mkdir -p "$PRP_DIR/reviews"
-```
+## 6. Publish and report
 
-**Path**: `$PRP_DIR/reviews/pr-{NUMBER}-review.md` (report the expanded absolute path to the user).
+Post the report with `gh pr comment` by default. Use `gh pr review --approve` only when `--approve`
+was explicitly requested and the verdict is `READY TO MERGE`. Use `gh pr review --request-changes`
+when explicitly requested or when the user explicitly asked the skill to submit blocking findings
+as a formal review. Never formally approve or request changes on a draft.
 
-## Post to GitHub
-
-**Always post the summary to the PR when a PR number is provided**:
-
-```bash
-gh pr comment <PR_NUMBER> --body-file "$PRP_DIR/reviews/pr-<PR_NUMBER>-review.md"
-```
-
-## Usage Examples
-
-```bash
-# Full multi-agent review of specific PR
-the prp-review skill 163 --agents
-
-# Review only specific aspects
-the prp-review skill 163 --agents tests errors
-
-# Review current branch's PR
-the prp-review skill --agents
-
-# Only code and docs review
-the prp-review skill 42 --agents code docs
-
-# Review missing-type and counterpart drift at seams
-the prp-review skill 42 --agents seams
-
-# Force one-at-a-time execution (parallel is the default)
-the prp-review skill 42 --agents all sequential
-
-# Just simplify after passing review
-the prp-review skill 42 --agents simplify
-```
-
-## Workflow Integration
-
-**Before creating PR**:
-1. Run `the prp-review skill --agents` on current branch
-2. Fix critical and important issues
-3. Re-run to verify
-4. Create PR
-
-**During PR review**:
-1. Run `the prp-review skill <pr-number> --agents`
-2. Review posts summary to GitHub
-3. Address feedback
-4. Re-run targeted aspects
-
-**After making changes**:
-1. Run specific aspects: `the prp-review skill <pr-number> --agents tests code`
-2. Verify issues resolved
-3. Push updates
-
-## Notes
-
-- Agents analyze git diff by default (changed files only)
-- Each agent returns detailed report with file:line references
-- All agents are advisory — they report findings but do not modify files or commit
-- Summary always written to the expanded absolute path `$PRP_DIR/reviews/pr-{NUMBER}-review.md`, and posted as PR comment when PR number provided
+Read the PR back to verify the comment or review exists and capture its URL. Return the PR URL,
+verdict, finding counts, validation summary, selected scopes, absolute report path, and comment URL.

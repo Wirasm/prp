@@ -42,7 +42,7 @@ uv run .agents/skills/prp-loop/scripts/prp_loop.py "$ARGUMENTS" --cli codex --un
 1. **plan** — `prp-plan` writes the plan under the project's PRP store at `$PRP_DIR/plans/<feature>.plan.md`.
 2. **implement** — `prp-implement` executes and validates the plan, commits the work, and opens the PR (bounded by `--max-implement-iterations`).
 3. **pr compatibility** — if an older implementation run did not open a PR, `prp-pr` does so once.
-4. **review** — `prp-review --agents` reviews the PR and writes a `{clean, blocking}` verdict.
+4. **review** — `prp-review` runs its default code and seam reviewers and writes a `{clean, blocking}` verdict.
 5. **cycle** — if not clean, the blocking findings feed back into a fix pass → push → re-review, up to `--max-cycles`. Clean → done.
 
 ## Safety

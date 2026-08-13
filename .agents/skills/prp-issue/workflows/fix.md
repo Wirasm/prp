@@ -457,16 +457,13 @@ the rest of this phase acting on its findings.
 
 ### 8.1 Run the review
 
-Run the `prp-review` skill with arguments `{pr-number} --agents code simplify`.
+Run the `prp-review` skill with arguments `{pr-number}`.
 
 That is the whole of this step. It dispatches the reviewers, writes
 `$PRP_DIR/reviews/pr-{pr-number}-review.md`, and posts the summary to the PR.
 
-- **`code` is mandatory.** It is `code-reviewer`, and it is what makes this phase a review
-  rather than a formality. Keep it in the aspect list on every run.
-- **`simplify` rides along** — `code-simplifier`, cheap on a diff this size. This workflow
-  ships one artifact-sized fix, so the full aspect stack costs more than the fix is worth; reach for
-  `--agents all` by hand on a PR that earns it.
+- The review skill always runs `code-reviewer` and `seam-analyzer`. Add a named
+  specialist scope only when the issue or user explicitly calls for it.
 - **The review comment on the PR is written by the review skill.** Your own comment comes later, in
   8.3, and it records what you applied and what you declined.
 
@@ -519,7 +516,7 @@ fixing at all, say that in one line instead of posting the template.
 
 **PHASE_8_CHECKPOINT:**
 
-- [ ] `prp-review --agents` dispatched against the PR with `code` among the aspects; report written and posted by it
+- [ ] `prp-review` dispatched against the PR; default code and seam review report written and posted by it
 - [ ] `$PRP_DIR/reviews/pr-{pr-number}-review.md` exists on disk
 - [ ] Critical and Important findings fixed, or explicitly rejected with a reason
 - [ ] Suggestions judged individually; over-engineered ones declined
@@ -651,7 +648,7 @@ Do **not** stage, commit, or push the archive; it is stored outside the reposito
 - **PLAN_EXECUTED**: All artifact steps completed
 - **VALIDATION_PASSED**: All checks green
 - **PR_CREATED**: PR exists and linked to issue
-- **REVIEWED_BY_AGENTS**: `prp-review --agents` run against the PR with `code` among the aspects; `$PRP_DIR/reviews/pr-{pr-number}-review.md` exists and its summary is posted
+- **REVIEWED_BY_AGENTS**: `prp-review` run against the PR with its default code and seam agents; `$PRP_DIR/reviews/pr-{pr-number}-review.md` exists and its summary is posted
 - **FINDINGS_ACTIONED**: Every Critical/Important fixed or rejected with a reason; declines stated on the PR
 - **ARTIFACT_ARCHIVED**: Moved to completed folder
 - **AUDIT_TRAIL**: GitHub comment and PRP-store artifact history

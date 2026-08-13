@@ -1,52 +1,62 @@
-# Multi-Agent Review Summary Format
+# Review Report Contract
 
 > **Kild lane:** you are running inside a kild room, in a workspace (worktree + branch) the kild engine assigned. The driver owns isolation and publishing — SKIP any step below that creates or switches branches or worktrees, pulls or rebases the base branch, pushes, opens PRs, or moves/archives plan artifacts, and never run `gh pr checkout`. Your job ends at implement → validate → commit in the current workspace, reporting evidence. Where a step spawns subagents, do that analysis inline — or ask the room's orchestrator to invite a helper agent.
 
-**MANDATORY**: When running the `--agents` (multi-agent) mode, aggregate every agent's findings into exactly this format. Do not improvise a different shape — downstream tooling (e.g. `prp-loop`) reads this structure.
-
-## Categories
-
-| Category | Description | Action |
-|----------|-------------|--------|
-| **Critical** | Must fix before merge | Block merge |
-| **Important** | Should fix | Address before merge |
-| **Suggestions** | Nice to have | Consider |
-| **Strengths** | What's good | Acknowledge |
-
-## Summary Format
+Write every review report in this shape. Omit empty finding rows, but keep all headings so humans and
+downstream workflows can find the verdict and blocking categories reliably.
 
 ```markdown
-## PR Review Summary
+---
+pr: <number>
+base: <base branch>
+head: <head branch>
+reviewed: <ISO timestamp>
+verdict: <READY TO MERGE | NEEDS FIXES | REVIEW INCOMPLETE>
+scopes: [code, seams, ...]
+---
 
-### Critical Issues (X found)
-| Agent | Issue | Location |
-|-------|-------|----------|
-| code-reviewer | Description | `file.ts:line` |
+# PR Review: #<number> — <title>
 
-### Important Issues (X found)
-| Agent | Issue | Location |
-|-------|-------|----------|
-| silent-failure-hunter | Description | `file.ts:line` |
+## Outcome
 
-### Suggestions (X found)
-| Agent | Suggestion | Location |
-|-------|------------|----------|
-| type-design-analyzer | Description | `file.ts:line` |
+<One concise paragraph explaining what the PR changes and the review result.>
 
-### Strengths
-- Well-structured error handling
-- Good test coverage for critical paths
+## Validation
 
-### Documentation Issues
-- `CLAUDE.md` - Stale command reference needs update
-- `README.md` - Configuration section outdated
+| Command | Result | Evidence |
+|---|---|---|
+| `<actual command>` | PASS / FAIL / NOT RUN | <decisive detail> |
 
-### Verdict
-[READY TO MERGE / NEEDS FIXES / CRITICAL ISSUES]
+## Critical Issues (<count>)
 
-### Recommended Actions
-1. Fix critical issues first
-2. Address important issues
-3. Consider suggestions
-4. Re-run review after fixes
+| Agent | Finding | Evidence | Required change |
+|---|---|---|---|
+| `<agent>` | <concrete defect and impact> | `path:line` | <smallest valid correction> |
+
+## Important Issues (<count>)
+
+| Agent | Finding | Evidence | Required change |
+|---|---|---|---|
+
+## Suggestions (<count>)
+
+| Agent | Suggestion | Evidence | Why consider it |
+|---|---|---|---|
+
+## Strengths
+
+- <Specific behavior or implementation choice supported by the review.>
+
+## Verdict
+
+**<READY TO MERGE | NEEDS FIXES | REVIEW INCOMPLETE>**
+
+<What must happen next, or why the PR is ready.>
 ```
+
+Rules:
+
+- Every Critical or Important finding needs a concrete impact and file:line evidence.
+- Attribute findings to the agent that produced them; validation failures use `validation`.
+- Keep suggestions genuinely optional. Never disguise a blocker as a suggestion or vice versa.
+- Do not add generic praise, boilerplate checklists, confidence scores, or AI attribution.
