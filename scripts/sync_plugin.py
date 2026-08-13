@@ -4,7 +4,8 @@
 Targets:
 
 1. plugins/prp-core/ — the Claude Code plugin.
-   - skills/  <- .claude/skills/, verbatim except SKILL.md launcher paths in
+   - skills/  <- active skills under .claude/skills/, excluding in-process/,
+     verbatim except SKILL.md launcher paths in
      LAUNCHER_REWRITES (scripts invoked from a .claude/ path locally) are
      rewritten to their ${CLAUDE_PLUGIN_ROOT} form
    - agents/  <- .claude/agents/, minus EXCLUDED_AGENTS
@@ -60,6 +61,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 SRC_SKILLS = ROOT / ".claude" / "skills"
 SRC_AGENTS = ROOT / ".claude" / "agents"
+
+# Manual experiments live here for local testing and are deliberately absent
+# from every generated distribution target.
+IN_PROCESS_ROOTS = {"in-process"}
 
 PRP_RESOLVER_BLOCK = """# --- PRP store resolver (canonical; keep byte-identical across skills) ---
 _gd="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"
@@ -401,11 +406,18 @@ def _walk(base: Path) -> list[Path]:
     )
 
 
+def _active_skill_files() -> list[Path]:
+    return [
+        src for src in _walk(SRC_SKILLS)
+        if src.relative_to(SRC_SKILLS).parts[0] not in IN_PROCESS_ROOTS
+    ]
+
+
 def expected_files() -> dict[Path, bytes]:
     """Map of repo-relative path -> expected content, across all targets."""
     expected: dict[Path, bytes] = {}
 
-    for src in _walk(SRC_SKILLS):
+    for src in _active_skill_files():
         if src.suffix != ".md":
             continue
         text = src.read_text()
@@ -413,7 +425,7 @@ def expected_files() -> dict[Path, bytes]:
             sys.exit(f"{src}: PRP store resolver differs from the canonical block")
 
     # 1. Claude Code plugin
-    for src in _walk(SRC_SKILLS):
+    for src in _active_skill_files():
         rel = src.relative_to(SRC_SKILLS)
         skill = rel.parts[0]
         content = src.read_bytes()
@@ -430,7 +442,7 @@ def expected_files() -> dict[Path, bytes]:
         expected[PLUGIN_AGENTS / src.relative_to(SRC_AGENTS)] = src.read_bytes()
 
     # 2. Codex skills render
-    for src in _walk(SRC_SKILLS):
+    for src in _active_skill_files():
         rel = src.relative_to(SRC_SKILLS)
         skill = rel.parts[0]
         if skill in CODEX_EXCLUDED_SKILLS:
@@ -453,7 +465,7 @@ def expected_files() -> dict[Path, bytes]:
         expected[CODEX_AGENTS / (src.stem + ".toml")] = agent_md_to_toml(src)
 
     # 4. kild-lane profile (handed to sessions by the kild engine, never discovered)
-    for src in _walk(SRC_SKILLS):
+    for src in _active_skill_files():
         rel = src.relative_to(SRC_SKILLS)
         skill = rel.parts[0]
         if skill not in KILD_INCLUDED_SKILLS:

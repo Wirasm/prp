@@ -54,14 +54,14 @@ The four added lines each replace a failure the orchestrator otherwise pays for 
 **Worktree location**: if the repo has its own convention (a `.worktrees/` directory, a worktree skill/CLI, existing sibling worktrees), tell the agent to follow it rather than relying on the isolation default. Some projects list, prune or build against their worktrees, and one parked outside that convention is invisible to those tools.
 
 The STOP-and-report clause is the escalation path: the orchestrator gates the blocker, then **SendMessage the decision to the same agent** — it continues with full context. Never replace a blocked agent with a fresh one; the fresh one has no history.
-The `prp-deliver` owner must add every applicable Standing Decision—and later gate answers—to the verbatim caller-decisions record it passes into its own fresh planning, implementation, and review agents.
+The `prp-issue` owner retains every applicable Standing Decision—and later gate answers—in its implementation context and passes them into each fresh review context.
 
 ## Engines per workstream type
 
 | Workstream           | Prompt core                                                                                                                                              |
 | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Issue / PRD / document / idea | `Use the prp-deliver skill to own <input> autonomously through a published READY TO MERGE review. Return only the reviewed PR or a concrete blocker only a human can resolve.` |
-| Existing plan              | `Use the prp-deliver skill to own the plan at <path> autonomously through a published READY TO MERGE review. Return only the reviewed PR or a concrete blocker only a human can resolve.` |
+| Issue / PRD / document / idea | `Use the prp-issue skill to own <input> autonomously in one context through a published READY TO MERGE review and green CI. Return only the proven workstream or a concrete blocker only a human can resolve.` |
+| Existing plan              | `Use the prp-issue skill to own the plan at <path> autonomously in one context through a published READY TO MERGE review and green CI. Return only the proven workstream or a concrete blocker only a human can resolve.` |
 | Detached autonomous work   | `Use the prp-loop skill for: <input>.` (the headless loop owns persisted stage state and bounded review/fix cycles)                                      |
 | Plan only (staged)   | `Use the prp-plan skill to create an implementation plan for: <feature>.` — gate the plan, then SendMessage the same agent to proceed with prp-implement |
 | Feasibility unknown  | `Use the prp-spike skill to settle: <the question>.` — ends in a PROVEN / DISPROVEN / CONDITIONAL verdict and **no PR**; gate the verdict, then launch or drop the workstreams that depended on it |

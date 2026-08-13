@@ -93,7 +93,7 @@ The `.claude/skills/` directory contains the core PRP workflow as Agent Skills �
 | `/prp-prd`       | Interactive PRD generator with implementation phases     |
 | `/prp-plan`      | Create implementation plan (from PRD or free-form input) |
 | `/prp-implement` | Execute a plan through validated commit and PR            |
-| `/prp-deliver`   | Take an issue, plan, document, or idea to a reviewed PR   |
+| `/prp-issue`     | Own an issue, plan, document, or idea through reviewed PR and green CI |
 | `/prp-prd-update` | Maintain PRD phase status and delivery links             |
 
 ### Debug Workflow
@@ -116,6 +116,12 @@ The `.claude/skills/` directory contains the core PRP workflow as Agent Skills �
 | ----------- | --------------------------------------------------------------------- |
 | `/prp-loop` | Autonomous pipeline: plan → implement with PR → review (review→fix loops until clean) |
 | `/prp-orchestrate` | Coordinate parallel workstreams running PRP skills in git worktrees, with review gates and merge sequencing |
+
+### In Process
+
+| Command | Description |
+| ------- | ----------- |
+| `/prp-deliver` | Manual-only multi-context delivery experiment under `.claude/skills/in-process/`; not distributed or used by orchestration |
 
 ### Research & Authoring
 
@@ -198,16 +204,16 @@ Creates implementation plan from description
 /prp-implement ~/.prp/<project-key>/plans/add-pagination.plan.md
 ```
 
-### Any Work: Input to Reviewed PR
+### Any Work: Input to Reviewed PR and Green CI
 
 ```
-/prp-deliver 123
+/prp-issue 123
     ↓
 Creates or resolves the plan, implements it, commits, and opens the PR
     ↓
 Publishes the complete agent review on the PR
     ↓
-Fixes review findings autonomously and re-reviews until ready to merge
+Fixes or disproves review findings, re-reviews, and waits for green CI
 ```
 
 ---

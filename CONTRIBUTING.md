@@ -16,7 +16,7 @@ But please know up front that **I'm deliberately picky about what I merge.** Bec
 
 ## How the repo is structured
 
-- **`.claude/skills/`** — the PRP skills (the working source). Each is a self-contained Agent Skill: a `SKILL.md` plus optional `references/`, `templates/`, and `scripts/`.
+- **`.claude/skills/`** — the PRP skills (the working source). Each is a self-contained Agent Skill: a `SKILL.md` plus optional `references/`, `templates/`, and `scripts/`. Manual experiments live under `.claude/skills/in-process/` and are excluded from generated distributions.
 - **`plugins/prp-core/`** — the same skills packaged as a distributable Claude Code plugin. Its `skills/` and `agents/` are generated from `.claude/` by `scripts/sync_plugin.py` — edit the `.claude/` source, then regenerate; never edit the plugin copies directly.
 - **`old-prp-commands/`** — the previous slash-command generation (including its old `PRPs/templates/` and `PRPs/ai_docs/`), kept for reference only.
 - **`claude_md_files/`** — framework-specific `CLAUDE.md` examples.

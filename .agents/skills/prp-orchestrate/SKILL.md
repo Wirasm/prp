@@ -1,13 +1,13 @@
 ---
 name: prp-orchestrate
-description: Turn the current session into an SDLC orchestrator that coordinates parallel background agents running PRP skills in isolated worktrees - decompose work into workstreams, launch and steer autonomous deliveries, hold human-only and merge gates as the user's proxy, and sequence merges. Use when the user wants to "spawn N agents in separate worktrees", "run prp-deliver on these issues in parallel", "orchestrate these features", "act as my orchestrator", "coordinate agents through the PRP pipeline", "ship these issues in parallel", or invokes $prp-orchestrate.
+description: Turn the current session into an SDLC orchestrator that coordinates parallel background agents running PRP skills in isolated worktrees - decompose work into workstreams, launch and steer autonomous deliveries, hold human-only and merge gates as the user's proxy, and sequence merges. Use when the user wants to "spawn N agents in separate worktrees", "run prp-issue on these issues in parallel", "orchestrate these features", "act as my orchestrator", "coordinate agents through the PRP pipeline", "ship these issues in parallel", or invokes $prp-orchestrate.
 ---
 
 > **Arguments:** `$ARGUMENTS` (and `$1`, `$2`, ...) refer to the arguments given when this skill was invoked. Take them from the user's request; if absent, infer them from the conversation.
 
 # PRP Orchestrate
 
-Coordinate multiple PRP workstreams from one session. The orchestrator is the user's proxy: it decomposes the goal, launches autonomous `prp-deliver` owners, steers them mid-flight, resolves human-only blockers, and sequences reviewed PRs through merge gates. A delivery owns its internal plan/implement/review/correction loop; the outer orchestrator owns the batch, dependencies, and merges. The run is **live and dynamic** — the user can add work, stop work, redirect an agent, or ask for status at any moment, and the orchestrator absorbs it without restarting anything. The end artifacts are merged PRs plus a run file at `$PRP_DIR/orchestration/<run-id>.md` recording every workstream, decision, and merge.
+Coordinate multiple PRP workstreams from one session. The orchestrator is the user's proxy: it decomposes the goal, launches autonomous `prp-issue` workstream owners, steers them mid-flight, resolves human-only blockers, and sequences reviewed PRs through merge gates. Each workstream owner keeps planning, implementation, and correction in one context while delegating independent review; the outer orchestrator owns the batch, dependencies, and merges. The run is **live and dynamic** — the user can add work, stop work, redirect an agent, or ask for status at any moment, and the orchestrator absorbs it without restarting anything. The end artifacts are merged PRs plus a run file at `$PRP_DIR/orchestration/<run-id>.md` recording every workstream, decision, and merge.
 
 **Input**: $ARGUMENTS (if absent, infer the goal and workstreams from the conversation)
 
@@ -26,17 +26,17 @@ mkdir -p "$PRP_DIR"; [ -f "$PRP_DIR/project.json" ] || printf '{"path": "%s", "n
 - **Orchestrate, don't implement.** Never write feature code in the orchestrator session — all product changes happen inside workstream agents. The orchestrator only touches the run file, branches/merges, and the agents themselves.
 - **Drive everything through your harness's delegation tools** — spawn background workstream agents in isolated worktrees (kild rooms via the kild_* tools, or your subagent mechanism), steer a running agent by sending it a follow-up message, stop it and check status with the matching controls. Shelling out to a headless CLI is the fallback lane, not the default (see `references/launching.md` → Detached fallback).
 - **Trust authoritative signals for "done"**: artifacts under the project's PRP store, agent completion reports, `gh pr view/checks`, git state. An agent saying "done" is a claim; a green PR is a fact.
-- **Each delivery carries its burden of proof.** The outer orchestrator owns the workstream portfolio, but each `prp-deliver` sub-orchestrator owns one workstream and must return the plan, implementation report, live PR, green validation, complete published review, and `READY TO MERGE` verdict. Verify that evidence; never reconstruct a delivery from its summary or finish its internal correction loop here.
+- **Each delivery carries its burden of proof.** The outer orchestrator owns the workstream portfolio, but each `prp-issue` owner must return the plan, implementation report, live PR, green validation and CI, complete published review, and `READY TO MERGE` verdict. Verify that evidence; never reconstruct a delivery from its summary or finish its internal correction loop here.
 - **Where the project has no CI, there is no fact to trust — so the orchestrator re-runs the gate.** Check once per run whether the repo actually has checks (`gh pr checks <n>`; a secret-scanner alone is not a build). If it does not, a workstream's "validations green" is a self-report, and accepting it makes the orchestrator a relay for whatever the agent believed. Run the project's own gate against the branch before marking `pr-open`. Re-run more than once where the suite has known flakes — one green run does not distinguish a fix from a lucky sample.
 - **The user is the principal.** Every gate decision is either covered by the Standing Decisions log (act, record it as `auto`) or escalated as a short digest (act on the answer, record it). Never guess on destructive or product-shape decisions.
-- **Compose skills by name only.** Agents are told to "use the prp-deliver skill on #123" or "use the prp-loop skill for detached execution" — never pointed at another skill's files.
+- **Compose skills by name only.** Agents are told to "use the prp-issue skill on #123" or "use the prp-loop skill for detached execution" — never pointed at another skill's files.
 - **Think in invariants and primitives.** Do not let a workstream inherit a proposed implementation as its objective. Preserve the required observable outcome, look for the smallest existing primitive that can satisfy it, and prove an uncertain architectural hinge before allowing substantial new machinery.
 
 ## Phase 1 — Intake & decompose
 
 1. Establish the goal and enumerate workstreams: GitHub issues, PRD phases, features, or PRs to review. One workstream = one agent = one branch = one PR.
 2. Pick each workstream's engine:
-   - Issue, existing plan, PRD, document, or description going to a reviewed PR → `prp-deliver`
+   - Issue, existing plan, PRD, document, or description going to a reviewed PR → `prp-issue`
    - Detached execution that must survive this orchestrator session → `prp-loop`
    - Plan only → `prp-plan`; implementation without review → `prp-implement`
    - Review-only → `prp-review` (worktree — it runs `gh pr checkout`); research-only → `prp-codebase-question` (plain background agent)
@@ -86,7 +86,7 @@ Prompts must be self-sufficient (agents inherit nothing from this conversation) 
 
 Monitoring is **event-driven, not polled**: background agents notify on completion, and their final report returns to the orchestrator. Between events, stay responsive to the user — this phase is a loop of reacting to whichever arrives first:
 
-**On agent completion**: verify the claim against authority (PR exists? checks green? artifacts written? full review report published with `READY TO MERGE`?), update the workstream row and Event Log, then launch the next queued workstream into the freed slot. An intermediate review report is progress inside `prp-deliver`, not completion. A genuine human-only blocker → gate it (Phase 5), then message the decision back to the same agent to continue.
+**On agent completion**: verify the claim against authority (PR exists? checks green? artifacts written? full review report published with `READY TO MERGE`?), update the workstream row and Event Log, then launch the next queued workstream into the freed slot. An intermediate review report is progress inside `prp-issue`, not completion. A genuine human-only blocker → gate it (Phase 5), then message the decision back to the same agent to continue.
 
 **On user input at any time** — the run absorbs it live:
 - *"also do X, Y"* → run Phase 1 on the additions only (overlap-check against running workstreams), append rows, launch or queue.
@@ -99,7 +99,7 @@ Monitoring is **event-driven, not polled**: background agents notify on completi
 
 ## Phase 5 — Gates
 
-Gate points: after plans land in deliberately staged pipelines, before every merge, on genuine human-only blockers, and on any destructive or ambiguous call. Autonomous `prp-deliver` workstreams publish every review for visibility but resolve review findings internally until `READY TO MERGE`; do not turn those reports into outer-orchestrator gates.
+Gate points: after plans land in deliberately staged pipelines, before every merge, on genuine human-only blockers, and on any destructive or ambiguous call. Autonomous `prp-issue` workstreams publish every review for visibility but resolve review findings internally until `READY TO MERGE` and CI is green; do not turn those reports into outer-orchestrator gates.
 
 1. Check the Standing Decisions log. Covered within scope → act, record `auto: <action> per SD-<n>` in the Event Log.
 2. Not covered → escalate a **digest**, not a dump: what happened (2–3 lines), what needs deciding, the recommendation and its risk. Group simultaneous gates into one message.

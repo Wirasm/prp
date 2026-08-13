@@ -18,7 +18,7 @@ grep -nE '`(references|templates|scripts|assets)/' .claude/skills/<name>/SKILL.m
 - Third person; not "Use this when you…".
 - States WHAT it does AND WHEN to use it.
 - Contains literal trigger phrases a user would actually say, plus the `/name` invocation.
-- For PRP family: `user-invocable` and `disable-model-invocation` are NOT set (both invocation paths stay open).
+- For active PRP skills: `user-invocable` and `disable-model-invocation` are NOT set. A manual experiment under `.claude/skills/in-process/` may set `disable-model-invocation: true`; verify it is absent from generated distributions and active composition callers.
 
 ## Gate 3 — Body style & size
 

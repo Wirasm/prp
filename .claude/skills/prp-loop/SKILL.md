@@ -1,6 +1,6 @@
 ---
 name: prp-loop
-description: Runs the detached, resumable PRP pipeline in fresh headless CLI sessions, cycling plan, implementation, PR, review, and corrections with persisted state and safety bounds. Use only when the user explicitly asks to "run the full PRP loop", "run this detached", "continue across context windows", use headless autonomous execution, resume a saved loop, or invokes /prp-loop. Use prp-deliver for ordinary end-to-end delivery.
+description: Runs the detached, resumable PRP pipeline in fresh headless CLI sessions, cycling plan, implementation, PR, review, and corrections with persisted state and safety bounds. Use only when the user explicitly asks to "run the full PRP loop", "run this detached", "continue across context windows", use headless autonomous execution, resume a saved loop, or invokes /prp-loop. Use prp-issue for ordinary end-to-end delivery.
 argument-hint: "<feature description> [--base <branch>] [--max-cycles N] [--validate \"<cmd>\"] | --resume"
 ---
 
