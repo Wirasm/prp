@@ -70,7 +70,7 @@ Specialized, advisory agents used by the review and planning skills. They are re
 | `silent-failure-hunter` | Error handling and silent failures |
 | `type-design-analyzer` | Type encapsulation and invariants |
 | `seam-analyzer` | Missing types and drift across system boundaries |
-| `code-simplifier` | Clarity and maintainability improvements |
+| `code-simplifier` | Removes avoidable machinery through proven smaller primitives |
 | `docs-impact-agent` | Flags stale documentation |
 
 Review agents are invoked automatically by `/prp-core:prp-review` and `/prp-core:prp-issue fix`, or manually via the Task tool.

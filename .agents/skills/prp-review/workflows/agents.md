@@ -41,7 +41,7 @@ Always select `code` and `seams`. Add only scopes explicitly named by the user o
 | `errors` | `silent-failure-hunter` | Swallowed failures, fallbacks, and actionable errors |
 | `types` | `type-design-analyzer` | Invariant expression and enforcement in changed types |
 | `docs` | `docs-impact-agent` | Stale or missing user and contributor documentation |
-| `simplify` | `code-simplifier` | Behavior-preserving clarity improvements |
+| `simplify` | `code-simplifier` | Avoidable machinery with a proven smaller primitive |
 
 `all` adds all six optional scopes. Explicit `code` or `seams` is redundant but valid. Ignore
 `--agents`; it exists only so older callers still receive the new default review.
@@ -75,7 +75,7 @@ When spawning each subagent:
 > Review documentation affected by PR #<number>. Find statements made stale by the change and genuinely necessary user-facing additions. Do not treat steering files as changelogs. Do not modify files, commit, or post comments.
 
 **code-simplifier**:
-> Identify behavior-preserving simplifications in PR #<number>. Prefer clarity and fewer moving parts; do not optimize for line count or propose speculative abstractions. Do not modify files, commit, or post comments.
+> Analyze PR #<number> for avoidable machinery. Establish the required outcome and invariant, find an existing or smaller primitive, and report only when evidence proves it can preserve the behavior while removing meaningful state, concepts, ownership, or synchronization. Do not modify files, commit, or post comments.
 
 ## 5. Aggregate without re-reviewing
 
