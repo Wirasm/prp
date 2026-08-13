@@ -44,7 +44,7 @@ Write `SKILL.md` to the standard:
 
 - **Description:** third person, lead with what it does, then "Use when …" with the literal trigger phrases from Step 1. Include the `/name` invocation as one trigger.
 - **Body (imperative):** the decision logic and workflow only. Each step is a verb-first instruction. Where a step needs bulk detail, write a one-line pointer to a reference instead of inlining it.
-- **Invocation:** omit `user-invocable`/`disable-model-invocation` so an active PRP skill is both user- and agent-invocable. A deliberately manual experiment stays top-level for discovery, sets `disable-model-invocation: true`, is registered in `IN_PROCESS_SKILLS`, and is not distributed or called by compositions.
+- **Invocation:** omit `user-invocable`/`disable-model-invocation` so a PRP skill is both user- and agent-invocable. A deliberately in-process experiment stays top-level, is registered in `IN_PROCESS_SKILLS`, and uses only this description: `This is an experimental skill. Never use it unless the user explicitly tells you to invoke /<name>.` Do not add trigger prose or call it from compositions.
 - End with a **Resources** section listing every bundled file.
 
 Get this minimal version triggering and working before writing the references. A spine that does not trigger is worth more fixing than a perfect reference no one reaches.

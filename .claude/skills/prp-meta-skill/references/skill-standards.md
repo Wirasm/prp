@@ -56,7 +56,7 @@ Choose by ownership and volatility: bundle what you own and want versioned; poin
 | `disable-model-invocation` | no | bool | `true` = user-only (no auto-invoke). Leave off for active PRP skills; use it deliberately for manual in-process experiments. |
 | `user-invocable` | no | bool | `false` = agent-only, hidden from `/`. **Leave off for prp skills** |
 
-For active PRP skills the default is **both** invocation paths: omit `user-invocable` and `disable-model-invocation`. A deliberately manual experiment stays top-level for discovery, may set `disable-model-invocation: true`, must be registered in `IN_PROCESS_SKILLS`, and must remain excluded from generated distributions and composition callers.
+For PRP skills the default is **both** invocation paths: omit `user-invocable` and `disable-model-invocation`. A deliberately in-process experiment stays top-level, must be registered in `IN_PROCESS_SKILLS`, and uses only `This is an experimental skill. Never use it unless the user explicitly tells you to invoke /<name>.` as its description. This keeps explicit agent delegation possible without advertising normal trigger phrases; the experiment remains excluded from generated distributions and composition callers.
 
 Invocation control is a deliberate decision, and it depends on **context**. A personal skill can stay fully open. But a **distributed** skill (shipped in a plugin) that auto-invokes a **side-effecting** action — commits, pushes, opens PRs, deletes — can surprise other people's agents. For those, set `disable-model-invocation: true` (user-only) in the distributed copy while leaving read/plan skills auto-invocable. Match the openness to who runs it and what it does.
 

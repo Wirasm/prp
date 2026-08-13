@@ -18,7 +18,7 @@ grep -nE '`(references|templates|scripts|assets)/' .agents/skills/<name>/SKILL.m
 - Third person; not "Use this when you…".
 - States WHAT it does AND WHEN to use it.
 - Contains literal trigger phrases a user would actually say, plus the `/name` invocation.
-- For active PRP skills: `user-invocable` and `disable-model-invocation` are NOT set. A top-level manual experiment registered in `IN_PROCESS_SKILLS` may set `disable-model-invocation: true`; verify explicit invocation works and it is absent from generated distributions and active composition callers.
+- `user-invocable` and `disable-model-invocation` are NOT set. For an in-process experiment registered in `IN_PROCESS_SKILLS`, verify its description is only `This is an experimental skill. Never use it unless the user explicitly tells you to invoke /<name>.`, explicit user and agent invocation work, and it is absent from generated distributions and active composition callers.
 
 ## Gate 3 — Body style & size
 

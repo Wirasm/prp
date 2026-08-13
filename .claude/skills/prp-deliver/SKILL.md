@@ -1,8 +1,7 @@
 ---
 name: prp-deliver
-description: In-process multi-context delivery experiment that autonomously takes an issue, PRD, document, plan, or prompt through planning, implementation, pull request, correction, published review, and green CI. Use only when the user explicitly invokes /prp-deliver to test this workflow; do not invoke it from another skill or orchestrator.
+description: This is an experimental skill. Never use it unless the user explicitly tells you to invoke /prp-deliver.
 argument-hint: "<issue|PRD|document|plan|description|reviewed PR> [--base <branch>] [review scopes]"
-disable-model-invocation: true
 ---
 
 # Deliver to a Reviewed PR
