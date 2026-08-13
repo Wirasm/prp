@@ -68,7 +68,7 @@ def ensure_excluded(root: Path) -> None:
 def default_base(root: Path) -> str:
     head = git("symbolic-ref", "--short", "refs/remotes/origin/HEAD", cwd=root, check=False)
     if head.startswith("origin/"):
-        return head.removeprefix("origin/")
+        return head
     return git("rev-parse", "--abbrev-ref", "HEAD", cwd=root)
 
 
@@ -171,9 +171,9 @@ def cmd_remove(args: argparse.Namespace) -> None:
     git("worktree", "remove", *(["--force"] if args.force else []), str(path), cwd=root)
     print(f"removed worktree {path}")
     if args.delete_branch:
-        # The explicit ancestry proof above is authoritative. `git branch -d`
-        # can still refuse based on a stale or different upstream, so delete
-        # only after our selected base has proven the branch safe.
+        # The selected-base ancestry proof (or the caller's explicit --force
+        # override) is authoritative; `git branch -d` may consult a different
+        # upstream, so use -D only after that gate.
         git("branch", "-D", branch, cwd=root)
         print(f"deleted branch {branch}")
     else:
