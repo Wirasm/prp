@@ -1,6 +1,6 @@
 ---
 name: prp-review
-description: Comprehensive PR code review - checks diff, patterns, runs validation, comments on PR. Single-pass by default; pass --agents for a multi-agent specialist fan-out (comments, tests, errors, types, code, docs, simplify). Use when the user wants to review a pull request, wants a thorough/multi-agent review, or invokes $prp-review.
+description: Comprehensive PR code review - checks diff, patterns, runs validation, comments on PR. Single-pass by default; pass --agents for a multi-agent specialist fan-out (comments, tests, errors, types, seams, code, docs, simplify). Use when the user wants to review a pull request, wants a thorough/multi-agent review, or invokes $prp-review.
 ---
 
 > **Arguments:** `$ARGUMENTS` (and `$1`, `$2`, ...) refer to the arguments given when this skill was invoked. Take them from the user's request; if absent, infer them from the conversation.
@@ -28,7 +28,7 @@ This skill has two modes:
 | Mode | Trigger | What it does |
 |------|---------|--------------|
 | **Single-pass** (default) | no `--agents` flag | One reviewer performs the full 8-phase review below |
-| **Multi-agent fan-out** | `--agents` flag present, or aspect keywords (`comments`/`tests`/`errors`/`types`/`code`/`docs`/`simplify`/`all`), or the user asks for a "multi-agent"/"thorough" review | Dispatches specialized agents in parallel, one per aspect |
+| **Multi-agent fan-out** | `--agents` flag present, or aspect keywords (`comments`/`tests`/`errors`/`types`/`seams`/`code`/`docs`/`simplify`/`all`), or the user asks for a "multi-agent"/"thorough" review | Dispatches specialized agents in parallel, one per aspect |
 
 **If multi-agent mode is selected**: follow `workflows/agents.md` instead of the phases below, then stop. Everything below this section is the single-pass review.
 
