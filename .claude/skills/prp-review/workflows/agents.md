@@ -54,7 +54,7 @@ All agents are advisory and must not modify files or post their own PR comments.
 When launching each agent via Task tool:
 
 **prp-core:code-reviewer**:
-> Review PR #<number> against its actual base for project guideline compliance, bugs, and quality issues. Read the repository guidance and relevant code outside the diff. Report only high-confidence findings with evidence and file:line locations. Do not modify files, commit, or post comments.
+> Review PR #<number> against its actual base for reachable behavioral defects and explicit repository-rule violations. Read direct callers and consumers beyond the diff. Report only causal findings with concrete evidence and file:line locations. Do not modify files, commit, or post comments.
 
 **prp-core:seam-analyzer**:
 > Analyze PR #<number> for missing types at seams. Leave the diff to inspect direct counterparts of changed payloads, wire formats, persisted or resumed values, IPC/FFI and cross-language boundaries, syntax forms, validators, and synchronized enumerations. Enforce the two-sided evidence bar and documented carve-outs. Do not modify files, commit, or post comments.

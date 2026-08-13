@@ -64,7 +64,7 @@ Specialized, advisory agents used by the review and planning skills. They are re
 
 | Agent | Description |
 |-------|-------------|
-| `code-reviewer` | Project guidelines, bugs, type/module checks |
+| `code-reviewer` | Reachable defects and explicit repository-rule violations |
 | `comment-analyzer` | Comment accuracy and maintainability |
 | `pr-test-analyzer` | Test coverage quality and gaps |
 | `silent-failure-hunter` | Error handling and silent failures |
