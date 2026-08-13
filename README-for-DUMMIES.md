@@ -42,9 +42,11 @@ Get the skills one of two ways (see the main `README.md` for details):
 | `/prp-prd`       | Create a PRD with implementation phases         |
 | `/prp-plan`      | Create an implementation plan                   |
 | `/prp-implement` | Execute a plan with validation loops            |
-| `/prp-deliver`   | Take any work input to a reviewed PR            |
+| `/prp-issue`     | Take any work input to a reviewed PR with green CI |
 | `/prp-loop`      | Autonomous pipeline: plan → implement → pr → review |
 | `/prp-orchestrate` | Run many workstreams in parallel worktrees, you sit at the gates |
+
+`/prp-deliver` is an in-process, manual-only multi-context experiment. It is not distributed or used by the orchestrator.
 
 ### Debug Workflow
 
@@ -103,7 +105,7 @@ Skip the PRD. Go straight to a plan:
 ### From an Issue or Idea to a Reviewed PR
 
 ```
-/prp-deliver 123
+/prp-issue 123
 ```
 
 ### For Debugging (Errors, Stack Traces)
@@ -196,7 +198,7 @@ Autonomous execution until the PR is clean.
 ### "There's a bug"
 
 ```bash
-/prp-deliver 456
+/prp-issue 456
 ```
 
 ### "I'm done, let's commit"
@@ -228,7 +230,7 @@ Previous commands like `/prp-base-create`, `/prp-spec-create`, `/api-contract-de
 
 1. Big feature? → `/prp-prd` → `/prp-plan` → `/prp-loop`
 2. Medium feature? → `/prp-plan` → `/prp-implement`
-3. Issue, plan, document, or idea to reviewed PR? → `/prp-deliver <input>`
+3. Issue, plan, document, or idea to reviewed PR? → `/prp-issue <input>`
 4. Weird bug? → `/prp-debug "error message"`
 5. Done? → `/prp-commit` → `/prp-pr`
 

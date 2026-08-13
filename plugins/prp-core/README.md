@@ -6,7 +6,7 @@ Complete PRP (Product Requirement Prompt) workflow automation for Claude Code, p
 
 This plugin provides a comprehensive workflow for creating, executing, and shipping features using the PRP methodology — where **PRP = PRD + curated codebase intelligence + agent/runbook** — designed to enable AI agents to ship production-ready code on the first pass.
 
-Everything ships as **skills** (not slash commands), so each one is both **user-invocable** (type `/prp-core:<name>`) and **agent-invocable** (Claude loads it automatically when your request matches its description).
+Everything here ships as **skills** (not slash commands), so each one is both **user-invocable** (type `/prp-core:<name>`) and **agent-invocable** (Claude loads it automatically when your request matches its description). Manual experiments under the source repository's `.claude/skills/in-process/` are not distributed.
 
 ## Skills
 
@@ -22,7 +22,7 @@ Everything ships as **skills** (not slash commands), so each one is both **user-
 | Skill | Description |
 |-------|-------------|
 | `/prp-core:prp-implement` | Execute a plan through validated commit and PR; write the durable implementation report |
-| `/prp-core:prp-deliver` | Autonomously take an issue, PRD, document, plan, or idea to a published `READY TO MERGE` review |
+| `/prp-core:prp-issue` | Own an issue, PRD, document, plan, or idea in one context through a published `READY TO MERGE` review and green CI |
 | `/prp-core:prp-loop` | **Detached** cyclic pipeline: plan → implement → PR → review, looping review→fix until clean. `--until implement` stops after a green implementation and open PR |
 | `/prp-core:prp-orchestrate` | Turn the session into an **orchestrator**: coordinate autonomous delivery workstreams in git worktrees, with human-only and merge gates, a standing-decisions log, and merge sequencing |
 | `/prp-core:prp-commit` | Smart commit with natural-language file targeting |
@@ -74,7 +74,7 @@ Specialized, advisory agents used by the review and planning skills. They are re
 | `code-simplifier` | Removes avoidable machinery through proven smaller primitives |
 | `docs-impact-agent` | False or missing documentation that changes reader behavior |
 
-Review agents are invoked automatically by `/prp-core:prp-review` and the review stage of `/prp-core:prp-deliver`, or manually via the Task tool.
+Review agents are invoked automatically by `/prp-core:prp-review` and the review stage of `/prp-core:prp-issue`, or manually via the Task tool.
 
 ## Hooks
 
@@ -111,8 +111,8 @@ repeat /prp-core:prp-plan for the next phase
 ### Input to a reviewed PR
 
 ```
-/prp-core:prp-deliver 123
-    ↓  plan → implement → PR → review → correct → READY TO MERGE
+/prp-core:prp-issue 123
+    ↓  plan → implement → PR → review → correct → re-review → green CI
 ```
 
 ## Installation

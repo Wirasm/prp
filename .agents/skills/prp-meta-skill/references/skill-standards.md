@@ -55,10 +55,10 @@ Choose by ownership and volatility: bundle what you own and want versioned; poin
 | `argument-hint` | no | string | Autocomplete hint, e.g. `<path/to/plan.md> [--base <branch>]` |
 | `allowed-tools` | no | string/list | Tools usable without prompts while active |
 | `model` / `effort` | no | model name / level | Override per-skill execution |
-| `disable-model-invocation` | no | bool | `true` = user-only (no auto-invoke). **Leave off for prp skills** |
+| `disable-model-invocation` | no | bool | `true` = user-only (no agent invocation). Leave off for PRP skills that may be delegated, including in-process experiments. |
 | `user-invocable` | no | bool | `false` = agent-only, hidden from `/`. **Leave off for prp skills** |
 
-For the PRP skill family the default is **both** invocation paths: omit `user-invocable` and `disable-model-invocation`.
+For PRP skills the default is **both** invocation paths: omit `user-invocable` and `disable-model-invocation`. A deliberately in-process experiment stays top-level in this repository's authored `.claude` skill source tree, never the generated `.agents/skills/` tree; it must be registered in `IN_PROCESS_SKILLS` and uses only `This is an experimental skill. Never use it unless the user explicitly tells you to invoke /<name>.` as its description. This keeps explicit agent delegation possible without advertising normal trigger phrases; the experiment remains excluded from generated distributions and composition callers.
 
 Invocation control is a deliberate decision, and it depends on **context**. A personal skill can stay fully open. But a **distributed** skill (shipped in a plugin) that auto-invokes a **side-effecting** action — commits, pushes, opens PRs, deletes — can surprise other people's agents. For those, set `disable-model-invocation: true` (user-only) in the distributed copy while leaving read/plan skills auto-invocable. Match the openness to who runs it and what it does.
 

@@ -14,7 +14,7 @@
 
 | # | Workstream | Engine | Agent | Branch | Status | PR | Last activity |
 |---|-----------|--------|-------|--------|--------|----|--------------|
-| 1 | {issue #123: title} | prp-deliver | ws1 | fix/issue-123 | running | - | {HH:MM} {event} |
+| 1 | {issue #123: title} | prp-issue | ws1 | fix/issue-123 | running | - | {HH:MM} {event} |
 
 Agent column holds a run-local alias (ws1, ws2, …) — raw agent IDs are session-internal and never written to files; the orchestrator keeps the alias→handle mapping in-conversation. Fallback-lane workstreams record their PID here instead.
 
