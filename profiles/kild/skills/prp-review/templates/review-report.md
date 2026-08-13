@@ -13,6 +13,7 @@ head: <head branch>
 reviewed: <ISO timestamp>
 verdict: <READY TO MERGE | NEEDS FIXES | REVIEW INCOMPLETE>
 scopes: [code, seams, ...]
+publication: <verified GitHub comment/review URL | pending>
 ---
 
 # PR Review: #<number> — <title>
@@ -60,3 +61,4 @@ Rules:
 - Attribute findings to the agent that produced them; validation failures use `validation`.
 - Keep suggestions genuinely optional. Never disguise a blocker as a suggestion or vice versa.
 - Do not add generic praise, boilerplate checklists, confidence scores, or AI attribution.
+- Write `publication: pending` before posting. After GitHub verification, replace it in the local report with the stable comment or review URL; downstream automation treats that URL as required delivery evidence.

@@ -16,6 +16,7 @@ Plan only. Do not implement, commit, or open a PR. A spike is allowed only to se
 ## Mode
 
 - A request to link two existing plans routes to `workflows/update-references.md` and stops.
+- `publish <existing .plan.md>` publishes or refreshes that plan on its recorded source issue, updates `Plan Publication`, verifies the shared comment, and stops. Do not redesign the plan unless the user asks to revise it.
 - A bug report, stack trace, regression, error, or unexplained current behavior adds root-cause analysis before solution design.
 - Everything else creates an implementation plan.
 
@@ -156,7 +157,7 @@ The plan must make incomplete work unacceptable: every requested outcome is cove
 
 ## 8. Verify and hand off
 
-If the input came from an issue, publish the complete rendered plan to that issue through the configured tracker access. Prefix the body with `<!-- prp-plan-id: <plan-id> -->`, capture its stable comment URL, record that URL as `Plan Publication` in the local plan, and update the published comment to the same final plan. Read the issue back and verify the complete final plan exists at that URL. If publication or verification fails, preserve the local plan but report the publication blocker; do not claim the shared handoff is complete.
+If the input came from an issue—or publish mode supplied an issue-derived plan—publish the complete rendered plan to that issue through the configured tracker access. Prefix the body with `<!-- prp-plan-id: <plan-id> -->`, capture its stable comment URL, record that URL as `Plan Publication` in the local plan, and update the published comment to the same final plan. Read the issue back and verify the complete final plan exists at that URL. Reuse and update the existing marked comment when refreshing the same plan ID rather than creating duplicates. If publication or verification fails, preserve the local plan but report the publication blocker; do not claim the shared handoff is complete.
 
 Before reporting completion, verify:
 

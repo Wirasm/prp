@@ -1,6 +1,6 @@
 {
   "name": "prp-core",
-  "description": "Complete PRP workflow automation as agent skills - prd, plan, implement, debug, commit, pr, review, issue, codebase research, an autonomous build loop, and a skill-authoring meta-skill, with specialized agents",
+  "description": "Complete PRP workflow automation as agent skills - prd, plan, deliver, implement, debug, commit, pr, review, codebase research, a detached build loop, and a skill-authoring meta-skill, with specialized agents",
   "author": {
     "name": "Wirasm",
     "email": "hello@rasmuswiding.com"

@@ -35,6 +35,8 @@ Resolve the plan path from the arguments, linked implementation report, or conve
 
 For an issue-derived plan, read comments added after `Plan Publication` before editing. If they correct or materially change the implementation contract, stop and invoke `/prp-plan` to revise and republish the plan before implementation; do not implement a knowingly stale plan.
 
+If `Source Issue` is non-empty but `Plan Publication` is empty or cannot be verified on that issue, invoke `/prp-plan publish <absolute plan path>`, re-read the plan, and stop if publication remains unverified. Apply this gate whether the input was the issue or the plan path.
+
 Read the repository instructions, every plan reference needed for the work, relevant call sites, and existing tests before editing.
 
 Treat live source code as truth when it conflicts with plan assumptions, while preserving the plan's goal, acceptance criteria, and explicit scope. If reality makes the intended outcome ambiguous or materially changes product shape, stop and ask. If implementation would require working around a missing foundational primitive that should exist first, stop and explain the missing primitive, why it belongs earlier, and what it blocks. Otherwise record the necessary deviation and continue.

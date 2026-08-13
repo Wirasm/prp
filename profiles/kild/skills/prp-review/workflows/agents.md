@@ -101,5 +101,5 @@ was explicitly requested and the verdict is `READY TO MERGE`. Use `gh pr review 
 when explicitly requested or when the user explicitly asked the skill to submit blocking findings
 as a formal review. Never formally approve or request changes on a draft.
 
-Read the PR back to verify the comment or review exists and capture its URL. Return the PR URL,
+Read the PR back to verify the comment or review exists and capture its stable URL. Replace `publication: pending` in the local canonical report with that URL, then re-read the report and GitHub state to verify both point to the same publication. Return the PR URL,
 verdict, finding counts, validation summary, selected scopes, absolute report path, and comment URL.

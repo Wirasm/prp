@@ -249,6 +249,34 @@ def current_pr() -> tuple[int | None, str | None]:
     return d.get("number"), d.get("url")
 
 
+def review_contract(report_path: Path) -> tuple[str | None, str | None]:
+    """Read the canonical verdict and verified GitHub publication from a review report."""
+    if not report_path.exists():
+        return None, None
+    report = report_path.read_text()
+    verdict = re.search(
+        r"^verdict:\s*(READY TO MERGE|NEEDS FIXES|REVIEW INCOMPLETE)\s*$", report, re.M
+    )
+    publication = re.search(r"^publication:\s*(https://\S+)\s*$", report, re.M)
+    return (verdict.group(1) if verdict else None, publication.group(1) if publication else None)
+
+
+def publication_exists(pr_number: int, publication_url: str) -> bool:
+    """Verify the recorded review publication is still attached to this PR on GitHub."""
+    out = subprocess.run(
+        ["gh", "pr", "view", str(pr_number), "--json", "comments,reviews"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
+    if out.returncode != 0:
+        return False
+    try:
+        return publication_url in json.dumps(json.loads(out.stdout))
+    except json.JSONDecodeError:
+        return False
+
+
 def _excludes() -> list[str]:
     return [f":(exclude){p}" for p in LOOP_ARTIFACTS]
 
@@ -363,7 +391,12 @@ def stage_pr(state: dict) -> None:
         halt(state, f"refusing to open a PR from base/protected branch '{branch}'")
     state["artifacts"]["branch"] = branch
     base_arg = f" --base {state['base']}" if state.get("base") else ""
-    run_agent(f"Use the prp-pr skill to push the current branch and open a pull request{base_arg}.")
+    plan = state["artifacts"]["plan_path"]
+    run_agent(
+        f"Use the prp-pr skill to push the current branch and open a pull request{base_arg}. "
+        f"Read the plan at {plan} and pass its Source Issue and verified Plan Publication URL "
+        "into the PR description when present."
+    )
     num, url = current_pr()
     if not num:
         halt(state, "pr stage did not produce a discoverable PR (gh pr view failed)")
@@ -388,12 +421,13 @@ def stage_review(state: dict) -> None:
     run_agent(prompt)
     if not report_path.exists():
         halt(state, f"review stage did not write the canonical report {report_path}")
-    report = report_path.read_text()
-    match = re.search(r"^verdict:\s*(READY TO MERGE|NEEDS FIXES|REVIEW INCOMPLETE)\s*$", report, re.M)
-    if not match:
+    verdict, publication = review_contract(report_path)
+    if not verdict:
         halt(state, f"review report has no canonical verdict: {report_path}")
-    verdict = match.group(1)
+    if not publication or not publication_exists(num, publication):
+        halt(state, f"review report has no verified GitHub publication: {report_path}")
     state["artifacts"]["review_report"] = str(report_path)
+    state["artifacts"]["review_publication"] = publication
 
     if verdict == "READY TO MERGE":
         record(state, "review", "clean")
@@ -420,6 +454,13 @@ def stage_fix(state: dict) -> None:
     plan = state["artifacts"]["plan_path"]
     pr_num = state["artifacts"]["pr_number"]
     review_report = state["artifacts"].get("review_report")
+    if not review_report:
+        legacy_report = REVIEW_DIR / f"pr-{pr_num}-review.md"
+        legacy_verdict, _ = review_contract(legacy_report)
+        if legacy_verdict == "NEEDS FIXES":
+            review_report = str(legacy_report)
+            state["artifacts"]["review_report"] = review_report
+            save_state(state)
     if not review_report or not Path(review_report).exists():
         halt(state, "fix pass has no complete canonical review report")
     head_before = git("rev-parse", "HEAD")
