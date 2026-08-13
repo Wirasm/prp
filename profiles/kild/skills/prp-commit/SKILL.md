@@ -1,89 +1,38 @@
 ---
 name: prp-commit
-description: Quick commit with natural language file targeting. Use when the user wants to commit changes, stage and commit specific files, or invokes the prp-commit skill.
+description: Creates Git commits for completed work. Always use when committing changes, when the user explicitly asks to commit the work, when another PRP workflow reaches its commit step, or when the user invokes the prp-commit skill.
 ---
 
 > **Kild lane:** you are running inside a kild room, in a workspace (worktree + branch) the kild engine assigned. The driver owns isolation and publishing — SKIP any step below that creates or switches branches or worktrees, pulls or rebases the base branch, pushes, opens PRs, or moves/archives plan artifacts, and never run `gh pr checkout`. Your job ends at implement → validate → commit in the current workspace, reporting evidence. Where a step spawns subagents, do that analysis inline — or ask the room's orchestrator to invite a helper agent.
 
 > **Arguments:** `$ARGUMENTS` (and `$1`, `$2`, ...) refer to the arguments given when this skill was invoked. Take them from the user's request; if absent, infer them from the conversation.
 
-# Commit
+# Commit Intended Work
+
+Create focused Git commits for the work identified by the user and conversation.
 
 **Target**: $ARGUMENTS
 
----
+## Scope
 
-## Your Mission
+Infer the intended work from the request, conversation, and current task, including changes produced by subagents. Blank arguments mean infer the target, never commit everything by default.
 
-Stage files matching the target, write a concise commit message, commit.
+Inspect staged, unstaged, and untracked changes. Preserve unrelated work in every state. If intended and unrelated changes cannot be separated safely, stop and ask rather than widening the commit.
 
----
+Keep each commit focused on one coherent outcome. Split unrelated outcomes, but do not fragment one outcome into mechanical implementation layers.
 
-## Phase 1: ASSESS
+## Message
 
-```bash
-git status --short
-```
+Write a concise, human-readable subject that explains the meaningful outcome. Commit subjects often become changelog entries or PR titles, so they must make sense without reading the diff.
 
-If nothing to commit, stop.
+Respect enforced repository syntax such as required types or scopes. Treat Git history as evidence of valid structure, not as the writing-quality standard. Never add AI attribution, generated-by text, robot emoji, or `Co-Authored-By: Claude`.
 
----
+**Bad:** `refactor(prp-pr): update skill instructions`
 
-## Phase 2: INTERPRET & STAGE
+**Good:** `refactor(prp-pr): PR creation now uses one focused workflow`
 
-**Target interpretation:**
+## Commit and verify
 
-| Input | Action |
-|-------|--------|
-| (blank) | `git add -A` (all changes) |
-| `staged` | Use current staging |
-| `*.ts` / `typescript files` | `git add "*.ts"` |
-| `files in src/X` | `git add src/X/` |
-| `except tests` | Add all, then `git reset *test* *spec*` |
-| `only new files` | Add only untracked files |
-| `the X changes` | Interpret from diff/context |
+Stage and commit only the intended work. Verify the resulting commit contains every intended change, excludes unrelated changes, and leaves the remaining worktree state untouched. Do not amend or push unless explicitly requested.
 
-Stage the matching files. Show what will be committed:
-
-```bash
-git diff --cached --name-only
-```
-
----
-
-## Phase 3: COMMIT
-
-Write a single-line message in imperative mood:
-
-```
-{type}: {description}
-```
-
-Types: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`
-
-```bash
-git commit -m "{type}: {description}"
-```
-
----
-
-## Phase 4: OUTPUT
-
-```markdown
-**Committed**: {hash} - {message}
-**Files**: {count} files (+{add}/-{del})
-
-Next: `git push` or `the prp-pr skill`
-```
-
----
-
-## Examples
-
-```
-the prp-commit skill                          # All changes
-the prp-commit skill typescript files         # *.ts only
-the prp-commit skill except package-lock      # Exclude specific
-the prp-commit skill only the new files       # Untracked only
-the prp-commit skill staged                   # Already-staged only
-```
+Return the commit hash, message, committed scope, and any remaining changes. The commit is the artifact; do not create a separate report.
