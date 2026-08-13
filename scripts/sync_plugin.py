@@ -220,8 +220,8 @@ CODEX_SKILL_REWRITES: dict[str, list[tuple[re.Pattern, str]]] = {
          "nothing is reclaimed for you."),
         (re.compile(r"Agent-tool worktrees are auto-removed when their owner is released and the "
                     r"checkout is unchanged; verify rather than assume\. For worktrees created "
-                    r"via `prp-worktree`, tear down"),
-         "No worktree here is auto-removed; verify and tear every worktree down"),
+                    r"via `prp-worktree`, use the same skill to remove the checkout"),
+         "No worktree here is auto-removed; use `prp-worktree` to remove the checkout"),
         (re.compile(r"\*\*Stop\*\*: the task-stop tool against the workstream's task\."),
          "**Stop**: your harness's stop control against the workstream's agent."),
         (re.compile(r"\*\*Status\*\*: the task-list/status tools give live agent state"),

@@ -103,14 +103,14 @@ Invoke `prp-loop` only when the user explicitly selects it. Otherwise use live w
 
 ## Cleanup after each merge
 
-After each PR merges, fetch and verify its merge is reachable from `origin/<base>`. Mark the workstream merged, then release its owner and clean its checkout before deleting branches. Order matters: **worktrees release branches, so worktrees go first.** Merge without automatic branch deletion, then remove the worktree, local branch, and remote branch. Never force cleanup; preserve and report dirty worktrees, unmerged branches, or a checkout still owned by a live agent.
+After each PR merges, fetch and verify its GitHub merge commit is reachable from `origin/<base>`, and read the PR's `headRefOid`. Mark the workstream merged, then release its owner and clean its checkout before deleting branches. Order matters: **worktrees release branches, so worktrees go first.** Merge without automatic branch deletion, then remove the worktree, local branch, and remote branch. Never force cleanup; preserve and report dirty worktrees, changed branch tips, or a checkout still owned by a live agent.
 
 **`git worktree list` tells you which teardown a worktree needs — read the path, not your memory of the run.** Every worktree here was created explicitly, so every one needs explicit teardown — nothing is reclaimed for you. The run file records no isolation column on purpose: the filesystem already answers this, and it keeps answering after a resume or a compaction, when your memory of which lane you launched into is exactly what has gone missing.
 
-No worktree here is auto-removed; verify and tear every worktree down with the same skill—its rails refuse dirty worktrees and unmerged branch deletion:
+No worktree here is auto-removed; use `prp-worktree` to remove the checkout while retaining the branch; its rails refuse dirty worktrees:
 
 ```
-$prp-worktree remove <branch> --delete-branch --base origin/<base>
+$prp-worktree remove <branch>
 ```
 
-After the worktree no longer holds the branch, delete any surviving merged local branch normally and delete the remote feature branch. Phase 7 performs a final reconciliation sweep for cleanup that was safely deferred; it must not wait until run completion to begin cleanup.
+After the worktree no longer holds the branch, compare every surviving local or remote feature-branch tip with the PR's `headRefOid`. Only exact matches belong to the merged PR: delete that local branch with `git branch -D` and that remote branch with `git push origin --delete`. This exact-identity gate supports squash and rebase merges, whose feature tip is not an ancestor of the base, without weakening `prp-worktree`'s Git-native `--delete-branch` safety contract. Preserve and report any mismatched ref. Phase 7 performs a final reconciliation sweep for cleanup that was safely deferred; it must not wait until run completion to begin cleanup.

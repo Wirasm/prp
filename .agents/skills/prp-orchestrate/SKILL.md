@@ -112,7 +112,7 @@ Hard rules regardless of standing decisions: never merge to a protected branch w
 When PRs are green and gate-approved:
 
 1. Build the merge queue: dependency edges first, then ascending conflict risk — pairwise overlap of `gh pr diff <n> --name-only`; overlapping pairs merge farthest apart.
-2. Merge strictly one at a time. After each merge, verify it is reachable from `origin/<base>`, update the run file, then clean that workstream's checkout and merged branches immediately (`references/launching.md` → Cleanup after each merge). Never force cleanup; preserve and report dirty or unmerged state.
+2. Merge strictly one at a time. After each merge, verify its GitHub merge commit is reachable from `origin/<base>`, update the run file, then clean that workstream's checkout and exact PR-head branches immediately (`references/launching.md` → Cleanup after each merge). Never force checkout cleanup; preserve and report dirty state or changed branch tips.
 3. Bring remaining branches onto the new base — prefer messaging the owning agent ("rebase onto <base>, resolve, re-run validations, push") so its context handles the conflicts; rebase directly only for trivial cases. Re-check `gh pr checks <n> --required` before the next merge, or rerun the local gate when no required checks exist.
 4. Conflicts: mechanical → the owning agent resolves and revalidates; semantic (both sides changed the same behavior) → gate it with both diffs summarized.
 
