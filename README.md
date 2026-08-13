@@ -121,7 +121,7 @@ The `.claude/skills/` directory contains the core PRP workflow as Agent Skills â
 
 | Command | Description |
 | ------- | ----------- |
-| `/prp-deliver` | Manual-only multi-context delivery experiment under `.claude/skills/in-process/`; not distributed or used by orchestration |
+| `/prp-deliver` | Manual-only, top-level multi-context delivery experiment; excluded from distribution and orchestration |
 
 ### Research & Authoring
 

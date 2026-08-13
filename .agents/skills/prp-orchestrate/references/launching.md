@@ -80,14 +80,14 @@ An agent's "done" report is a claim. Verify before marking `pr-open`/`merged`:
 
 ```bash
 gh pr list --head <branch> --state all --json number,url,isDraft,state   # PR exists, not draft
-gh pr checks <number>                                                    # CI state, if any
+gh pr checks <number> --required                                         # terminal CI state
 git log --oneline <base>..<branch> | head -3                             # commits exist
 git diff --name-only origin/<base>...origin/<branch>                     # true PR scope (three-dot!)
 ```
 
 `--state all` is not optional: **`gh pr list` returns only open PRs by default**, so it goes empty — with no error — the moment a PR merges. Omitting it makes the lookup fail for exactly the terminal state it is meant to confirm, and a `merged` workstream reads as "no PR found".
 
-**No CI is not the same as passing CI.** If `gh pr checks` reports nothing (or only a secret scanner), there is no external fact here — run the project's own validation gate against the branch yourself before marking `pr-open`, per the Role contract. Capture each stage's own exit code; a gate piped into `tail`/`head` reports the *pager's* status, so an `&&` chain sails past a failing stage and the run looks green.
+**No required CI is not the same as passing CI.** If `gh pr checks <number> --required` reports none, there is no external terminal fact here — run the project's own validation gate against the branch yourself before marking `pr-open`, per the Role contract. Optional checks remain useful evidence but do not block the terminal state. Capture each stage's own exit code; a gate piped into `tail`/`head` reports the *pager's* status, so an `&&` chain sails past a failing stage and the run looks green.
 
 Scope-check with the **three-dot** (merge-base) diff only — a two-dot diff false-flags out-of-scope files whenever the agent based its branch on a different tip (local vs origin) than the one being compared, and both choices are legitimate.
 

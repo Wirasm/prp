@@ -4,7 +4,8 @@
 Targets:
 
 1. plugins/prp-core/ — the Claude Code plugin.
-   - skills/  <- active skills under .claude/skills/, excluding in-process/,
+   - skills/  <- active skills under .claude/skills/, excluding manual
+     experiments named in IN_PROCESS_SKILLS,
      verbatim except SKILL.md launcher paths in
      LAUNCHER_REWRITES (scripts invoked from a .claude/ path locally) are
      rewritten to their ${CLAUDE_PLUGIN_ROOT} form
@@ -62,9 +63,9 @@ ROOT = Path(__file__).resolve().parent.parent
 SRC_SKILLS = ROOT / ".claude" / "skills"
 SRC_AGENTS = ROOT / ".claude" / "agents"
 
-# Manual experiments live here for local testing and are deliberately absent
-# from every generated distribution target.
-IN_PROCESS_ROOTS = {"in-process"}
+# Manual experiments remain top-level so Claude Code can discover explicit
+# invocations, but are deliberately absent from every generated target.
+IN_PROCESS_SKILLS = {"prp-deliver"}
 
 PRP_RESOLVER_BLOCK = """# --- PRP store resolver (canonical; keep byte-identical across skills) ---
 _gd="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"
@@ -409,7 +410,7 @@ def _walk(base: Path) -> list[Path]:
 def _active_skill_files() -> list[Path]:
     return [
         src for src in _walk(SRC_SKILLS)
-        if src.relative_to(SRC_SKILLS).parts[0] not in IN_PROCESS_ROOTS
+        if src.relative_to(SRC_SKILLS).parts[0] not in IN_PROCESS_SKILLS
     ]
 
 
