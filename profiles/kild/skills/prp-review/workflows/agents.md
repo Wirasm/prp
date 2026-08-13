@@ -68,7 +68,7 @@ For each analysis, inline:
 > Analyze comments changed by PR #<number> for factual accuracy and long-term value. Verify them against actual behavior. Do not modify files, commit, or post comments.
 
 **silent-failure-hunter**:
-> Hunt for silent failures in PR #<number>, including swallowed errors, unjustified fallbacks, and non-actionable failure handling. Ground findings in reachable behavior. Do not modify files, commit, or post comments.
+> Trace changed failure and recovery paths in PR #<number>. Report only reachable failures that become indistinguishable from success or lose evidence needed by the owner who can act; respect legitimate probes, retries, fallbacks, and propagation. Do not modify files, commit, or post comments.
 
 **type-design-analyzer**:
 > Analyze new or modified types in PR #<number> for meaningful invariants they fail to enforce. Report only reachable invalid states with a concrete downstream consequence and the smallest proportional enforcement point. Do not modify files, commit, or post comments.

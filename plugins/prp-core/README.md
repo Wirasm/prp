@@ -67,7 +67,7 @@ Specialized, advisory agents used by the review and planning skills. They are re
 | `code-reviewer` | Reachable defects and explicit repository-rule violations |
 | `comment-analyzer` | Comment accuracy and maintainability |
 | `pr-test-analyzer` | Test coverage quality and gaps |
-| `silent-failure-hunter` | Error handling and silent failures |
+| `silent-failure-hunter` | Failure paths that become indistinguishable from success |
 | `type-design-analyzer` | Reachable invalid states and invariant enforcement |
 | `seam-analyzer` | Missing types and drift across system boundaries |
 | `code-simplifier` | Removes avoidable machinery through proven smaller primitives |
