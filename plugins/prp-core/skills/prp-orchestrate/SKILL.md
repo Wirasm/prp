@@ -28,6 +28,7 @@ mkdir -p "$PRP_DIR"; [ -f "$PRP_DIR/project.json" ] || printf '{"path": "%s", "n
 - **Where the project has no CI, there is no fact to trust — so the orchestrator re-runs the gate.** Check once per run whether the repo actually has checks (`gh pr checks <n>`; a secret-scanner alone is not a build). If it does not, a workstream's "validations green" is a self-report, and accepting it makes the orchestrator a relay for whatever the agent believed. Run the project's own gate against the branch before marking `pr-open`. Re-run more than once where the suite has known flakes — one green run does not distinguish a fix from a lucky sample.
 - **The user is the principal.** Every gate decision is either covered by the Standing Decisions log (act, record it as `auto`) or escalated as a short digest (act on the answer, record it). Never guess on destructive or product-shape decisions.
 - **Compose skills by name only.** Agents are told to "use the prp-issue skill on #123", "use the prp-loop skill for <feature>" — never pointed at another skill's files.
+- **Think in invariants and primitives.** Do not let a workstream inherit a proposed implementation as its objective. Preserve the required observable outcome, look for the smallest existing primitive that can satisfy it, and prove an uncertain architectural hinge before allowing substantial new machinery.
 
 ## Phase 1 — Intake & decompose
 
@@ -40,6 +41,16 @@ mkdir -p "$PRP_DIR"; [ -f "$PRP_DIR/project.json" ] || printf '{"path": "%s", "n
    - **Feasibility unknown** — "can this be built here", "what would it cost to allow it" → `prp-spike` (worktree). It ends in a verdict, not a PR; what it gates is whether the downstream workstreams should exist at all, so schedule it *before* the work it informs
 3. Map dependencies and conflict risk: predict the files each workstream touches. Disjoint → parallel; overlapping → serialize or merge into one workstream.
 4. Size the batch. Default `--max-parallel 3`; raise only when workstreams are provably disjoint. More parallel agents = more merge surface and more gates.
+
+Before approving a plan or implementation shape that adds a subsystem, policy layer, state store, staging area, or lifecycle, probe the owning agent in its existing context:
+
+- What invariant requires this?
+- Which existing primitive comes closest?
+- What unproven assumption rules out configuration, composition, prompting, or a smaller extension?
+- What is the cheapest credible experiment that could disprove that assumption?
+- What machinery disappears if the simpler mechanism works?
+
+When those answers can change the architecture, tell the agent to use `prp-spike` before dependent work proceeds. The orchestrator routes and enforces this reasoning; the planning or implementation agent owns the investigation.
 
 **CHECKPOINT — the first gate.** Present the run plan as a table (workstream, engine, dependencies, parallel group) plus proposed standing decisions. Do not launch until the user approves. Approval of the plan is approval of the batch — individual launches don't re-ask.
 
