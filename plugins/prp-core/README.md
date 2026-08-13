@@ -39,7 +39,7 @@ Everything ships as **skills** (not slash commands), so each one is both **user-
 | Skill | Description |
 |-------|-------------|
 | `/prp-core:prp-codebase-question` | Research how the codebase works using parallel agents — documents what exists |
-| `/prp-core:prp-debug` | Deep root-cause analysis (5 Whys) — finds the actual cause, not symptoms |
+| `/prp-core:prp-debug` | Diagnose a root cause and publish the evidence to the matching GitHub issue |
 | `/prp-core:prp-research-team` | Design a dynamic research team and plan using agent teams |
 
 ### Authoring
@@ -58,6 +58,7 @@ Specialized, advisory agents used by the review and planning skills. They are re
 |-------|-------------|
 | `codebase-analyst` | Documents HOW code works with file:line references |
 | `codebase-explorer` | Finds WHERE code lives AND extracts patterns |
+| `root-cause-analyzer` | Proves the causal chain, smallest fix boundary, and regression check for broken behavior |
 | `web-researcher` | Researches the web for docs, APIs, best practices |
 
 ### Review

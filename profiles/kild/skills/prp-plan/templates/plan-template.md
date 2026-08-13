@@ -43,6 +43,16 @@ Keep every **required** section. Include a **conditional** section only when it 
 
 - **{Alternative}:** {Why it loses against the invariant, evidence, or ownership cost.}
 
+## Root Cause
+
+<!-- CONDITIONAL: include for a bug, regression, error, stack trace, or unexplained current behavior. -->
+
+- **Observed failure:** {Reproduced symptom and decisive observation.}
+- **Causal chain:** {Shortest evidence-backed chain from symptom to cause.}
+- **Fix boundary:** `{path:line}` — {smallest responsible behavior to change.}
+- **Regression proof:** {Test or procedure that fails before the fix and passes after.}
+- **Remaining uncertainty:** {Named condition and resolution step, or `None`.}
+
 ## Visuals
 
 <!-- CONDITIONAL: use a UX diagram for interaction changes and/or an architecture diagram for structural changes. Follow references/visuals.md. Omit this section when prose is clearer. -->

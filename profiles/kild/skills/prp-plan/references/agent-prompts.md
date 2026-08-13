@@ -28,6 +28,18 @@ Follow control flow, data flow, state ownership, side effects, configuration, an
 Return the decisive path with precise file:line references, contracts, and observation points. Document what exists; do not recommend a future design.
 ```
 
+## Root-cause analyzer
+
+Use `root-cause-analyzer` when the request reports broken current behavior:
+
+```text
+Diagnose this reported behavior: [original symptom, error, stack trace, or issue context].
+
+The expected observable invariant is: [expected behavior, if known].
+
+Reproduce it at the cheapest authoritative boundary when reasonably possible. Test competing hypotheses, trace the evidence to the smallest fixable cause, rule out plausible alternatives, and identify the minimum fix boundary plus a regression check. Return explicit uncertainty rather than assuming the report's proposed cause. Do not modify files or publish tracker findings.
+```
+
 ## Targeted follow-up
 
 Reuse the relevant agent rather than launching a generic architecture phase:
@@ -51,6 +63,7 @@ Prioritize official documentation, source, schemas, release notes, and reproduci
 ## Prompt quality
 
 - Give each agent the problem and invariant, not a preselected implementation.
+- Give the root-cause agent the original symptom and complete tracker context, not the planner's preferred explanation.
 - Name the uncertainty that its evidence should reduce.
 - Ask for actual observation points when external behavior is involved.
 - Do not demand arbitrary counts, exhaustive inventories, or generic security/performance sections.

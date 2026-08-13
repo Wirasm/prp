@@ -100,7 +100,7 @@ The `.claude/skills/` directory contains the core PRP workflow as Agent Skills â
 | Command                  | Description                                      |
 | ------------------------ | ------------------------------------------------ |
 | `/prp-issue`             | Investigate a GitHub issue, then implement the fix (`investigate` / `fix` verbs) |
-| `/prp-debug`             | Deep root cause analysis with 5 Whys methodology |
+| `/prp-debug`             | Diagnose a root cause and publish the evidence to the matching GitHub issue |
 
 ### Git & Review
 
