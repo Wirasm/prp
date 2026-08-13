@@ -110,7 +110,7 @@ For evidence standards — what counts as proof, how to make a comparison fair, 
 
 **Re-read the kill criteria and verdict boundaries recorded in Phase 1 before choosing — not after.** They were written by someone who had not yet seen these results. That is the only reason they are worth anything.
 
-Reach one verdict:
+Reach one top-level verdict for the original hypothesis. When sub-claims have mixed results, keep each sub-claim's own verdict and use the top-level verdict to answer whether the original hypothesis held:
 
 | Verdict | Meaning |
 |---|---|
@@ -122,7 +122,7 @@ Reach one verdict:
 
 **Label each verdict `proved` or `inferred`, and record the seat it was proved from** — which process, layer or surface, under which mode. Then re-run the inferred ones before finalizing: the setup already exists by this point, and an inference is where a spike is most confidently wrong. `references/evidence.md` carries the craft, including what to do when a kill criterion turns out to have named the wrong observation points.
 
-Complete `$PRP_DIR/spikes/spike-<slug>.md` — read `templates/spike-report.md` again (mandatory) and fill every remaining section, replacing `(pending)` with the verdict. Keep every heading; drop only the CONDITIONAL section when the verdict is not CONDITIONAL.
+Complete `$PRP_DIR/spikes/spike-<slug>.md` — read `templates/spike-report.md` again (mandatory) and fill every remaining section, replacing `(pending)` with the verdict. Keep every heading except `## Conditional constraint`, which exists only for a CONDITIONAL top-level verdict.
 
 **One report, at that path.** The Phase 1 file *is* the report — finish it in place. Do not write a second copy under `research/`, `reports/`, or anywhere else: a stub pointing at a fuller document elsewhere splits the record, and nothing keeps the two in agreement.
 

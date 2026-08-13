@@ -4,7 +4,7 @@ Written in two passes. In **Phase 1**, create the file with the header (verdict 
 
 Lead with the verdict — the reader wants the decision first and the working second.
 
-Drop the CONDITIONAL section when the verdict is not CONDITIONAL. Keep every other section: the ones that bound the result are the ones a reader most needs and an author most wants to skip.
+Drop `## Conditional constraint` when the top-level verdict is not CONDITIONAL. Keep every other section: the ones that bound the result are the ones a reader most needs and an author most wants to skip.
 
 ---
 
@@ -66,7 +66,7 @@ converted.}
 
 {For a comparison: the metric fixed before building, the conditions held equal, results including spread, and what the losing approaches did better.}
 
-## The constraint
+## Conditional constraint
 
 **What must change**: {the primitive, schema, dependency, or product rule — precisely enough to estimate}
 
