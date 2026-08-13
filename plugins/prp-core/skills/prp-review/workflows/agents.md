@@ -60,10 +60,10 @@ When launching each agent via Task tool:
 > Analyze PR #<number> for missing types at seams. Leave the diff to inspect direct counterparts of changed payloads, wire formats, persisted or resumed values, IPC/FFI and cross-language boundaries, syntax forms, validators, and synchronized enumerations. Enforce the two-sided evidence bar and documented carve-outs. Do not modify files, commit, or post comments.
 
 **prp-core:pr-test-analyzer**:
-> Analyze behavioral test coverage for PR #<number>. Identify only gaps that protect meaningful behavior or prevent realistic regressions. Account for existing integration coverage. Do not modify files, commit, or post comments.
+> Map changed behavior in PR #<number> to existing unit, integration, and end-to-end assertions. Report only gaps with a plausible faulty implementation that current tests allow and the smallest behavioral test that would catch it. Do not modify files, commit, or post comments.
 
 **prp-core:comment-analyzer**:
-> Analyze comments changed by PR #<number> for factual accuracy and long-term value. Verify them against actual behavior. Do not modify files, commit, or post comments.
+> Verify comments and docstrings changed by PR #<number> against actual code, contracts, and direct consumers. Report only materially false prose, a concrete maintenance trap, or missing durable knowledge that code and types cannot express. Do not modify files, commit, or post comments.
 
 **prp-core:silent-failure-hunter**:
 > Trace changed failure and recovery paths in PR #<number>. Report only reachable failures that become indistinguishable from success or lose evidence needed by the owner who can act; respect legitimate probes, retries, fallbacks, and propagation. Do not modify files, commit, or post comments.
@@ -72,7 +72,7 @@ When launching each agent via Task tool:
 > Analyze new or modified types in PR #<number> for meaningful invariants they fail to enforce. Report only reachable invalid states with a concrete downstream consequence and the smallest proportional enforcement point. Do not modify files, commit, or post comments.
 
 **prp-core:docs-impact-agent**:
-> Review documentation affected by PR #<number>. Find statements made stale by the change and genuinely necessary user-facing additions. Do not treat steering files as changelogs. Do not modify files, commit, or post comments.
+> Review repository documentation affected by PR #<number>. Report only materially false guidance or missing instructions required to discover, use, operate, migrate, or maintain changed public behavior. Determine this repository's real documentation surfaces and authoritative sources; do not treat steering files as changelogs. Do not modify files, commit, or post comments.
 
 **prp-core:code-simplifier**:
 > Analyze PR #<number> for avoidable machinery. Establish the required outcome and invariant, find an existing or smaller primitive, and report only when evidence proves it can preserve the behavior while removing meaningful state, concepts, ownership, or synchronization. Do not modify files, commit, or post comments.
