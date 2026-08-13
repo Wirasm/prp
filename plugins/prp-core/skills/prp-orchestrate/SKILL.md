@@ -75,7 +75,7 @@ Launch each workstream as a **background agent** via the Agent/Task tool — see
 
 - **Worktree isolation is the default** — every workstream that touches the working tree gets its own checkout. The test is *"does it touch the working tree"*, not *"does it open a PR"*: `prp-review` looks read-only but runs `gh pr checkout`, so it gets a worktree too.
 - **PR-producing work** → background agent, worktree-isolated: the agent creates its branch, commits, pushes, opens the PR.
-- **Store-only work** — reads files and writes to the PRP store (`prp-codebase-question`, `prp-debug`, `prp-plan`, `prp-prd`) → plain background agents, several in one message so they run concurrently.
+- **Read-only working-tree work** — does not modify the checkout (`prp-codebase-question`, `prp-debug`, `prp-plan`, `prp-prd`) → plain background agents. `prp-debug` may publish to GitHub, so give each issue one owning workstream and do not race multiple debuggers against it.
 - Record each agent's ID/name and workstream row in the run file at launch. Respect `--max-parallel`: queue the rest, launch as slots free.
 
 Prompts must be self-sufficient (agents inherit nothing from this conversation) and must end with the escalation rule: *if blocked on a decision only a human can make, stop and report the blocker* — the orchestrator relays it to a gate and resumes the same agent via SendMessage with the answer, context intact.

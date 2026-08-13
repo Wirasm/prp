@@ -1,6 +1,6 @@
 ---
 name: prp-plan
-description: Creates an implementation-ready feature plan from a PRD, issue, document, or description using codebase evidence, first-principles reasoning, and conditional research or spikes. Use when the user asks to "plan this feature", "plan issue X", "create an implementation plan", "turn this PRD into a plan", investigate how a change should be built, link related plans, or invokes /prp-plan.
+description: Creates an implementation-ready plan for a feature, bug fix, refactor, or chore from a PRD, issue, document, or description using codebase evidence, first-principles reasoning, and conditional root-cause analysis, research, or spikes. Use when the user asks to "plan this feature", "plan this bug fix", "plan issue X", "create an implementation plan", "turn this PRD into a plan", investigate how a change should be built, link related plans, or invokes /prp-plan.
 argument-hint: <feature description | path/to/prd.md> | update-references <plan-path> <related-plan-path> [back|forward]
 ---
 
@@ -15,6 +15,7 @@ Plan only. Do not implement, commit, or open a PR. A spike is allowed only to se
 ## Mode
 
 - A request to link two existing plans routes to `workflows/update-references.md` and stops.
+- A bug report, stack trace, regression, error, or unexplained current behavior adds root-cause analysis before solution design.
 - Everything else creates an implementation plan.
 
 ## 1. Resolve the request
@@ -56,6 +57,7 @@ For a non-trivial code change, read `references/agent-prompts.md`, then launch t
 
 - `prp-core:codebase-explorer` to locate relevant files, analogous behavior, tests, configuration, and existing primitives.
 - `prp-core:codebase-analyst` to trace the current control flow, data flow, state changes, contracts, and observable behavior.
+- For broken current behavior, `prp-core:root-cause-analyzer` to reproduce the symptom, falsify competing explanations, and prove the causal chain and smallest fix boundary.
 
 For a small documentation, configuration, or narrowly localized change, use only the agent or direct inspection needed to remove uncertainty. The planner owns synthesis and must inspect the decisive files itself.
 
@@ -70,7 +72,17 @@ Collect only relevant evidence:
 
 Do not preserve a known poor local convention merely because it exists. Fit the architecture while applying repository and global quality guidance.
 
-## 3. Reason from invariants and primitives
+## 3. Establish the cause for broken behavior
+
+For a bug, error, regression, stack trace, or unexplained behavior, do not plan from the report's assumed cause. Give the root-cause agent the original symptom and tracker context without a preferred fix, then consume its evidence alongside the explorer and analyst results.
+
+Require a reproducible observation when reasonably possible, a causal chain, rejected alternatives, the smallest responsible fix boundary, and a regression check. If the diagnosis is conditional or unresolved, surface the missing evidence and recommendation at the design gate. Do not disguise an unproven cause as an implementation task.
+
+The planner remains read-only with respect to issue trackers. It may retrieve issue context, but it never invokes `/prp-debug`, creates issues, edits bodies, or posts comments.
+
+For requests that do not assert broken current behavior, skip this step.
+
+## 4. Reason from invariants and primitives
 
 Read `references/planning-craft.md` and challenge the first plausible design before committing to it.
 
@@ -85,7 +97,7 @@ Answer:
 
 Prefer the smallest valuable vertical slice: it must deliver or directly unlock the user outcome, not merely create an elegant technical primitive. Reuse proven primitives, keep ownership clear, and avoid speculative flexibility. Simplicity is not fewer plan details; it is fewer moving parts in the proposed system.
 
-## 4. Research or spike only when it can change the plan
+## 5. Research or spike only when it can change the plan
 
 External research is conditional. Use `prp-core:web-researcher` when current documentation, dependency versions, platform behavior, security guidance, or an unfamiliar tool affects the design. Ask a narrow question tied to the architectural decision and prefer primary sources.
 
@@ -99,7 +111,7 @@ Delegate `/prp-spike` to a separate agent before finalizing when an uncertain, f
 
 The planner chooses the question. Use the exact agent-delegation prompt under `references/planning-craft.md` → **Decide when to spike**, wait for that agent, then consume its verdict and evidence. Never build the spike in the planner context or copy spike code into the plan as production code.
 
-## 5. Hold the design gate
+## 6. Hold the design gate
 
 Before writing the plan, state the recommended approach and its evidence. Stop and ask the user when:
 
@@ -113,7 +125,7 @@ Explain the invariant, discovery, recommendation, and cost of the alternatives. 
 
 Minor uncertainties may remain in the plan only with a recommendation, supporting evidence, and the consequence of choosing differently.
 
-## 6. Write the adaptive plan
+## 7. Write the adaptive plan
 
 Resolve the canonical store and save the plan to `$PRP_DIR/plans/<kebab-case-name>.plan.md`:
 
@@ -141,13 +153,14 @@ Tasks describe outcomes in dependency order. Each task identifies its files and 
 
 The plan must make incomplete work unacceptable: every requested outcome is covered, and every validation has an owner. If something cannot be completed in this implementation, resolve the scope with the user before presenting the plan as ready.
 
-## 7. Verify and hand off
+## 8. Verify and hand off
 
 Before saving, verify:
 
 - the invariant and recommended solution are explicit;
 - implementation acceptance is distinct from the product success signal;
 - the approach is supported by codebase evidence and any relevant spike or research;
+- bug-fix plans state the proven causal chain, fix boundary, and regression proof, or clearly surface the evidence still missing;
 - tasks cover the full agreed scope and can execute top-to-bottom;
 - acceptance criteria cover the observable completed outcome without duplicating a completion checklist;
 - decisive references use real paths and line numbers;

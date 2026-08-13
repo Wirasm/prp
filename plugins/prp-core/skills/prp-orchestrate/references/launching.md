@@ -6,7 +6,7 @@ Mechanics for running workstreams as native background agents (the default), plu
 
 Spawn via the Agent/Task tool:
 
-**`isolation: "worktree"` is the default.** Spawn every workstream that touches the working tree into its own checkout — it cannot then collide with the operator's checkout or with another agent. The exception is narrow, and you must be able to name it: a workstream that only reads files and writes to the PRP store (`prp-codebase-question`, `prp-debug`, `prp-plan`, `prp-prd`) can be a plain background agent. Launch several of those in a single message so they run concurrently.
+**`isolation: "worktree"` is the default.** Spawn every workstream that touches the working tree into its own checkout — it cannot then collide with the operator's checkout or with another agent. The exception is narrow, and you must be able to name it: a workstream that does not modify the checkout (`prp-codebase-question`, `prp-debug`, `prp-plan`, `prp-prd`) can be a plain background agent. `prp-debug` may publish to GitHub; assign one owning workstream per issue and never race multiple debuggers against the same thread. Launch independent read-only workstreams in a single message so they run concurrently.
 
 - The test is **"does it touch the working tree"**, not "does it open a PR". `prp-review` reads as read-only and is not: it runs `gh pr checkout`, which switches branches in whatever checkout it lands in. Run it in the operator's and you have moved their HEAD out from under them mid-session. It gets a worktree.
 - When in doubt, isolate. A worktree costs a few hundred milliseconds and some disk; a workstream that mutates the shared checkout costs the operator their session.
