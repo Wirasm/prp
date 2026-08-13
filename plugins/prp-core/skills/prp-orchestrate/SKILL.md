@@ -23,7 +23,7 @@ mkdir -p "$PRP_DIR"; [ -f "$PRP_DIR/project.json" ] || printf '{"path": "%s", "n
 ## Role contract
 
 - **Orchestrate, don't implement.** Never write feature code in the orchestrator session — all product changes happen inside workstream agents. The orchestrator only touches the run file, branches/merges, and the agents themselves.
-- **Drive everything through the native agent tools** — spawn with the Agent/Task tool (background, worktree isolation), steer and continue with SendMessage, stop with the task-stop tool, check with the task-list/status tools. Shelling out to a headless CLI is the fallback lane, not the default (see `references/launching.md` → Detached fallback).
+- **Drive workstreams through the native agent tools** — spawn with the Agent/Task tool (background, worktree isolation), steer and continue with SendMessage, stop with the task-stop tool, and check with the task-list/status tools. Never improvise detached CLI processes. Use `prp-loop` only when the user explicitly asks for it.
 - **Trust authoritative signals for "done"**: artifacts under the project's PRP store, agent completion reports, `gh pr view/checks`, git state. An agent saying "done" is a claim; a green PR is a fact.
 - **Each delivery carries its burden of proof.** The outer orchestrator owns the workstream portfolio, but each `prp-issue` owner must return the plan, implementation report, live PR, green validation and CI, complete published review, and `READY TO MERGE` verdict. Verify that evidence; never reconstruct a delivery from its summary or finish its internal correction loop here.
 - **Required CI defines the terminal gate.** Check with `gh pr checks <n> --required`. Pending or failing required checks block acceptance; optional checks remain useful evidence but do not contradict a delivery's terminal state. If the repository has no required CI, a workstream's "validations green" is a self-report, so run the project's own gate against the branch before marking `pr-open`. Re-run more than once where the suite has known flakes — one green run does not distinguish a fix from a lucky sample.
@@ -36,7 +36,7 @@ mkdir -p "$PRP_DIR"; [ -f "$PRP_DIR/project.json" ] || printf '{"path": "%s", "n
 1. Establish the goal and enumerate workstreams: GitHub issues, PRD phases, features, or PRs to review. One workstream = one agent = one branch = one PR.
 2. Pick each workstream's engine:
    - Issue, existing plan, PRD, document, or description going to a reviewed PR → `prp-issue`
-   - Detached execution that must survive this orchestrator session → `prp-loop`
+   - Explicit user request for detached, resumable execution or `prp-loop` → `prp-loop`; never select it merely because work may outlive this session
    - Plan only → `prp-plan`; implementation without review → `prp-implement`
    - Review-only → `prp-review` (worktree — it runs `gh pr checkout`); research-only → `prp-codebase-question` (plain background agent)
    - **Feasibility unknown** — "can this be built here", "what would it cost to allow it" → `prp-spike` (worktree). It ends in a verdict, not a PR; what it gates is whether the downstream workstreams should exist at all, so schedule it *before* the work it informs
@@ -111,23 +111,24 @@ Hard rules regardless of standing decisions: never merge to a protected branch w
 When PRs are green and gate-approved:
 
 1. Build the merge queue: dependency edges first, then ascending conflict risk — pairwise overlap of `gh pr diff <n> --name-only`; overlapping pairs merge farthest apart.
-2. Merge strictly one at a time. After each merge, bring remaining branches onto the new base — prefer SendMessage to the owning agent ("rebase onto <base>, resolve, re-run validations, push") so its context handles the conflicts; rebase directly only for trivial cases. Re-check `gh pr checks <n> --required` before the next merge, or rerun the local gate when no required checks exist.
-3. Conflicts: mechanical → the owning agent resolves and revalidates; semantic (both sides changed the same behavior) → gate it with both diffs summarized.
+2. Merge strictly one at a time. After each merge, verify its GitHub merge commit is reachable from `origin/<base>`, update the run file, then clean that workstream's checkout and exact PR-head branches immediately (`references/launching.md` → Cleanup after each merge). Never force checkout cleanup; preserve and report dirty state or changed branch tips.
+3. Bring remaining branches onto the new base — prefer SendMessage to the owning agent ("rebase onto <base>, resolve, re-run validations, push") so its context handles the conflicts; rebase directly only for trivial cases. Re-check `gh pr checks <n> --required` before the next merge, or rerun the local gate when no required checks exist.
+4. Conflicts: mechanical → the owning agent resolves and revalidates; semantic (both sides changed the same behavior) → gate it with both diffs summarized.
 
 ## Phase 7 — Close out
 
 1. All workstreams merged, dropped, or handed back → set run status `complete` with a final outcomes table.
-2. Clean up remaining worktrees/branches only after verifying merges (`references/launching.md` → Cleanup). Keep the run file — it is the record.
+2. Reconcile any worktrees or branches that could not be cleaned after their merge (`references/launching.md` → Cleanup after each merge). Keep the run file — it is the record.
 3. Summarize: what shipped (PR links), what was dropped and why, standing decisions worth promoting into CLAUDE.md or memory.
 
 ## Gotchas
 
 - Worktree-isolated agents each resolve the same project PRP store. Workstream artifacts (plans, reports) are shared there across worktrees without merging anything. The **run file lives in the project's store** and is never committed by a workstream.
 - SendMessage continues an agent **with its context intact** — always prefer it over spawning a fresh agent to "fix" a live workstream; a fresh agent has none of the history.
-- Agents and tasks die with the orchestrator session. For work that must survive it (overnight runs, other harnesses), use the detached fallback lane in `references/launching.md` — same protocol, headless CLI, artifacts as truth.
+- Agents and tasks die with the orchestrator session. Preserve branches, PRs, and PRP artifacts for recovery; never assemble a raw detached CLI launch or switch to `prp-loop` unless the user explicitly requested it.
 - Hooks are the observability extension point (e.g. notify or log on subagent stop); wire them per-project if the run file + notifications aren't enough — not required for the skill to work.
 
 ## Resources
 
-- `references/launching.md` — agent-tool call shapes, the workstream prompt template, SendMessage/stop/status patterns, the detached headless fallback, cleanup. Read before the first launch of a run.
+- `references/launching.md` — agent-tool call shapes, the workstream prompt template, SendMessage/stop/status patterns, harness-aware isolation, and post-merge cleanup. Read before the first launch of a run.
 - `templates/orchestration-run.md` — the run-file format. Read before creating the run file; follow it exactly.
