@@ -6,6 +6,9 @@
 
 # Feature: {Feature Name}
 
+**Source PRD:** `{absolute path | None}`
+**PRD Phase:** `{phase number | None}`
+
 ## Summary
 
 {One paragraph: What we're building and high-level approach}

@@ -92,7 +92,8 @@ The `.claude/skills/` directory contains the core PRP workflow as Agent Skills �
 | ---------------- | -------------------------------------------------------- |
 | `/prp-prd`       | Interactive PRD generator with implementation phases     |
 | `/prp-plan`      | Create implementation plan (from PRD or free-form input) |
-| `/prp-implement` | Execute a plan with validation loops                     |
+| `/prp-implement` | Execute a plan through validated commit and PR            |
+| `/prp-prd-update` | Maintain PRD phase status and delivery links             |
 
 ### Issue & Debug Workflow
 
@@ -113,7 +114,7 @@ The `.claude/skills/` directory contains the core PRP workflow as Agent Skills �
 
 | Command     | Description                                                            |
 | ----------- | --------------------------------------------------------------------- |
-| `/prp-loop` | Autonomous cyclic pipeline: plan → implement → pr → review (review→fix loops until clean) |
+| `/prp-loop` | Autonomous pipeline: plan → implement with PR → review (review→fix loops until clean) |
 | `/prp-orchestrate` | Coordinate parallel workstreams running PRP skills in git worktrees, with review gates and merge sequencing |
 
 ### Research & Authoring
@@ -128,7 +129,7 @@ The `.claude/skills/` directory contains the core PRP workflow as Agent Skills �
 
 ## PRP Loop (Autonomous Execution)
 
-`/prp-loop` drives the full pipeline (`plan → implement → pr → review`) headlessly, running one `claude -p` session per stage and looping `review → fix` until the PR review comes back clean. Progress is tracked in the project's PRP store at `~/.prp/<project-key>/state/prp-loop.state.json`.
+`/prp-loop` drives the full pipeline (`plan → implement with commit and PR → review`) headlessly, running one `claude -p` session per stage and looping `review → fix` until the PR review comes back clean. Progress is tracked in the project's PRP store at `~/.prp/<project-key>/state/prp-loop.state.json`.
 
 ### How It Works
 
@@ -137,8 +138,8 @@ The `.claude/skills/` directory contains the core PRP workflow as Agent Skills �
 ```
 
 1. **plan** — writes `~/.prp/<project-key>/plans/<feature>.plan.md`
-2. **implement** — executes the plan, looping until all validations pass, then commits
-3. **pr** — pushes the branch and opens the PR
+2. **implement** — executes and validates the plan, commits the work, and opens the PR
+3. **pr compatibility** — opens the PR only if an older implementation run did not
 4. **review** — reviews the PR and writes a `{clean, blocking}` verdict
 5. **cycle** — if not clean, blocking findings feed back into a fix pass → push → re-review, until clean or `--max-cycles` is reached
 
@@ -148,7 +149,7 @@ The `.claude/skills/` directory contains the core PRP workflow as Agent Skills �
 # Run the full pipeline from a feature description
 /prp-loop "add user authentication with JWT"
 
-# Grind a single plan to green and stop before PR/review (the old Ralph behaviour)
+# Run through implementation and PR, then stop before review
 /prp-loop "add user authentication with JWT" --until implement
 
 # Resume a halted or in-progress loop
@@ -157,7 +158,7 @@ The `.claude/skills/` directory contains the core PRP workflow as Agent Skills �
 
 ### Tips
 
-- `--until <stage>` (`plan` | `implement` | `pr` | `review` | `fix`) halts once that stage completes; `--until implement` is the headless replacement for the retired single-session Ralph loop ("grind one plan to green, no PR")
+- `--until <stage>` (`plan` | `implement` | `pr` | `review` | `fix`) halts once that stage completes; `--until implement` stops after the implementation is green, committed, and opened as a PR
 - Defaults: `--max-cycles 3`, `--max-implement-iterations 10`; base branch is auto-detected
 - Pass `--validate "<cmd>"` to give the loop an authoritative green check (exit 0 = pass)
 - Works best with plans that have clear, testable validation commands
@@ -180,9 +181,11 @@ Auto-selects next pending phase, creates plan
     ↓
 /prp-implement ~/.prp/<project-key>/plans/user-auth-phase-1.plan.md
     ↓
-Executes plan, updates PRD progress, archives plan
+Implements and validates, then commits and opens a PR
     ↓
-Repeat /prp-plan for next phase
+Links the plan, report, and PR back to the source PRD
+    ↓
+/prp-review --agents
 ```
 
 ### Medium Features: Direct to Plan
@@ -239,12 +242,12 @@ The project key is derived from the canonical main-checkout path, so all linked 
 PRDs include an Implementation Phases table for tracking progress:
 
 ```markdown
-| #   | Phase | Description | Status      | Parallel | Depends | PRP Plan |
-| --- | ----- | ----------- | ----------- | -------- | ------- | -------- |
-| 1   | Auth  | User login  | complete    | -        | -       | [link]   |
-| 2   | API   | Endpoints   | in-progress | -        | 1       | [link]   |
-| 3   | UI    | Frontend    | pending     | with 4   | 2       | -        |
-| 4   | Tests | Test suite  | pending     | with 3   | 2       | -        |
+| #   | Phase | Description | Status      | Parallel | Depends | Plan   | Report | PR     |
+| --- | ----- | ----------- | ----------- | -------- | ------- | ------ | ------ | ------ |
+| 1   | Auth  | User login  | complete    | -        | -       | [link] | [link] | [link] |
+| 2   | API   | Endpoints   | in-progress | -        | 1       | [link] | [link] | [link] |
+| 3   | UI    | Frontend    | pending     | with 4   | 2       | -      | -      | -      |
+| 4   | Tests | Test suite  | pending     | with 3   | 2       | -      | -      | -      |
 ```
 
 - **Status**: `pending` → `in-progress` → `complete`

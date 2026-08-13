@@ -33,4 +33,3 @@ DIRECTION: $3 — `back` (PLAN builds on / depends on RELATED) or `forward` (REL
 ## Notes
 
 - Use expanded absolute store paths so links resolve from every worktree that shares the project store.
-- Caveat: if `prp-implement` archives a plan to `$PRP_DIR/plans/completed/`, its path changes and existing refs go stale. For plans you expect to archive, re-run this workflow after archiving (or link by a stable identifier).

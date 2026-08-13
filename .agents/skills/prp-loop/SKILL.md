@@ -1,13 +1,13 @@
 ---
 name: prp-loop
-description: Run the autonomous cyclic PRP pipeline end to end (plan → implement → pr → review, looping review→fix until the PR is clean). Use when the user wants to "ship feature X end to end", "run the full PRP loop", "auto-implement and open a PR for a feature", or invokes $prp-loop.
+description: Run the autonomous cyclic PRP pipeline end to end (plan → implement and PR → review, looping review→fix until the PR is clean). Use when the user wants to "ship feature X end to end", "run the full PRP loop", "auto-implement and open a PR for a feature", or invokes $prp-loop.
 ---
 
 > **Arguments:** `$ARGUMENTS` (and `$1`, `$2`, ...) refer to the arguments given when this skill was invoked. Take them from the user's request; if absent, infer them from the conversation.
 
 # PRP Loop — autonomous cyclic pipeline
 
-Launch the orchestrator that drives `plan → implement → pr → review` and loops `review → fix` until the PR review is clean (or limits are hit). It runs headless `codex exec` once per stage and tracks progress in `~/.prp/<key>/state/prp-loop.state.json`.
+Launch the orchestrator that drives `plan → implement (commit + PR) → review` and loops `review → fix` until the PR review is clean (or limits are hit). It runs headless `codex exec` once per stage and tracks progress in `~/.prp/<key>/state/prp-loop.state.json`.
 
 ## Run it
 
@@ -33,15 +33,15 @@ Pass `--until <stage>` (`plan` | `implement` | `pr` | `review` | `fix`) to halt 
 uv run .agents/skills/prp-loop/scripts/prp_loop.py "$ARGUMENTS" --cli codex --until implement
 ```
 
-`--until implement` runs `plan → implement` and stops once validations are green and the work is committed — **no PR, no review**. This is the headless replacement for the old single-session Ralph loop: "grind one plan to green."
+`--until implement` runs `plan → implement` and stops once validations are green and the implementation skill has committed and opened its PR — **no review**.
 
 **UX note:** the retired Ralph loop was single-session and interactive (a Stop-hook fed the prompt back in the same session). `prp-loop --until implement` is headless instead — it drives fresh `codex exec` sessions per iteration and you resume/inspect via the state file rather than watching it live.
 
 ## What it does
 
 1. **plan** — `prp-plan` writes the plan under the project's PRP store at `$PRP_DIR/plans/<feature>.plan.md`.
-2. **implement** — `prp-implement` executes the plan, looping until all validations pass (bounded by `--max-implement-iterations`), then commits.
-3. **pr** — `prp-pr` pushes the branch and opens the PR (once).
+2. **implement** — `prp-implement` executes and validates the plan, commits the work, and opens the PR (bounded by `--max-implement-iterations`).
+3. **pr compatibility** — if an older implementation run did not open a PR, `prp-pr` does so once.
 4. **review** — `prp-review --agents` reviews the PR and writes a `{clean, blocking}` verdict.
 5. **cycle** — if not clean, the blocking findings feed back into a fix pass → push → re-review, up to `--max-cycles`. Clean → done.
 

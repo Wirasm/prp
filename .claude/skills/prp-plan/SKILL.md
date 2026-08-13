@@ -259,13 +259,9 @@ Create directory if needed: `mkdir -p "$PRP_DIR/plans"`
 <output>
 **OUTPUT_FILE**: `$PRP_DIR/plans/{kebab-case-feature-name}.plan.md`
 
-**If input was from PRD file**, also update the PRD:
+Set the plan's `Source PRD` and `PRD Phase` metadata when the input was a PRD; otherwise set both to `None`.
 
-1. **Update phase status** in the Implementation Phases table:
-   - Change the phase's Status from `pending` to `in-progress`
-   - Add the plan file path to the PRP Plan column
-
-2. **Edit the PRD file** with these changes
+**If input was from a PRD**, invoke `/prp-prd-update planned` with the PRD path, selected phase number, and absolute plan path. Verify that the exact phase is `in-progress` and links to the plan. Do not edit PRD lifecycle state directly.
 
 **REPORT_TO_USER** (display after creating plan): Read `templates/report-format.md` now (mandatory) and display the "Plan Created" report in exactly that structure.
 

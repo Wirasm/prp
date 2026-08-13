@@ -6,7 +6,7 @@
 prp_loop.py — autonomous, cyclic PRP pipeline orchestrator.
 
 Pipeline:
-    plan -> implement (loop until green) -> pr (create once) -> review
+    plan -> implement (loop until green, commit, open PR) -> review
     review clean? -> done
     review dirty? -> fix (loop until green) -> push -> review   (cyclic, bounded)
 
@@ -21,12 +21,12 @@ Design:
 - Stages are invoked by naming the skill in a natural-language prompt, so the
   agent-invocable PRP skills auto-load. Skills are never modified.
 - Bounded by --max-cycles (outer review loop) and --max-implement-iterations (inner).
-- --until <stage> stops after the named stage completes. `--until implement` grinds a
-  single plan to green and stops before opening a PR (replaces the old Ralph loop).
+- --until <stage> stops after the named stage completes. `--until implement` stops
+  after the implementation is green, committed, and opened as a PR.
 
 Usage:
     uv run .claude/skills/prp-loop/scripts/prp_loop.py "implement feature X" [--base main]
-    uv run .claude/skills/prp-loop/scripts/prp_loop.py "implement feature X" --until implement  # green, no PR
+    uv run .claude/skills/prp-loop/scripts/prp_loop.py "implement feature X" --until implement  # green + PR, no review
     uv run .claude/skills/prp-loop/scripts/prp_loop.py --resume
 """
 
@@ -341,7 +341,16 @@ def stage_implement(state: dict) -> None:
     if not implement_until_green(state, initial, "implement"):
         halt(state, f"implement not green after {state['max_implement_iterations']} iterations")
     ensure_committed(state)
-    state["stage"] = "pr"
+    num, url = current_pr()
+    if num:
+        state["artifacts"]["branch"] = git("rev-parse", "--abbrev-ref", "HEAD")
+        state["artifacts"]["pr_number"] = num
+        state["artifacts"]["pr_url"] = url
+        record(state, "pr", f"#{num}")
+        state["stage"] = "review"
+        log(f"implement opened PR #{num} {url}")
+    else:
+        state["stage"] = "pr"
     save_state(state)
 
 
@@ -452,7 +461,7 @@ STAGES = {
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="Autonomous cyclic PRP pipeline (plan->implement->pr->review).")
+    ap = argparse.ArgumentParser(description="Autonomous cyclic PRP pipeline (plan->implement+PR->review).")
     ap.add_argument("feature", nargs="?", help="Feature description, or path to a PRD/plan.")
     ap.add_argument("--base", help="Base branch (default: auto-detected by the skills).")
     ap.add_argument("--max-cycles", type=int, default=3, help="Max review->fix cycles (default 3).")
@@ -465,8 +474,8 @@ def main() -> None:
                          "If omitted, falls back to the VALIDATION: GREEN sentinel.")
     ap.add_argument("--until", dest="until_stage",
                     choices=["plan", "implement", "pr", "review", "fix"],
-                    help="Stop after the named stage completes. '--until implement' grinds one "
-                         "plan to green and stops before opening a PR (replaces the old Ralph loop).")
+                    help="Stop after the named stage completes. '--until implement' stops after "
+                         "the implementation is green, committed, and opened as a PR.")
     ap.add_argument("--resume", action="store_true", help="Resume from the existing state file.")
     ap.add_argument("--cli", choices=["claude", "codex"], default=None,
                     help="Headless CLI that drives the stages (default: claude; "
