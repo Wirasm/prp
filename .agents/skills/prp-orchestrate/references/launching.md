@@ -1,6 +1,6 @@
 # Launching, Steering & Monitoring Workstreams
 
-Mechanics for running workstreams as native background agents (the default), plus the detached headless fallback. All actions happen from the orchestrator session.
+Mechanics for running workstreams as native background agents. `prp-loop` is a separate, explicit user-selected engine; never construct raw detached CLI processes here.
 
 ## Launching a workstream agent (default lane)
 
@@ -62,7 +62,7 @@ The `prp-issue` owner retains every applicable Standing Decision—and later gat
 | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Issue / PRD / document / idea | `Use the prp-issue skill to own <input> autonomously in one context through a published READY TO MERGE review and green CI. Return only the proven workstream or a concrete blocker only a human can resolve.` |
 | Existing plan              | `Use the prp-issue skill to own the plan at <path> autonomously in one context through a published READY TO MERGE review and green CI. Return only the proven workstream or a concrete blocker only a human can resolve.` |
-| Detached autonomous work   | `Use the prp-loop skill for: <input>.` (the headless loop owns persisted stage state and bounded review/fix cycles)                                      |
+| User explicitly requests `prp-loop` | `Use the prp-loop skill for: <input>.` It owns persisted stage state and bounded review/fix cycles; never select it implicitly. |
 | Plan only (staged)   | `Use the prp-plan skill to create an implementation plan for: <feature>.` — gate the plan, then message the same agent to proceed with prp-implement |
 | Feasibility unknown  | `Use the prp-spike skill to settle: <the question>.` — ends in a PROVEN / DISPROVEN / CONDITIONAL verdict and **no PR**; gate the verdict, then launch or drop the workstreams that depended on it |
 
@@ -97,30 +97,20 @@ Plus artifacts where the engine promises them (plans/reports/reviews under the p
 
 For runs that need more than notifications + the run file (e.g. a log line or desktop notification whenever any agent stops), wire hooks on the relevant agent-stop events if your harness supports them. This is an extension point, not a requirement.
 
-## Detached fallback (headless CLI)
+## Persistent work
 
-Use only when work must **survive the orchestrator session** (overnight batches) or run on a **different harness** (Codex-style CLIs). Same protocol — one worktree + branch per workstream, artifacts and PR state as the only truth — but the launch is a detached process:
+Invoke `prp-loop` only when the user explicitly selects it. Otherwise use live workstream agents running `prp-issue` or the requested PRP skills one by one. If the orchestrator session cannot continue, preserve branches, PRs, and PRP artifacts and report how to resume; do not switch engines or construct an ad hoc detached process.
 
-```bash
-# Create the worktree with the prp-worktree skill (its create command prints
-# the worktree's absolute path as its final line):
-#   $prp-worktree create <branch> --base <base>
-WT=<path printed by prp-worktree create>
-cd "$WT" && nohup codex exec --dangerously-bypass-approvals-and-sandbox "<workstream prompt>" \
-  > /tmp/orchestrator-ws-<slug>.log 2>&1 &
-echo $!   # record the PID in the run file (replaces the agent ID)
-```
+## Cleanup after each merge
 
-Differences from the default lane: no live steering (course-correct by restarting with feedback: "Continue the work on the current branch. Previous attempt: <state>. Problem: <issue>. <Correction.>"), no completion notifications (poll PR state and artifacts), the blocked-escalation signal is a **draft PR** describing the blocker instead of a stopped agent, and the log is liveness-only (`kill -0 <PID>`, `tail -5 <log>`) — never status truth. On non-Claude harnesses, swap the CLI and its permission flags; if the harness doesn't read `.agents/skills/`, inline the skill's instructions into the prompt.
-
-## Cleanup (Phase 7 only)
-
-Order matters: **worktrees release branches, so worktrees go first.** An agent worktree holds the PR branch checked out — `gh pr merge --delete-branch` fails on the local deletion while it exists, so merge _without_ `--delete-branch` and clean up after: remove worktrees, then local branches (`-d`), then remote branches (`git push origin --delete <branch>`). A worktree locked by a live (resumable) agent stays until the session ends — leave it and only delete the remote branch.
+After each PR merges, fetch and verify its merge is reachable from `origin/<base>`. Mark the workstream merged, then release its owner and clean its checkout before deleting branches. Order matters: **worktrees release branches, so worktrees go first.** Merge without automatic branch deletion, then remove the worktree, local branch, and remote branch. Never force cleanup; preserve and report dirty worktrees, unmerged branches, or a checkout still owned by a live agent.
 
 **`git worktree list` tells you which teardown a worktree needs — read the path, not your memory of the run.** Every worktree here was created explicitly, so every one needs explicit teardown — nothing is reclaimed for you. The run file records no isolation column on purpose: the filesystem already answers this, and it keeps answering after a resume or a compaction, when your memory of which lane you launched into is exactly what has gone missing.
 
-Nothing here is auto-removed; pushed branches survive regardless. Tear every worktree down with the same skill — its rails encode the safety order (refuses dirty worktrees and unmerged branch deletion):
+No worktree here is auto-removed; verify and tear every worktree down with the same skill—its rails refuse dirty worktrees and unmerged branch deletion:
 
 ```
-$prp-worktree remove <branch> --delete-branch    # --force only after investigating what would be lost
+$prp-worktree remove <branch> --delete-branch --base origin/<base>
 ```
+
+After the worktree no longer holds the branch, delete any surviving merged local branch normally and delete the remote feature branch. Phase 7 performs a final reconciliation sweep for cleanup that was safely deferred; it must not wait until run completion to begin cleanup.
