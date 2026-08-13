@@ -1,6 +1,6 @@
 ---
 name: prp-plan
-description: Creates an implementation-ready plan for a feature, bug fix, refactor, or chore from a PRD, issue, document, or description using codebase evidence, first-principles reasoning, and conditional root-cause analysis, research, or spikes. Use when the user asks to "plan this feature", "plan this bug fix", "plan issue X", "create an implementation plan", "turn this PRD into a plan", investigate how a change should be built, link related plans, or invokes the prp-plan skill.
+description: Creates an implementation-ready plan for a feature, bug fix, refactor, or chore from a PRD, issue, document, or description using codebase evidence, first-principles reasoning, and conditional root-cause analysis, research, or spikes. Publishes issue-derived plans back to their source issue. Use when the user asks to "plan this feature", "plan this bug fix", "plan issue X", "create an implementation plan", "turn this PRD into a plan", investigate how a change should be built, link related plans, or invokes the prp-plan skill.
 ---
 
 > **Kild lane:** you are running inside a kild room, in a workspace (worktree + branch) the kild engine assigned. The driver owns isolation and publishing — SKIP any step below that creates or switches branches or worktrees, pulls or rebases the base branch, pushes, opens PRs, or moves/archives plan artifacts, and never run `gh pr checkout`. Your job ends at implement → validate → commit in the current workspace, reporting evidence. Where a step spawns subagents, do that analysis inline — or ask the room's orchestrator to invite a helper agent.
@@ -35,7 +35,7 @@ For a PRD:
 For an issue from GitHub, Jira, Linear, or another tracker:
 
 1. Retrieve the issue through whatever access is already configured in the environment. The skill does not prescribe or configure a tracker client.
-2. Treat the body as the starting point, not the complete brief. Read the relevant comment history and follow linked issues, parent/child or blocking relationships, duplicates, PRs, specifications, and attachments that can change scope, intent, constraints, or current decisions.
+2. Treat the body as the starting point, not the complete brief. Read the relevant comment history—including earlier published PRP plans and corrections after them—and follow linked issues, parent/child or blocking relationships, duplicates, PRs, specifications, and attachments that can change scope, intent, constraints, or current decisions.
 3. Reconcile that context: distinguish current decisions from superseded discussion, note unresolved disagreements, and stop following links once additional material no longer affects the plan. Curate; do not dump the tracker graph.
 4. Preserve the source issue in the plan while separating its required outcome from any suggested implementation.
 5. If the issue, comments, or decision-relevant links cannot be retrieved, state what context is missing and ask the user to provide it or configure access. Never infer missing tracker content.
@@ -81,7 +81,7 @@ For a bug, error, regression, stack trace, or unexplained behavior, do not plan 
 
 Require a reproducible observation when reasonably possible, a causal chain, rejected alternatives, the smallest responsible fix boundary, and a regression check. If the diagnosis is conditional or unresolved, surface the missing evidence and recommendation at the design gate. Do not disguise an unproven cause as an implementation task.
 
-The planner remains read-only with respect to issue trackers. It may retrieve issue context, but it never invokes `the prp-debug skill`, creates issues, edits bodies, or posts comments.
+The planner does not create issues, edit issue bodies, or publish diagnosis through `the prp-debug skill`. Its only tracker write is publishing and verifying its completed plan under step 8.
 
 For requests that do not assert broken current behavior, skip this step.
 
@@ -143,7 +143,7 @@ mkdir -p "$PRP_DIR"; [ -f "$PRP_DIR/project.json" ] || printf '{"path": "%s", "n
 mkdir -p "$PRP_DIR/plans"
 ```
 
-Read `templates/plan-template.md` and `references/task-format.md`. Keep its required human-scannable spine; set the source issue metadata when planning from a tracker, and include conditional sections only when they add information.
+Read `templates/plan-template.md` and `references/task-format.md`. Keep its required human-scannable spine; assign a stable plan ID, reusing it when revising the same plan, set the source issue metadata when planning from a tracker, and include conditional sections only when they add information. The source metadata is the store lookup key; do not add a separate plan index that can drift.
 
 Use `references/visuals.md` when either applies:
 
@@ -158,7 +158,9 @@ The plan must make incomplete work unacceptable: every requested outcome is cove
 
 ## 8. Verify and hand off
 
-Before saving, verify:
+If the input came from an issue, publish the complete rendered plan to that issue through the configured tracker access. Prefix the body with `<!-- prp-plan-id: <plan-id> -->`, capture its stable comment URL, record that URL as `Plan Publication` in the local plan, and update the published comment to the same final plan. Read the issue back and verify the complete final plan exists at that URL. If publication or verification fails, preserve the local plan but report the publication blocker; do not claim the shared handoff is complete.
+
+Before reporting completion, verify:
 
 - the invariant and recommended solution are explicit;
 - implementation acceptance is distinct from the product success signal;
@@ -173,6 +175,7 @@ Before saving, verify:
 - applicable rollout, compatibility, migration, observability, and reversibility concerns are owned by tasks or explicitly resolved;
 - open decisions carry recommendations and none silently change the architecture;
 - issue-derived plans account for relevant comments and linked tracker context rather than relying on the body alone;
+- issue-derived plans are published in full, verified on the source issue, and record that publication URL;
 - no placeholders, generic examples, confidence scores, or arbitrary coverage targets remain.
 
 If the input came from a PRD, invoke `the prp-prd-update skill planned` with the PRD path, selected phase, and absolute plan path. Verify that the phase is `in-progress` and links to the plan.

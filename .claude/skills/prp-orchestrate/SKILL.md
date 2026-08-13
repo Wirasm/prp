@@ -1,6 +1,6 @@
 ---
 name: prp-orchestrate
-description: Turn the current session into an SDLC orchestrator that coordinates parallel background agents running PRP skills in isolated worktrees - decompose work into workstreams, launch and steer agents with the native agent tools, hold review gates as the user's proxy, and sequence merges. Use when the user wants to "spawn N agents in separate worktrees", "run prp-issue on these issues in parallel", "orchestrate these features", "act as my orchestrator", "coordinate agents through the PRP pipeline", "ship these issues in parallel", or invokes /prp-orchestrate.
+description: Turn the current session into an SDLC orchestrator that coordinates parallel background agents running PRP skills in isolated worktrees - decompose work into workstreams, launch and steer agents with the native agent tools, hold review gates as the user's proxy, and sequence merges. Use when the user wants to "spawn N agents in separate worktrees", "run prp-deliver on these issues in parallel", "orchestrate these features", "act as my orchestrator", "coordinate agents through the PRP pipeline", "ship these issues in parallel", or invokes /prp-orchestrate.
 argument-hint: <goal, or list of issues/features/PRD phases> [--max-parallel N] | --resume
 ---
 
@@ -27,16 +27,16 @@ mkdir -p "$PRP_DIR"; [ -f "$PRP_DIR/project.json" ] || printf '{"path": "%s", "n
 - **Trust authoritative signals for "done"**: artifacts under the project's PRP store, agent completion reports, `gh pr view/checks`, git state. An agent saying "done" is a claim; a green PR is a fact.
 - **Where the project has no CI, there is no fact to trust — so the orchestrator re-runs the gate.** Check once per run whether the repo actually has checks (`gh pr checks <n>`; a secret-scanner alone is not a build). If it does not, a workstream's "validations green" is a self-report, and accepting it makes the orchestrator a relay for whatever the agent believed. Run the project's own gate against the branch before marking `pr-open`. Re-run more than once where the suite has known flakes — one green run does not distinguish a fix from a lucky sample.
 - **The user is the principal.** Every gate decision is either covered by the Standing Decisions log (act, record it as `auto`) or escalated as a short digest (act on the answer, record it). Never guess on destructive or product-shape decisions.
-- **Compose skills by name only.** Agents are told to "use the prp-issue skill on #123", "use the prp-loop skill for <feature>" — never pointed at another skill's files.
+- **Compose skills by name only.** Agents are told to "use the prp-deliver skill on #123" or "use the prp-loop skill for detached execution" — never pointed at another skill's files.
 - **Think in invariants and primitives.** Do not let a workstream inherit a proposed implementation as its objective. Preserve the required observable outcome, look for the smallest existing primitive that can satisfy it, and prove an uncertain architectural hinge before allowing substantial new machinery.
 
 ## Phase 1 — Intake & decompose
 
 1. Establish the goal and enumerate workstreams: GitHub issues, PRD phases, features, or PRs to review. One workstream = one agent = one branch = one PR.
 2. Pick each workstream's engine:
-   - Issue → `prp-issue` (investigate, then fix)
-   - Feature with an existing plan → `prp-implement` (+ `prp-pr`)
-   - Feature from a description → `prp-loop`, or staged `prp-plan` → gate → `prp-implement` when the user should see plans before code
+   - Issue, existing plan, PRD, document, or description going to a reviewed PR → `prp-deliver`
+   - Detached execution that must survive this orchestrator session → `prp-loop`
+   - Plan only → `prp-plan`; implementation without review → `prp-implement`
    - Review-only → `prp-review` (worktree — it runs `gh pr checkout`); research-only → `prp-codebase-question` (plain background agent)
    - **Feasibility unknown** — "can this be built here", "what would it cost to allow it" → `prp-spike` (worktree). It ends in a verdict, not a PR; what it gates is whether the downstream workstreams should exist at all, so schedule it *before* the work it informs
 3. Map dependencies and conflict risk: predict the files each workstream touches. Disjoint → parallel; overlapping → serialize or merge into one workstream.
@@ -84,7 +84,7 @@ Prompts must be self-sufficient (agents inherit nothing from this conversation) 
 
 Monitoring is **event-driven, not polled**: background agents notify on completion, and their final report returns to the orchestrator. Between events, stay responsive to the user — this phase is a loop of reacting to whichever arrives first:
 
-**On agent completion**: verify the claim against authority (PR exists? checks green? artifacts written?), update the workstream row and Event Log, then launch the next queued workstream into the freed slot. A "blocked" report → gate it (Phase 5), then SendMessage the decision back to the same agent to continue.
+**On agent completion**: verify the claim against authority (PR exists? checks green? artifacts written? full review report published?), update the workstream row and Event Log, then launch the next queued workstream into the freed slot. A findings gate or "blocked" report → gate it (Phase 5), then SendMessage the decision back to the same agent to continue.
 
 **On user input at any time** — the run absorbs it live:
 - *"also do X, Y"* → run Phase 1 on the additions only (overlap-check against running workstreams), append rows, launch or queue.
@@ -98,6 +98,8 @@ Monitoring is **event-driven, not polled**: background agents notify on completi
 ## Phase 5 — Gates
 
 Gate points: after plans land (staged pipelines), when a PR opens, before every merge, on every "blocked" report, and on any destructive or ambiguous call.
+
+The published `prp-review` report is the findings gate. Present its GitHub URL to the user unless a standing decision already dispositions those findings. Resume the same `prp-deliver` workstream with the decision so it can return accepted findings to its implementation context and re-review the resulting PR.
 
 1. Check the Standing Decisions log. Covered within scope → act, record `auto: <action> per SD-<n>` in the Event Log.
 2. Not covered → escalate a **digest**, not a dump: what happened (2–3 lines), what needs deciding, the recommendation and its risk. Group simultaneous gates into one message.

@@ -96,7 +96,7 @@ Write the report to the expanded absolute path `$PRP_DIR/reviews/pr-{NUMBER}-rev
 
 ## 6. Publish and report
 
-Post the report with `gh pr comment` by default. Use `gh pr review --approve` only when `--approve`
+Post the complete, unabridged canonical report with `gh pr comment` by default. Use the same complete report body with `gh pr review --approve` only when `--approve`
 was explicitly requested and the verdict is `READY TO MERGE`. Use `gh pr review --request-changes`
 when explicitly requested or when the user explicitly asked the skill to submit blocking findings
 as a formal review. Never formally approve or request changes on a draft.

@@ -8,9 +8,11 @@ Keep every **required** section. Include a **conditional** section only when it 
 
 # {Outcome-oriented plan title}
 
+**Plan ID:** `{stable kebab-case identifier}`
 **Source PRD:** `{absolute path | None}`
 **PRD Phase:** `{phase number and name | None}`
 **Source Issue:** `{tracker reference or URL | None}`
+**Plan Publication:** `{verified issue comment URL | None}`
 
 ## Outcome
 

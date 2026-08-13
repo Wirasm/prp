@@ -101,7 +101,7 @@ ROOT = _project_root()  # worktree being operated on (git toplevel, else cwd)
 PRP_DIR = _prp_dir()  # store shared by all worktrees of the main checkout
 STATE_FILE = PRP_DIR / "state" / "prp-loop.state.json"
 PLANS_DIR = PRP_DIR / "plans"
-REVIEW_DIR = PRP_DIR / "state"
+REVIEW_DIR = PRP_DIR / "reviews"
 LEGACY_STATE_FILE = ROOT / ".claude" / "prp-loop.state.json"
 
 GREEN = "VALIDATION: GREEN"
@@ -112,7 +112,6 @@ CLI = "claude"  # which headless CLI drives the stages; set in main(), persisted
 LOOP_ARTIFACTS = (
     ".claude/prp-loop.state.json*",  # state file + its atomic-write temp
     ".claude/prp-loop.run.log",
-    ".claude/PRPs/reviews/*.verdict.json",  # per-cycle review verdicts
 )
 
 
@@ -290,7 +289,9 @@ def check_green(state: dict, result: str) -> tuple[bool, str]:
     return False, result[-2000:]
 
 
-def implement_until_green(state: dict, initial_prompt: str, label: str) -> bool:
+def implement_until_green(
+    state: dict, initial_prompt: str, label: str, handoff_context: str = ""
+) -> bool:
     prompt = initial_prompt
     for i in range(1, state["max_implement_iterations"] + 1):
         log(f"{label} iteration {i}/{state['max_implement_iterations']} (cycle {state['cycle']})")
@@ -305,6 +306,7 @@ def implement_until_green(state: dict, initial_prompt: str, label: str) -> bool:
         prompt = (
             f"Continue working on the current branch{plan_ref}. The previous attempt's "
             f"validations did not pass:\n{failures}\n\n"
+            f"{handoff_context}\n\n"
             "Fix the failures, re-run ALL validations, and commit. End your message with "
             f"exactly '{GREEN}' when everything passes, otherwise 'VALIDATION: FAILED' "
             "followed by the failing output."
@@ -376,34 +378,24 @@ def stage_pr(state: dict) -> None:
 def stage_review(state: dict) -> None:
     log("STAGE review")
     num = state["artifacts"]["pr_number"]
-    cycle = state["cycle"]
     REVIEW_DIR.mkdir(parents=True, exist_ok=True)
-    verdict_path = REVIEW_DIR / f"pr-{num}-cycle-{cycle}.verdict.json"
-    bar = state["clean_bar"]
+    report_path = REVIEW_DIR / f"pr-{num}-review.md"
     prompt = (
-        f"Use the prp-review skill to review PR #{num}. "
-        "After the review is complete, decide whether the PR is CLEAN, where clean means "
-        f"there are zero {bar} issues. Then write a JSON file to {verdict_path} with exactly this "
-        'shape and nothing else:\n'
-        '{"clean": <true|false>, "blocking": ["<one line per blocking finding>"]}'
+        f"Use the prp-review skill to review PR #{num}. Publish the complete canonical report "
+        "to GitHub and verify its publication URL."
     )
-    verdict_path.unlink(missing_ok=True)  # never trust a stale verdict from a prior attempt
+    report_path.unlink(missing_ok=True)  # never trust a stale report from a prior attempt
     run_agent(prompt)
-    if not verdict_path.exists():
-        halt(state, f"review stage did not write the verdict file {verdict_path}")
-    try:
-        text = verdict_path.read_text().strip()
-        if text.startswith("```"):  # tolerate a markdown-fenced verdict
-            text = text.split("\n", 1)[-1].rsplit("```", 1)[0].strip()
-        verdict = json.loads(text)
-    except (json.JSONDecodeError, ValueError) as e:
-        halt(state, f"verdict file {verdict_path} is not valid JSON: {e}")
-    state["artifacts"].setdefault("review_verdicts", []).append(str(verdict_path))
+    if not report_path.exists():
+        halt(state, f"review stage did not write the canonical report {report_path}")
+    report = report_path.read_text()
+    match = re.search(r"^verdict:\s*(READY TO MERGE|NEEDS FIXES|REVIEW INCOMPLETE)\s*$", report, re.M)
+    if not match:
+        halt(state, f"review report has no canonical verdict: {report_path}")
+    verdict = match.group(1)
+    state["artifacts"]["review_report"] = str(report_path)
 
-    clean = verdict.get("clean")
-    if not isinstance(clean, bool):  # a string "false" is truthy — never trust raw truthiness
-        clean = str(clean).strip().lower() == "true"
-    if clean:
+    if verdict == "READY TO MERGE":
         record(state, "review", "clean")
         state["stage"] = "done"
         state["status"] = "done"
@@ -411,33 +403,40 @@ def stage_review(state: dict) -> None:
         log("review CLEAN — pipeline complete")
         return
 
-    blocking = verdict.get("blocking", [])
-    record(state, "review", f"dirty:{len(blocking)}")
+    if verdict == "REVIEW INCOMPLETE":
+        halt(state, f"review incomplete; inspect the published report at {report_path}")
+
+    record(state, "review", "needs-fixes")
     if state["cycle"] >= state["max_cycles"]:
         halt(state, f"review still dirty after {state['max_cycles']} cycles; PR #{num} left open for review")
     state["cycle"] += 1
-    state["pending_findings"] = blocking
     state["stage"] = "fix"
     save_state(state)
-    log(f"review dirty ({len(blocking)} blocking) — entering cycle {state['cycle']}")
+    log(f"review needs fixes — entering cycle {state['cycle']}")
 
 
 def stage_fix(state: dict) -> None:
     log("STAGE fix")
-    findings = "\n".join(f"- {f}" for f in state.get("pending_findings", []))
     plan = state["artifacts"]["plan_path"]
     pr_num = state["artifacts"]["pr_number"]
+    review_report = state["artifacts"].get("review_report")
+    if not review_report or not Path(review_report).exists():
+        halt(state, "fix pass has no complete canonical review report")
     head_before = git("rev-parse", "HEAD")
     if not head_before:
         halt(state, "could not resolve HEAD before the fix pass")
     initial = (
-        f"Address these blocking review findings on the current branch (PR #{pr_num}):\n"
-        f"{findings}\n\n"
-        f"Use the prp-implement skill's approach against the plan at {plan}: make the fixes, "
+        f"Use the prp-implement skill in review-correction mode for PR #{pr_num}. "
+        f"Read the complete review report at {review_report} and the original plan at {plan}. "
+        "Address every Critical and Important finding, preserve optional Suggestions as optional, "
         "run ALL validations, and commit. End your message with exactly "
         f"'{GREEN}' when everything passes, otherwise 'VALIDATION: FAILED' + the output."
     )
-    if not implement_until_green(state, initial, "fix"):
+    handoff = (
+        f"Continue the review correction for PR #{pr_num}. Re-read the complete review report "
+        f"at {review_report} and the original plan at {plan}; do not rely on a findings summary."
+    )
+    if not implement_until_green(state, initial, "fix", handoff):
         halt(state, f"fix pass not green after {state['max_implement_iterations']} iterations")
     ensure_committed(state)
     if git("rev-parse", "HEAD") == head_before:
@@ -446,7 +445,6 @@ def stage_fix(state: dict) -> None:
     if push.returncode != 0:
         halt(state, f"git push failed: {push.stderr[:300]}")
     record(state, "fix", "pushed")
-    state.pop("pending_findings", None)
     state["stage"] = "review"
     save_state(state)
 
@@ -467,8 +465,7 @@ def main() -> None:
     ap.add_argument("--max-cycles", type=int, default=3, help="Max review->fix cycles (default 3).")
     ap.add_argument("--max-implement-iterations", type=int, default=10,
                     help="Max implement/fix iterations per stage (default 10).")
-    ap.add_argument("--clean-bar", default="Critical or Important",
-                    help="Severity that blocks 'clean' (default: 'Critical or Important').")
+    ap.add_argument("--clean-bar", help=argparse.SUPPRESS)  # retired; canonical review verdict owns the bar
     ap.add_argument("--validate", dest="validate_cmd",
                     help="Authoritative shell command for green (exit 0 = pass). "
                          "If omitted, falls back to the VALIDATION: GREEN sentinel.")
@@ -513,7 +510,6 @@ def main() -> None:
             "cycle": 0,
             "max_cycles": args.max_cycles,
             "max_implement_iterations": args.max_implement_iterations,
-            "clean_bar": args.clean_bar,
             "validate_cmd": args.validate_cmd,
             "until": args.until_stage,
             "base": args.base,

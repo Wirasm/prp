@@ -57,9 +57,9 @@ The STOP-and-report clause is the escalation path: the orchestrator gates the bl
 
 | Workstream           | Prompt core                                                                                                                                              |
 | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GitHub issue         | `Use the prp-issue skill: first investigate #N, then fix #N.`                                                                                            |
-| Feature, plan exists | `Use the prp-implement skill to execute the plan at <path>, then use the prp-pr skill to open a PR.`                                                     |
-| Feature, autonomous  | `Use the prp-loop skill for: <feature description>.` (the loop handles plan→implement→pr→review; the orchestrator then only gates the final merge)       |
+| Issue / PRD / document / idea | `Use the prp-deliver skill to take <input> to a reviewed PR. Stop at its published findings gate unless a standing decision applies.`               |
+| Existing plan              | `Use the prp-deliver skill to take the plan at <path> to a reviewed PR. Stop at its published findings gate unless a standing decision applies.`       |
+| Detached autonomous work   | `Use the prp-loop skill for: <input>.` (the headless loop owns persisted stage state and bounded review/fix cycles)                                      |
 | Plan only (staged)   | `Use the prp-plan skill to create an implementation plan for: <feature>.` — gate the plan, then message the same agent to proceed with prp-implement |
 | Feasibility unknown  | `Use the prp-spike skill to settle: <the question>.` — ends in a PROVEN / DISPROVEN / CONDITIONAL verdict and **no PR**; gate the verdict, then launch or drop the workstreams that depended on it |
 

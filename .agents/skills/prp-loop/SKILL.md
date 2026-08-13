@@ -1,6 +1,6 @@
 ---
 name: prp-loop
-description: Run the autonomous cyclic PRP pipeline end to end (plan → implement and PR → review, looping review→fix until the PR is clean). Use when the user wants to "ship feature X end to end", "run the full PRP loop", "auto-implement and open a PR for a feature", or invokes $prp-loop.
+description: Runs the detached, resumable PRP pipeline in fresh headless CLI sessions, cycling plan, implementation, PR, review, and corrections with persisted state and safety bounds. Use only when the user explicitly asks to "run the full PRP loop", "run this detached", "continue across context windows", use headless autonomous execution, resume a saved loop, or invokes $prp-loop. Use prp-deliver for ordinary end-to-end delivery.
 ---
 
 > **Arguments:** `$ARGUMENTS` (and `$1`, `$2`, ...) refer to the arguments given when this skill was invoked. Take them from the user's request; if absent, infer them from the conversation.
@@ -42,8 +42,8 @@ uv run .agents/skills/prp-loop/scripts/prp_loop.py "$ARGUMENTS" --cli codex --un
 1. **plan** — `prp-plan` writes the plan under the project's PRP store at `$PRP_DIR/plans/<feature>.plan.md`.
 2. **implement** — `prp-implement` executes and validates the plan, commits the work, and opens the PR (bounded by `--max-implement-iterations`).
 3. **pr compatibility** — if an older implementation run did not open a PR, `prp-pr` does so once.
-4. **review** — `prp-review` runs its default code and seam reviewers and writes a `{clean, blocking}` verdict.
-5. **cycle** — if not clean, the blocking findings feed back into a fix pass → push → re-review, up to `--max-cycles`. Clean → done.
+4. **review** — `prp-review` runs its default code and seam reviewers, writes the canonical report, and publishes that complete report to GitHub.
+5. **cycle** — if the verdict needs fixes, the complete report, plan, and live PR feed into a fresh `prp-implement` correction pass → push → re-review, up to `--max-cycles`. Ready to merge → done; review incomplete → halt.
 
 ## Safety
 

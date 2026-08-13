@@ -93,13 +93,13 @@ The `.claude/skills/` directory contains the core PRP workflow as Agent Skills �
 | `/prp-prd`       | Interactive PRD generator with implementation phases     |
 | `/prp-plan`      | Create implementation plan (from PRD or free-form input) |
 | `/prp-implement` | Execute a plan through validated commit and PR            |
+| `/prp-deliver`   | Take an issue, plan, document, or idea to a reviewed PR   |
 | `/prp-prd-update` | Maintain PRD phase status and delivery links             |
 
-### Issue & Debug Workflow
+### Debug Workflow
 
 | Command                  | Description                                      |
 | ------------------------ | ------------------------------------------------ |
-| `/prp-issue`             | Investigate a GitHub issue, then implement the fix (`investigate` / `fix` verbs) |
 | `/prp-debug`             | Diagnose a root cause and publish the evidence to the matching GitHub issue |
 
 ### Git & Review
@@ -140,8 +140,8 @@ The `.claude/skills/` directory contains the core PRP workflow as Agent Skills �
 1. **plan** — writes `~/.prp/<project-key>/plans/<feature>.plan.md`
 2. **implement** — executes and validates the plan, commits the work, and opens the PR
 3. **pr compatibility** — opens the PR only if an older implementation run did not
-4. **review** — reviews the PR and writes a `{clean, blocking}` verdict
-5. **cycle** — if not clean, blocking findings feed back into a fix pass → push → re-review, until clean or `--max-cycles` is reached
+4. **review** — publishes the complete canonical review report to the PR
+5. **cycle** — if fixes are needed, the full report feeds a correction pass → push → re-review, until ready or `--max-cycles` is reached
 
 ### Usage
 
@@ -198,16 +198,16 @@ Creates implementation plan from description
 /prp-implement ~/.prp/<project-key>/plans/add-pagination.plan.md
 ```
 
-### Bug Fixes: Issue Workflow
+### Any Work: Input to Reviewed PR
 
 ```
-/prp-issue investigate 123
+/prp-deliver 123
     ↓
-Analyzes issue, creates investigation artifact
+Creates or resolves the plan, implements it, commits, and opens the PR
     ↓
-/prp-issue fix 123
+Publishes the complete agent review on the PR
     ↓
-Implements fix, creates PR
+Pauses for finding decisions, then fixes and re-reviews as needed
 ```
 
 ---
@@ -221,16 +221,13 @@ Artifacts and runtime state are stored outside the repository in a per-project d
 ├── project.json       # Canonical project path and name
 ├── prds/              # Product requirement documents
 ├── plans/             # Implementation plans
-│   └── completed/     # Archived completed plans
 ├── research/          # Codebase research
 ├── research-plans/    # Multi-agent research plans
 ├── reports/           # Implementation reports
 ├── reviews/           # Human-readable PR reviews
-├── issues/            # Issue investigation artifacts
-│   └── completed/     # Archived completed investigations
 ├── debug/             # Root-cause analysis reports
 ├── orchestration/     # Parallel-workstream run files
-└── state/             # Loop state, verdicts, logs, and hook sentinels
+└── state/             # Loop state, logs, and hook sentinels
 ```
 
 The project key is derived from the canonical main-checkout path, so all linked worktrees share the same store. Set `PRP_HOME` to override the default `~/.prp` root.

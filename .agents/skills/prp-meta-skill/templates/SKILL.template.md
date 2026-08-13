@@ -34,7 +34,7 @@ description: <What it does in one phrase>. Use when the user wants to "<trigger 
 <!--
 Authoring reminders (delete before shipping):
 - description: third person + literal trigger phrases + /name. ≤1024 chars.
-- body: imperative, lean (1,500–2,000 words). Detail → references/. Output shapes → templates/.
+- body: imperative, the smallest complete decision spine. Detail → references/. Output shapes → templates/.
 - match structure to the skill TYPE (workflow / artifact-generator / knowledge / tool-wrapper); don't force a workflow shape onto a knowledge skill.
 - context can be bundled (references/templates), external (a file path or URL the body cites), or gathered from the user at runtime — pick per ownership/volatility.
 - both user- and agent-invocable: do NOT set user-invocable/disable-model-invocation.

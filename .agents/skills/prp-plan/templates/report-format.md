@@ -14,6 +14,7 @@ Lead with the recommendation, then provide the artifact and only the evidence us
 
 {If from an issue:}
 **Source:** `{issue reference or URL}`
+**Published plan:** `{verified issue comment URL}`
 
 {If research or a spike decided the architecture:}
 **Decisive evidence:** {source or spike verdict and absolute report path}
@@ -24,7 +25,7 @@ Lead with the recommendation, then provide the artifact and only the evidence us
 {If a minor decision remains:}
 **Decision to confirm:** {recommendation and consequence}
 
-**Next:** Implement with `$prp-implement {expanded absolute plan path}`.
+**Next:** Implement with `$prp-implement {expanded absolute plan path}` or its source issue reference.
 ```
 
 Omit non-applicable lines. Never include a confidence score, file-count inventory, or generic complexity label.

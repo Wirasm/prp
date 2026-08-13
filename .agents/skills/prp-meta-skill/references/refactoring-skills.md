@@ -50,7 +50,7 @@ In SKILL.md, replace each extracted block with its pointer (mandatory-read or la
 - No content is duplicated between body and any reference (delete the original once moved).
 - References are one level deep (linked directly from SKILL.md).
 
-Aim the trimmed body at 1,500–2,000 words.
+Aim for the smallest body that still contains the complete decision spine. Do not add prose to reach a word target.
 
 ## Step 5 — Behavior-preservation check
 
@@ -64,7 +64,7 @@ If anything is uncertain, prefer keeping it in the body.
 
 ## Step 6 — Validate
 
-Run `validation.md` gates, including the behavior-preservation gate and the `plugin-dev:skill-reviewer` agent.
+Run `validation.md` gates, including the fidelity gate and the `plugin-dev:skill-reviewer` agent.
 
 ---
 
@@ -86,5 +86,7 @@ prp-plan/
 ```
 SKILL.md keeps the workflow and decision spine, and at the write-the-plan step says:
 > Before writing the plan, read `templates/plan-document.md` and keep its required semantic spine. For task detail see `references/task-format.md`; when a diagram materially improves human review, see `references/visuals.md`.
+
+When the requested change deliberately alters behavior or output, switch to `consolidating-workflows.md`: document and validate the new contract instead of claiming behavior preservation.
 
 The body that loads every run stays focused while the output shape and conditional craft load only when the planning step needs them. When the requested change deliberately alters behavior or output, document and validate that new contract instead of claiming behavior preservation.

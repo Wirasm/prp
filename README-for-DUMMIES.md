@@ -42,14 +42,14 @@ Get the skills one of two ways (see the main `README.md` for details):
 | `/prp-prd`       | Create a PRD with implementation phases         |
 | `/prp-plan`      | Create an implementation plan                   |
 | `/prp-implement` | Execute a plan with validation loops            |
+| `/prp-deliver`   | Take any work input to a reviewed PR            |
 | `/prp-loop`      | Autonomous pipeline: plan → implement → pr → review |
 | `/prp-orchestrate` | Run many workstreams in parallel worktrees, you sit at the gates |
 
-### Issue & Debug Workflow
+### Debug Workflow
 
 | Command       | What it does                                      |
 | ------------- | ------------------------------------------------ |
-| `/prp-issue`  | Investigate a GitHub issue, then implement the fix (`investigate` / `fix`) |
 | `/prp-debug`  | Deep root cause analysis (5 Whys)                |
 
 ### Git & Review
@@ -100,12 +100,10 @@ Skip the PRD. Go straight to a plan:
 /prp-implement .claude/PRPs/plans/add-pagination.plan.md
 ```
 
-### For Bug Fixes (GitHub Issues)
+### From an Issue or Idea to a Reviewed PR
 
 ```
-/prp-issue investigate 123
-    ↓
-/prp-issue fix 123
+/prp-deliver 123
 ```
 
 ### For Debugging (Errors, Stack Traces)
@@ -163,9 +161,7 @@ After implementation:
 .claude/PRPs/
 ├── prds/              # PRD documents
 ├── plans/             # Implementation plans
-│   └── completed/     # Archived plans
 ├── reports/           # Implementation reports
-├── issues/            # Issue investigations
 └── reviews/           # PR reviews
 ```
 
@@ -200,8 +196,7 @@ Autonomous execution until the PR is clean.
 ### "There's a bug"
 
 ```bash
-/prp-issue investigate 456
-/prp-issue fix 456
+/prp-deliver 456
 ```
 
 ### "I'm done, let's commit"
@@ -233,7 +228,7 @@ Previous commands like `/prp-base-create`, `/prp-spec-create`, `/api-contract-de
 
 1. Big feature? → `/prp-prd` → `/prp-plan` → `/prp-loop`
 2. Medium feature? → `/prp-plan` → `/prp-implement`
-3. GitHub issue? → `/prp-issue investigate` → `/prp-issue fix`
+3. Issue, plan, document, or idea to reviewed PR? → `/prp-deliver <input>`
 4. Weird bug? → `/prp-debug "error message"`
 5. Done? → `/prp-commit` → `/prp-pr`
 
