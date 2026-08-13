@@ -163,14 +163,18 @@ def cmd_remove(args: argparse.Namespace) -> None:
     dirty = [l for l in git("status", "--porcelain", cwd=path).splitlines() if l]
     if dirty and not args.force:
         die(f"worktree has {len(dirty)} uncommitted change(s) — commit/stash them, or pass --force to discard")
-    git("worktree", "remove", *(["--force"] if args.force else []), str(path), cwd=root)
-    print(f"removed worktree {path}")
     if args.delete_branch:
         base = args.base or default_base(root)
         merged = git_ok("merge-base", "--is-ancestor", branch, base, cwd=root)
         if not merged and not args.force:
             die(f"branch '{branch}' is not merged into '{base}' — kept. Merge it, or pass --force to delete anyway")
-        git("branch", "-D" if args.force else "-d", branch, cwd=root)
+    git("worktree", "remove", *(["--force"] if args.force else []), str(path), cwd=root)
+    print(f"removed worktree {path}")
+    if args.delete_branch:
+        # The explicit ancestry proof above is authoritative. `git branch -d`
+        # can still refuse based on a stale or different upstream, so delete
+        # only after our selected base has proven the branch safe.
+        git("branch", "-D", branch, cwd=root)
         print(f"deleted branch {branch}")
     else:
         pushed = git_ok("rev-parse", "--verify", "--quiet", f"origin/{branch}", cwd=root)
