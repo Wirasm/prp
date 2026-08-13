@@ -1,6 +1,6 @@
 ---
 name: prp-implement
-description: Implements and validates existing PRP plans and applies dispositioned review findings to their open pull requests. Always use when executing an implementation plan, implementing an issue that already has a local or published plan, correcting a PR from a PRP review report, when another PRP workflow reaches its implementation or correction step, or when the user invokes the prp-implement skill.
+description: Implements and validates existing PRP plans and corrects reviewed pull requests. Always use when executing an implementation plan, implementing an issue that already has a local or published plan, correcting a PR from a PRP review report, when another PRP workflow reaches its implementation or correction step, or when the user invokes the prp-implement skill.
 ---
 
 > **Kild lane:** you are running inside a kild room, in a workspace (worktree + branch) the kild engine assigned. The driver owns isolation and publishing — SKIP any step below that creates or switches branches or worktrees, pulls or rebases the base branch, pushes, opens PRs, or moves/archives plan artifacts, and never run `gh pr checkout`. Your job ends at implement → validate → commit in the current workspace, reporting evidence. Where a step spawns subagents, do that analysis inline — or ask the room's orchestrator to invite a helper agent.
@@ -9,14 +9,14 @@ description: Implements and validates existing PRP plans and applies disposition
 
 # Implement Plan
 
-Execute the supplied implementation plan through a validated commit and pull request, or apply decided review findings to that pull request. Keep implementation, commit, and PR delivery in this context; leave review judgment to its own context.
+Execute the supplied implementation plan through a validated commit and pull request, or apply review findings to that pull request. Keep implementation, commit, and PR delivery in this context; leave review judgment to its own context.
 
 **Input**: $ARGUMENTS
 
 ## Mode
 
 - A plan path starts the initial implementation.
-- `review` plus a review report, PR, or finding decisions starts a correction pass. Resolve and read the original plan, implementation report, live PR diff and comments, complete canonical review report, and the user's dispositions before editing. Suggestions remain optional; Critical or Important findings require correction or an evidence-backed disagreement.
+- `review` plus a review report, PR, or finding decisions starts a correction pass. Resolve and read the original plan, implementation report, live PR diff and comments, complete canonical review report, and any explicit finding dispositions before editing. Human dispositions are binding when supplied. Otherwise Critical or Important findings require correction or an evidence-backed disagreement; suggestions remain optional.
 
 Resume the original implementation context for corrections when it is available. In a fresh context, reconstruct the complete contract from those durable artifacts rather than from an abbreviated findings summary.
 
@@ -48,7 +48,7 @@ Use the current feature branch or assigned worktree when one exists. If running 
 
 ## 2. Implement the plan
 
-For initial implementation, execute tasks in dependency order and read each referenced pattern before changing its task. For a correction pass, change only what the accepted findings require and preserve the plan's outcome and invariant. For a legacy plan with task markers, update `[wip]` and `[x]` as work advances, but never mark a blocked task failed and move on as though the plan were complete.
+For initial implementation, execute tasks in dependency order and read each referenced pattern before changing its task. For a correction pass, change only what the blocking findings or explicit dispositions require and preserve the plan's outcome and invariant. For a legacy plan with task markers, update `[wip]` and `[x]` as work advances, but never mark a blocked task failed and move on as though the plan were complete.
 
 Apply these implementation principles:
 
@@ -65,7 +65,7 @@ Record deviations and implementation-only decisions in the implementation report
 
 ## 3. Validate to green
 
-Run each task's specified validation after the coherent task, then run every applicable command or procedure in the plan's Validation section and verify every Acceptance criterion. A correction pass also runs the focused regression check for each accepted finding. For a legacy plan, honor its Validation Commands and Acceptance Criteria. Add or adapt a missing check only when repository evidence shows the plan's gate is incomplete.
+Run each task's specified validation after the coherent task, then run every applicable command or procedure in the plan's Validation section and verify every Acceptance criterion. A correction pass also runs the focused regression check for each corrected finding. For a legacy plan, honor its Validation Commands and Acceptance Criteria. Add or adapt a missing check only when repository evidence shows the plan's gate is incomplete.
 
 On failure, fix the cause and rerun the affected check before continuing. Do not trust the first passing suite blindly: inspect suspicious or weak tests and verify the behavior they claim to cover. Never report completion with a known failing required check.
 
@@ -89,7 +89,7 @@ If committing, pushing, PR creation, or the required PRD update fails, leave the
 
 ## 6. Verify and hand off
 
-Re-read the branch diff, updated plan, report, and—during correction—the review report. Confirm the intended implementation or accepted corrections are complete, unrelated work remains untouched, every reported validation result is factual, the commit contains the intended scope, the PR targets the correct base, and the report exists at the stated absolute path.
+Re-read the branch diff, updated plan, report, and—during correction—the review report. Confirm the intended implementation or required corrections are complete, unrelated work remains untouched, every reported validation result is factual, the commit contains the intended scope, the PR targets the correct base, and the report exists at the stated absolute path.
 
 Return the implemented outcome, validation summary, deviations or blocker and recovery action, commit, PR URL, tracked follow-up issues, conditional PRD update, and absolute report path. Do not review, merge, move, or archive the plan.
 

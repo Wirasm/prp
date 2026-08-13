@@ -43,7 +43,7 @@ Keep one context when it owns an execution lifecycle and accumulated reasoning m
 
 Use an independent context when independence is the feature, such as reviewing implementation. A fresh fallback context must reconstruct the full contract from durable artifacts and live state.
 
-Put human decisions between judgment and mutation. Publish the evidence first, then pause unless an explicit standing decision authorizes the composition to proceed. Feed the human's dispositions back to the execution owner and re-run independent validation or review after changes.
+Define the composition owner's autonomy contract: its terminal condition, which blockers truly require a human, and whether published reports are informational or decision gates. Publication creates visibility; it does not automatically transfer ownership. An autonomous delivery should resolve actionable findings and re-run independent review until its terminal condition, pausing only for product shape, authority, access, or a no-progress blocker that it cannot settle. An interactive workflow should publish evidence before asking for a decision, then return the disposition to the execution owner.
 
 ## 5. Assign maintainers and terminal outcomes
 

@@ -22,9 +22,9 @@ Everything ships as **skills** (not slash commands), so each one is both **user-
 | Skill | Description |
 |-------|-------------|
 | `/prp-core:prp-implement` | Execute a plan through validated commit and PR; write the durable implementation report |
-| `/prp-core:prp-deliver` | Take an issue, PRD, document, plan, or idea through a published review gate |
+| `/prp-core:prp-deliver` | Autonomously take an issue, PRD, document, plan, or idea to a published `READY TO MERGE` review |
 | `/prp-core:prp-loop` | **Detached** cyclic pipeline: plan → implement → PR → review, looping review→fix until clean. `--until implement` stops after a green implementation and open PR |
-| `/prp-core:prp-orchestrate` | Turn the session into an **orchestrator**: coordinate parallel workstreams running PRP skills in git worktrees, with review gates, a standing-decisions log, and merge sequencing |
+| `/prp-core:prp-orchestrate` | Turn the session into an **orchestrator**: coordinate autonomous delivery workstreams in git worktrees, with human-only and merge gates, a standing-decisions log, and merge sequencing |
 | `/prp-core:prp-commit` | Smart commit with natural-language file targeting |
 | `/prp-core:prp-pr` | Push the branch and open a PR with template support |
 
@@ -112,7 +112,7 @@ repeat /prp-core:prp-plan for the next phase
 
 ```
 /prp-core:prp-deliver 123
-    ↓  plan → implement → PR → published review → findings gate
+    ↓  plan → implement → PR → review → correct → READY TO MERGE
 ```
 
 ## Installation

@@ -35,7 +35,9 @@ Context:
 - Other work in flight: <branches/PRs touching nearby files, and to stay off them>
 
 Definition of done: <PR opened against <base> with validations green / plan file
-written / report written>. Report the PR number and a 3-line summary as your final message.
+written / report written>. Carry the burden of proof: return every promised artifact and
+authoritative terminal signal, not only a summary. Report the PR number and a 3-line
+summary as your final message.
 
 If blocked on a decision only a human can make: STOP and report the blocker precisely
 (what you need decided, the options, your recommendation). You will receive the decision
@@ -57,8 +59,8 @@ The STOP-and-report clause is the escalation path: the orchestrator gates the bl
 
 | Workstream           | Prompt core                                                                                                                                              |
 | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Issue / PRD / document / idea | `Use the prp-deliver skill to take <input> to a reviewed PR. Stop at its published findings gate unless a standing decision applies.`               |
-| Existing plan              | `Use the prp-deliver skill to take the plan at <path> to a reviewed PR. Stop at its published findings gate unless a standing decision applies.`       |
+| Issue / PRD / document / idea | `Use the prp-deliver skill to own <input> autonomously through a published READY TO MERGE review. Return only the reviewed PR or a concrete blocker only a human can resolve.` |
+| Existing plan              | `Use the prp-deliver skill to own the plan at <path> autonomously through a published READY TO MERGE review. Return only the reviewed PR or a concrete blocker only a human can resolve.` |
 | Detached autonomous work   | `Use the prp-loop skill for: <input>.` (the headless loop owns persisted stage state and bounded review/fix cycles)                                      |
 | Plan only (staged)   | `Use the prp-plan skill to create an implementation plan for: <feature>.` — gate the plan, then message the same agent to proceed with prp-implement |
 | Feasibility unknown  | `Use the prp-spike skill to settle: <the question>.` — ends in a PROVEN / DISPROVEN / CONDITIONAL verdict and **no PR**; gate the verdict, then launch or drop the workstreams that depended on it |

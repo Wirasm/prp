@@ -207,7 +207,7 @@ Creates or resolves the plan, implements it, commits, and opens the PR
     ↓
 Publishes the complete agent review on the PR
     ↓
-Pauses for finding decisions, then fixes and re-reviews as needed
+Fixes review findings autonomously and re-reviews until ready to merge
 ```
 
 ---

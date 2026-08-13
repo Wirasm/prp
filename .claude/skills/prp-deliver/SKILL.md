@@ -1,65 +1,65 @@
 ---
 name: prp-deliver
-description: Delivers work from an issue, PRD, document, plan, or prompt through planning, implementation, pull request, and published review. Always use when the user asks to take work to a reviewed PR, implement or ship an issue end to end, go from plan to PR, continue after a PRP review, or when another PRP workflow reaches full delivery. Use /prp-plan for plan-only work, /prp-review for review-only work, and /prp-loop for detached autonomous execution.
+description: Autonomously delivers work from an issue, PRD, document, plan, or prompt through planning, implementation, pull request, correction, and a published READY TO MERGE review. Always use when the user asks to take work to a reviewed PR, implement or ship an issue end to end, go from plan to PR, continue after a PRP review, or when another PRP workflow reaches full delivery. Use /prp-plan for plan-only work, /prp-review for review-only work, and /prp-loop for detached resumable execution.
 argument-hint: "<issue|PRD|document|plan|description|reviewed PR> [--base <branch>] [review scopes]"
 ---
 
 # Deliver to a Reviewed PR
 
-Own one outcome from its source input to a reviewed GitHub pull request. Compose the specialist PRP skills; do not reproduce their planning, implementation, commit, PR, or review instructions here.
+Own one outcome from source input to a published `READY TO MERGE` review. Act as the sub-orchestrator for this delivery: start and steer specialist agents, preserve their handoff artifacts, and do not implement or review the work in this context.
 
 **Input**: $ARGUMENTS (if absent, use the conversation).
 
-## 1. Resolve the entry point
+## Ownership contract
 
-Accept an issue or tracker URL, PRD, document, existing `.plan.md`, free-form request, or conversation context.
+- Continue autonomously through plan, implementation, PR, review, correction, and re-review. A published report is observable progress, not a pause point.
+- Run stages sequentially in the delivery owner's checkout. Only one implementation or correction agent may mutate it at a time.
+- Use a fresh agent for planning, a fresh agent for implementation, and a fresh independent agent for every review. Resume the implementation agent for corrections while it remains available.
+- Keep the plan path, implementation report, PR, latest review report, publication URL, and agent handles. Durable artifacts—not recalled summaries—cross context windows.
+- Carry the burden of proof. The caller should never have to reconstruct the workstream or trust a self-reported "done": prove the implementation with green validation, the live PR, the complete published review, and its `READY TO MERGE` verdict.
+- Stop only when a product decision, missing prerequisite primitive, inaccessible dependency, permission boundary, or repeated no-progress failure cannot be resolved autonomously. Report the exact decision or access needed and a recommendation.
+- Do not merge the PR. The caller or outer orchestrator owns the merge gate.
 
-- Existing plan: read its source metadata. If it is issue-derived and lacks a verified `Plan Publication`, invoke `/prp-plan publish <path>` before using it.
-- Issue reference with an already published plan: let `/prp-implement` resolve the plan by source metadata when the user asks to continue that work; do not make them remember its filename.
-- Existing PR with a published `prp-review` report and finding decisions: resume at the findings gate. Resolve its plan and implementation report from the PR links and project store; do not plan or implement the original scope again.
-- Every other input: invoke `/prp-plan` with the complete input. Let the planner retrieve tracker context, investigate broken behavior, research, spike, or hold a design gate as needed.
-- Review-only request or an existing contributor PR: use `/prp-review` instead and stop.
+## 1. Resolve and plan
 
-Do not translate an issue into a second investigation artifact. The plan is the implementation contract.
+Accept an issue or tracker URL, PRD, document, existing `.plan.md`, free-form request, conversation context, or reviewed PR.
 
-Require the absolute plan path before continuing. For every issue-derived plan—regardless of whether the invocation began with the issue or a plan path—also require the verified published-plan URL; stop at the planner's publication blocker rather than beginning an implementation whose shared contract is missing.
+- Review-only request or contributor PR: use `/prp-review`; this is not a delivery run.
+- Existing plan: use it. If it is issue-derived and lacks a verified `Plan Publication`, start a planning agent with `/prp-plan publish <absolute-path>` first.
+- Issue whose plan was already published: let `/prp-implement` resolve it from source metadata; never require the user to remember its filename.
+- Existing PR with a published PRP review: resolve its plan and implementation report, then enter correction or review without repeating completed stages.
+- Otherwise start a fresh agent with this prompt:
+
+> Invoke `/prp-plan` against `<complete input>`. Additional caller context: `<relevant context and explicit base, if any>`. Return the absolute plan path, source and publication URLs, and any concrete blocker.
+
+Require an absolute plan path and, for issue-derived plans, a verified published-plan URL. The plan is the implementation contract; do not create a second investigation artifact.
 
 ## 2. Implement and open the PR
 
-Invoke `/prp-implement` with the absolute plan path—or the source issue when resuming a published plan—and any explicit base. Its context owns implementation, validation, commit, PR creation, linked PRD updates, and the implementation report.
+Start a fresh agent in the same checkout with this prompt:
 
-Stop on `VALIDATION: FAILED`. Do not review incomplete implementation or bypass a product, primitive, validation, delivery, or tracking blocker.
+> Invoke `/prp-implement` on `<absolute plan path or source issue>` with base `<explicit base, if any>`. Own implementation through validation, scoped commit, PR creation, linked PRD updates, and the implementation report. Return `VALIDATION: GREEN`, the absolute report path, and the PR URL; otherwise return the concrete blocker.
 
-## 3. Review in an independent context
+Do not begin review without `VALIDATION: GREEN`, a live PR, and the implementation report.
 
-Invoke `/prp-review` against the verified PR in a separate review context. Pass through any review scopes the user requested. The review skill is the only path for judging the PR and the only owner of the review report.
+## 3. Review independently
 
-Require all three review outputs:
+Start a fresh agent with this prompt:
 
-- the canonical `$PRP_DIR/reviews/pr-{number}-review.md` report;
-- the complete report published on GitHub as a PR comment by default, or as a formal request-changes review when explicitly requested;
-- the verified GitHub publication URL.
+> Invoke `/prp-review` on `<PR URL or number>` with scopes `<requested scopes, if any>`. Publish the complete review to GitHub. Return the verdict, canonical review-report path, verified publication URL, and any review blocker.
 
-Never replace the report with a private verdict, abbreviated finding list, or composition-specific review artifact.
+Require the canonical `$PRP_DIR/reviews/pr-{number}-review.md`, its complete GitHub publication, and the verified publication URL. The review skill is the only path for judging the PR.
 
-## 4. Hold the findings gate
+## 4. Correct until ready
 
-Return the published report URL and pause for the user to decide what to address. Do not silently convert reviewer advice into implementation scope.
+`READY TO MERGE` completes delivery. For `NEEDS FIXES` or `REVIEW INCOMPLETE`, send the complete review report—not an abbreviated finding list—to the implementation agent:
 
-An orchestrator may cross this gate only when an explicit standing decision covers the findings. Otherwise it presents the report and recommendation to the user, records the decision, and resumes this same delivery workstream.
+> Continue this delivery by invoking `/prp-implement` in review-correction mode for `<PR>`. Read `<plan>`, `<implementation report>`, and the complete review at `<review report>`. Resolve every blocking finding; if evidence proves one invalid, record that evidence. Restore `VALIDATION: GREEN`, commit only the correction scope, push the existing PR branch, and update the implementation report.
 
-`READY TO MERGE` completes this skill. `REVIEW INCOMPLETE` is a blocker until the missing validation or evidence is resolved. `NEEDS FIXES` continues only after the user or an applicable standing decision dispositions the findings.
+If that agent is unavailable, start a fresh correction agent with the same complete artifact bundle. Then start another fresh review agent and repeat. Do not ask the user which findings to address: resolve blocking findings autonomously, preserve evidence-backed disagreements for the next reviewer, and treat suggestions as optional unless they affect correctness or the requested outcome.
 
-## 5. Feed decisions back into implementation
+Do not impose an arbitrary cycle limit. If the same blocker survives without new evidence or progress, stop with the attempts made, the published review URL, and the concrete decision or capability needed.
 
-Return the absolute plan path, implementation report, live PR, complete review report, and the user's finding dispositions to the implementation owner.
+## 5. Return the outcome
 
-Resume the original implementation context when it remains available. It owns the code and retains the reasoning that produced it. If that context cannot be resumed, start a fresh `/prp-implement` review-correction run with every artifact above; never reconstruct the task from one-line findings.
-
-The implementation owner addresses the accepted findings, validates, commits only the correction scope, pushes the existing PR branch, and updates the implementation report. A declined blocking finding needs concrete evidence, not preference.
-
-After any correction or evidence-backed disagreement, run `/prp-review` again in a fresh review context and publish the new complete report. Repeat the findings gate until the verdict is `READY TO MERGE` or a concrete blocker requires the user.
-
-## 6. Report the delivered outcome
-
-Return the outcome, plan path, implementation report path, PR URL, latest review verdict, latest review report path, GitHub publication URL, validation summary, and any concrete blocker. Do not merge the PR or mark a linked PRD phase complete; those occur only after a separately verified merge.
+Return the implemented outcome, absolute plan and implementation-report paths, PR URL, `READY TO MERGE` verdict, latest review-report path, GitHub publication URL, and validation summary. These are the proof the human or outer orchestrator verifies before accepting the workstream. If genuinely blocked, return the same artifact bundle plus the exact blocker and recommended next action so the delivery is not lost in a private agent report.
