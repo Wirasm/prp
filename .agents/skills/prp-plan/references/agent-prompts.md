@@ -1,85 +1,55 @@
-# Subagent Prompts — Intelligence Gathering
+# Planner Subagent Prompts
 
-The exact prompt text for every subagent launch in Phases 2, 3, and 5. Fill the `[bracketed]` slots before sending; do not otherwise reword the prompts.
+Adapt these prompts to the feature and known uncertainty. The agents gather evidence; the planner decides what should change.
 
-## Phase 2 — codebase-explorer prompt
+## Codebase explorer
 
-Spawn the `codebase-explorer` subagent:
+Use `codebase-explorer`:
 
-```
-Find all code relevant to implementing: [feature description].
+```text
+Map the code relevant to [problem and observable invariant].
 
-LOCATE:
-1. Similar implementations - analogous features with file:line references
-2. Naming conventions - actual examples of function/class/file naming
-3. Error handling patterns - how errors are created, thrown, caught
-4. Logging patterns - logger usage, message formats
-5. Type definitions - relevant interfaces and types
-6. Test patterns - test file structure, assertion styles, test file locations
-7. Configuration - relevant config files and settings
-8. Dependencies - relevant libraries already in use
+Find the owning entry points, related implementation and tests, configuration, extension points, and the closest existing primitives that could compose into the outcome. Include useful variations where the codebase handles the same concern differently.
 
-Categorize findings by purpose (implementation, tests, config, types, docs).
-Return ACTUAL code snippets from codebase, not generic examples.
+Return a concise evidence map with precise file:line references and short actual snippets only where they clarify a contract. Identify repository commands that validate this area. Document what exists; do not design the solution.
 ```
 
-## Phase 2 — codebase-analyst prompt
+## Codebase analyst
 
-Spawn the `codebase-analyst` subagent:
+Use `codebase-analyst`:
 
-```
-Analyze the implementation details relevant to: [feature description].
+```text
+Trace how [current behavior related to the invariant] actually works.
 
-TRACE:
-1. Entry points - where new code will connect to existing code
-2. Data flow - how data moves through related components
-3. State changes - side effects in related functions
-4. Contracts - interfaces and expectations between components
-5. Patterns in use - design patterns and architectural decisions
+Follow control flow, data flow, state ownership, side effects, configuration, and boundaries from [known entry point, if any] to the observable result. Distinguish behavior proved at each layer from assumptions or behavior owned by an external tool.
 
-Document what exists with precise file:line references. No suggestions or improvements.
+Return the decisive path with precise file:line references, contracts, and observation points. Document what exists; do not recommend a future design.
 ```
 
-## Phase 3 — web-researcher prompt
+## Targeted follow-up
 
-Spawn the `web-researcher` subagent:
+Reuse the relevant agent rather than launching a generic architecture phase:
 
-```
-Research external documentation relevant to implementing: [feature description].
+```text
+Resolve this remaining planning question: [specific uncertainty].
 
-FIND:
-1. Official documentation for involved libraries (match versions from package.json: [list relevant deps and versions])
-2. Known gotchas, breaking changes, deprecations for these versions
-3. Security considerations and best practices
-4. Performance optimization patterns
-
-VERSION CONSTRAINTS:
-- [library]: v{version} (from package.json)
-- [library]: v{version}
-
-Return findings with:
-- Direct links to specific doc sections (not just homepages)
-- Key insights that affect implementation
-- Gotchas with mitigation strategies
-- Any conflicts between docs and existing codebase patterns found in Phase 2
+Inspect [integration points] and report only evidence that changes the answer: ownership, contract, failure behavior, precedent, and exact file:line references. State what the code proves and what remains unknown. Do not propose implementation.
 ```
 
-## Phase 5 — architecture deep-dive prompt
+## Web researcher
 
-Spawn the `codebase-analyst` subagent:
+Use `web-researcher` only for an external architectural hinge:
 
+```text
+Determine whether [specific product/library/tool and version] supports [primitive or observable behavior]. This answer decides between [simple approach] and [larger approach].
+
+Prioritize official documentation, source, schemas, release notes, and reproducible examples. Separate documented fact from inference. Return direct citations, version/date applicability, the exact control or API if it exists, limitations, and the smallest behavior that still needs an empirical spike. Do not provide a generic best-practices survey.
 ```
-Analyze the architecture around these integration points for: [feature description].
 
-INTEGRATION POINTS (from Phase 2):
-- [entry point 1 from explorer/analyst findings]
-- [entry point 2]
+## Prompt quality
 
-ANALYZE:
-1. How data flows through each integration point
-2. What contracts exist between components
-3. What side effects occur at each stage
-4. What error handling patterns are in place
-
-Document what exists with precise file:line references. No suggestions.
-```
+- Give each agent the problem and invariant, not a preselected implementation.
+- Name the uncertainty that its evidence should reduce.
+- Ask for actual observation points when external behavior is involved.
+- Do not demand arbitrary counts, exhaustive inventories, or generic security/performance sections.
+- Follow up in the same agent context when the first result exposes a sharper question.

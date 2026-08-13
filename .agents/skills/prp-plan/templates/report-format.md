@@ -1,47 +1,30 @@
-# Plan Created — User Report Format
+# Plan Created — User Report
 
-**MANDATORY**: after saving the plan file, display this report to the user in exactly this structure, filling every `{placeholder}` and dropping the `{If ...}` blocks that do not apply.
+Lead with the recommendation, then provide the artifact and only the evidence useful for deciding whether to implement it.
 
 ```markdown
-## Plan Created
+## Plan ready
 
-**File**: `{expanded absolute path to $PRP_DIR/plans/{feature-name}.plan.md}`
+{One or two sentences: recommended approach, invariant, and why this is the simplest supported shape.}
 
-{If from PRD:}
-**Source PRD**: `{prd-file-path}`
-**Phase**: #{number} - {phase name}
-**PRD Updated**: Status set to `in-progress`, plan linked
+**Plan:** `{expanded absolute plan path}`
 
-{If parallel phases available:}
-**Parallel Opportunity**: Phase {X} can run concurrently in a separate worktree.
-To start: `git worktree add -b phase-{X} ../project-phase-{X} && cd ../project-phase-{X} && $prp-plan {prd-path}`
+{If from a PRD:}
+**Source:** `{PRD path}`, phase {number and name} — marked `in-progress` and linked
 
-**Summary**: {2-3 sentence feature overview}
+{If from an issue:}
+**Source:** `{issue reference or URL}`
 
-**Complexity**: {LOW/MEDIUM/HIGH} - {brief rationale}
+{If research or a spike decided the architecture:}
+**Decisive evidence:** {source or spike verdict and absolute report path}
 
-**Scope**:
-- {N} files to CREATE
-- {M} files to UPDATE
-- {K} total tasks
+{If diagrams were included:}
+**Visual review:** {UX flow, architecture, or both}
 
-**Key Patterns Discovered**:
-- {Pattern 1 from codebase-explorer/analyst with file:line}
-- {Pattern 2 from codebase-explorer/analyst with file:line}
+{If a minor decision remains:}
+**Decision to confirm:** {recommendation and consequence}
 
-**External Research**:
-- {Key doc 1 with version}
-- {Key doc 2 with version}
-
-**UX Transformation**:
-- BEFORE: {one-line current state}
-- AFTER: {one-line new state}
-
-**Risks**:
-- {Primary risk}: {mitigation}
-
-**Confidence Score**: {1-10}/10 for one-pass implementation success
-- {Rationale for score}
-
-**Next Step**: To execute, run: `$prp-implement {expanded absolute path to $PRP_DIR/plans/{feature-name}.plan.md}`
+**Next:** Implement with `$prp-implement {expanded absolute plan path}`.
 ```
+
+Omit non-applicable lines. Never include a confidence score, file-count inventory, or generic complexity label.

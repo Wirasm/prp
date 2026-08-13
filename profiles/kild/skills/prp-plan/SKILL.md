@@ -1,245 +1,124 @@
 ---
 name: prp-plan
-description: Create comprehensive feature implementation plan with codebase analysis and research. Also wires bidirectional back/forward references between existing plans (the update-references workflow). Use when the user wants to plan a feature, turn a PRD into an implementation plan, "link two plans", "add a back/forward reference", "connect related plans", or invokes the prp-plan skill.
+description: Creates an implementation-ready feature plan from a PRD, issue, document, or description using codebase evidence, first-principles reasoning, and conditional research or spikes. Use when the user asks to "plan this feature", "plan issue X", "create an implementation plan", "turn this PRD into a plan", investigate how a change should be built, link related plans, or invokes the prp-plan skill.
 ---
 
 > **Kild lane:** you are running inside a kild room, in a workspace (worktree + branch) the kild engine assigned. The driver owns isolation and publishing — SKIP any step below that creates or switches branches or worktrees, pulls or rebases the base branch, pushes, opens PRs, or moves/archives plan artifacts, and never run `gh pr checkout`. Your job ends at implement → validate → commit in the current workspace, reporting evidence. Where a step spawns subagents, do that analysis inline — or ask the room's orchestrator to invite a helper agent.
 
 > **Arguments:** `$ARGUMENTS` (and `$1`, `$2`, ...) refer to the arguments given when this skill was invoked. Take them from the user's request; if absent, infer them from the conversation.
 
-<objective>
-Transform "$ARGUMENTS" into a battle-tested implementation plan through systematic codebase exploration, pattern extraction, and strategic research.
+# PRP Plan
 
-**Core Principle**: PLAN ONLY - no code written. Create a context-rich document that enables one-pass implementation success.
+Produce a plan a human can scan and an implementation agent can execute without rediscovering the design. Identify the invariant, find the existing primitives, and choose the smallest solution supported by evidence.
 
-**Execution Order**: CODEBASE FIRST, RESEARCH SECOND. Solutions must fit existing patterns before introducing new ones.
+Plan only. Do not implement, commit, or open a PR. A spike is allowed only to settle an architectural hinge; its code remains throwaway under the `prp-spike` contract.
 
-**Agent Strategy**: Use specialized agents for intelligence gathering:
-- `codebase-explorer` — finds WHERE code lives and extracts implementation patterns
-- `codebase-analyst` — analyzes HOW integration points work and traces data flow
-- `web-researcher` — strategic web research with citations and gap analysis
+**Input**: $ARGUMENTS (if absent, use the conversation).
 
-Launch codebase agents in parallel first, then research agent second.
-</objective>
+## Mode
 
-<context>
-Project rules: your loaded context files (AGENTS.md / CLAUDE.md) apply.
+- A request to link two existing plans routes to `workflows/update-references.md` and stops.
+- Everything else creates an implementation plan.
 
-**Directory Discovery** (run these to understand project structure):
-- List root contents: `ls -la`
-- Find main source directories: `ls -la */ 2>/dev/null | head -50`
-- Identify project type from config files (package.json, pyproject.toml, Cargo.toml, go.mod, etc.)
+## 1. Resolve the request
 
-**IMPORTANT**: Do NOT assume `src/` exists. Common alternatives include:
-- `app/` (Next.js, Rails, Laravel)
-- `lib/` (Ruby gems, Elixir)
-- `packages/` (monorepos)
-- `cmd/`, `internal/`, `pkg/` (Go)
-- Root-level source files (Python, scripts)
+Accept a PRD path, issue reference or URL, another document, free-form text, or conversation context.
 
-Discover the actual structure before proceeding.
-</context>
+For a PRD:
 
-<process>
+1. Read it and select the first pending phase whose dependencies are complete.
+2. Preserve its problem, user, hypothesis, scope, and success signal.
+3. Note other independently actionable phases, but plan only the selected phase.
+4. Tell the user which phase was selected.
 
-## Mode Select
+For an issue from GitHub, Jira, Linear, or another tracker:
 
-Before planning, check intent:
+1. Retrieve the issue through whatever access is already configured in the environment. The skill does not prescribe or configure a tracker client.
+2. Treat the body as the starting point, not the complete brief. Read the relevant comment history and follow linked issues, parent/child or blocking relationships, duplicates, PRs, specifications, and attachments that can change scope, intent, constraints, or current decisions.
+3. Reconcile that context: distinguish current decisions from superseded discussion, note unresolved disagreements, and stop following links once additional material no longer affects the plan. Curate; do not dump the tracker graph.
+4. Preserve the source issue in the plan while separating its required outcome from any suggested implementation.
+5. If the issue, comments, or decision-relevant links cannot be retrieved, state what context is missing and ask the user to provide it or configure access. Never infer missing tracker content.
 
-- **Link / connect two existing plans** — the request is to wire a back/forward reference between plans (e.g. "link plan A to plan B", "this plan builds on that one", `update-references <plan> <related> [back|forward]`). → Follow `workflows/update-references.md` and stop. Do NOT run the planning phases below.
-- **Create / update a plan** (the default) — anything that describes a feature, hands over a PRD, or otherwise asks for an implementation plan. → Continue with Phase 0 below.
+For every input, establish:
 
----
+- the problem and user outcome;
+- the affected user, operator, or system;
+- the observable invariant that must hold;
+- the success signal that would show the outcome improved after delivery;
+- constraints that are genuinely fixed;
+- assumptions inherited from the request;
+- whether a proposed implementation is required or merely suggested.
 
-## Phase 0: DETECT - Input Type Resolution
+Do not invent personas, business value, or vanity metrics. If the affected user, problem, desired outcome, or meaningful success signal is materially uncertain, stop and recommend clarifying the product intent before architecture turns assumptions into code. Ask the user only when ambiguity changes the product contract or would produce materially different plans.
 
-**Determine input type:**
+## 2. Gather codebase evidence
 
-| Input Pattern | Type | Action |
-|---------------|------|--------|
-| Ends with `.prd.md` | PRD file | Parse PRD, select next phase |
-| Ends with `.md` and contains "Implementation Phases" | PRD file | Parse PRD, select next phase |
-| File path that exists | Document | Read and extract feature description |
-| Free-form text | Description | Use directly as feature input |
-| Empty/blank | Conversation | Use conversation context as input |
+Read repository guidance and discover the actual project structure. Do not assume `src/`, a framework, or a validation stack.
 
-### If PRD File Detected:
+For a non-trivial code change, read `references/agent-prompts.md`, then launch these agents in parallel:
 
-1. **Read the PRD file**
-2. **Parse the Implementation Phases table** - find rows with `Status: pending`
-3. **Check dependencies** - only select phases whose dependencies are `complete`
-4. **Select the next actionable phase:**
-   - First pending phase with all dependencies complete
-   - If multiple candidates with same dependencies, note parallelism opportunity
+- `codebase-explorer` to locate relevant files, analogous behavior, tests, configuration, and existing primitives.
+- `codebase-analyst` to trace the current control flow, data flow, state changes, contracts, and observable behavior.
 
-5. **Extract phase context:**
-   ```
-   PHASE: {phase number and name}
-   GOAL: {from phase details}
-   SCOPE: {from phase details}
-   SUCCESS SIGNAL: {from phase details}
-   PRD CONTEXT: {problem statement, user, hypothesis from PRD}
-   ```
+For a small documentation, configuration, or narrowly localized change, use only the agent or direct inspection needed to remove uncertainty. The planner owns synthesis and must inspect the decisive files itself.
 
-6. **Report selection to user:**
-   ```
-   PRD: {prd file path}
-   Selected Phase: #{number} - {name}
+Collect only relevant evidence:
 
-   {If parallel phases available:}
-   Note: Phase {X} can also run in parallel (in separate worktree).
+- precise `file:line` references;
+- existing primitives and extension points;
+- the closest useful precedent, including meaningful variations;
+- authoritative project validation commands;
+- conventions the change should preserve;
+- awkward seams or missing primitives the requested feature would otherwise work around.
 
-   Proceeding with Phase #{number}...
-   ```
+Do not preserve a known poor local convention merely because it exists. Fit the architecture while applying repository and global quality guidance.
 
-### If Free-form or Conversation Context:
+## 3. Reason from invariants and primitives
 
-- Proceed directly to Phase 1 with the input as feature description
+Read `references/planning-craft.md` and challenge the first plausible design before committing to it.
 
-**PHASE_0_CHECKPOINT:**
-- [ ] Input type determined
-- [ ] If PRD: next phase selected and dependencies verified
-- [ ] Feature description ready for Phase 1
+Answer:
 
----
+1. What observable outcome is actually required?
+2. Which existing primitive comes closest to satisfying it?
+3. Can configuration, composition, prompting, or a small extension solve it?
+4. What assumption forces new state, lifecycle, abstraction, or subsystem?
+5. Can that assumption be tested cheaply?
+6. What machinery disappears if the simpler mechanism works?
 
-## Phase 1: PARSE - Feature Understanding
+Prefer the smallest valuable vertical slice: it must deliver or directly unlock the user outcome, not merely create an elegant technical primitive. Reuse proven primitives, keep ownership clear, and avoid speculative flexibility. Simplicity is not fewer plan details; it is fewer moving parts in the proposed system.
 
-**EXTRACT from input:**
+## 4. Research or spike only when it can change the plan
 
-- Core problem being solved
-- User value and business impact
-- Feature type: NEW_CAPABILITY | ENHANCEMENT | REFACTOR | BUG_FIX
-- Complexity: LOW | MEDIUM | HIGH
-- Affected systems list
+External research is conditional. Use `web-researcher` when current documentation, dependency versions, platform behavior, security guidance, or an unfamiliar tool affects the design. Ask a narrow question tied to the architectural decision and prefer primary sources.
 
-**FORMULATE user story:**
+Delegate `the prp-spike skill` to a separate agent before finalizing when an uncertain, falsifiable claim materially changes the architecture, especially when:
 
-```
-As a <user type>
-I want to <action/goal>
-So that <benefit/value>
-```
+- a new subsystem exists only because external behavior is uncertain;
+- a recent or unfamiliar tool may already expose the needed primitive;
+- a configuration switch, prompt, or composition technique might remove substantial code;
+- competing approaches have dramatically different complexity;
+- a small behavioral experiment can prove the real integration-point behavior.
 
-**PHASE_1_CHECKPOINT:**
+The planner chooses the question. Use the exact agent-delegation prompt under `references/planning-craft.md` → **Decide when to spike**, wait for that agent, then consume its verdict and evidence. Never build the spike in the planner context or copy spike code into the plan as production code.
 
-- [ ] Problem statement is specific and testable
-- [ ] User story follows correct format
-- [ ] Complexity assessment has rationale
-- [ ] Affected systems identified
+## 5. Hold the design gate
 
-**GATE**: If requirements are AMBIGUOUS → STOP and ASK user for clarification before proceeding.
+Before writing the plan, state the recommended approach and its evidence. Stop and ask the user when:
 
----
+- a missing primitive should probably be built first;
+- product intent or the success signal remains too uncertain to justify implementation;
+- evidence contradicts the requested implementation;
+- the simpler solution materially changes the intended product contract;
+- an unresolved decision would create substantially different plans.
 
-## Phase 2: EXPLORE - Codebase Intelligence
+Explain the invariant, discovery, recommendation, and cost of the alternatives. Do not bury a load-bearing decision in the artifact.
 
-**CRITICAL: Work through the two specialized analyses inline, one after another.** Read `references/agent-prompts.md` now (mandatory) — it is the exact prompt text for every subagent launch in Phases 2, 3, and 5.
+Minor uncertainties may remain in the plan only with a recommendation, supporting evidence, and the consequence of choosing differently.
 
-- **Agent 1: `codebase-explorer`** — finds WHERE code lives and extracts implementation patterns. Launch with the Phase 2 codebase-explorer prompt.
-- **Agent 2: `codebase-analyst`** — analyzes HOW integration points work and traces data flow. Launch with the Phase 2 codebase-analyst prompt.
+## 6. Write the adaptive plan
 
-### Merge Agent Results
-
-Combine findings from both agents into a unified discovery table:
-
-| Category | File:Lines                                  | Pattern Description  | Code Snippet                              |
-| -------- | ------------------------------------------- | -------------------- | ----------------------------------------- |
-| NAMING   | `src/features/X/service.ts:10-15`           | camelCase functions  | `export function createThing()`           |
-| ERRORS   | `src/features/X/errors.ts:5-20`             | Custom error classes | `class ThingNotFoundError`                |
-| LOGGING  | `src/core/logging/index.ts:1-10`            | getLogger pattern    | `const logger = getLogger("domain")`      |
-| TESTS    | `src/features/X/tests/service.test.ts:1-30` | describe/it blocks   | `describe("service", () => {`             |
-| TYPES    | `src/features/X/models.ts:1-20`             | Drizzle inference    | `type Thing = typeof things.$inferSelect` |
-| FLOW     | `src/features/X/service.ts:40-60`           | Data transformation  | `input → validate → persist → respond`    |
-
-**PHASE_2_CHECKPOINT:**
-
-- [ ] Both agents (`codebase-explorer` and `codebase-analyst`) launched in parallel and completed
-- [ ] At least 3 similar implementations found with file:line refs
-- [ ] Code snippets are ACTUAL (copy-pasted from codebase, not invented)
-- [ ] Integration points mapped with data flow traces
-- [ ] Dependencies cataloged with versions from package.json
-
----
-
-## Phase 3: RESEARCH - External Documentation
-
-**ONLY AFTER Phase 2 is complete** - solutions must fit existing codebase patterns first.
-
-**Launch `web-researcher`** with the Phase 3 web-researcher prompt from `references/agent-prompts.md`, filling in the feature description and the dependency versions found in Phase 2.
-
-**FORMAT the agent's findings into plan references:**
-
-```markdown
-- [Library Docs v{version}](https://url#specific-section)
-  - KEY_INSIGHT: {what we learned that affects implementation}
-  - APPLIES_TO: {which task/file this affects}
-  - GOTCHA: {potential pitfall and how to avoid}
-```
-
-**PHASE_3_CHECKPOINT:**
-
-- [ ] `web-researcher` agent launched and completed
-- [ ] Documentation versions match package.json
-- [ ] URLs include specific section anchors (not just homepage)
-- [ ] Gotchas documented with mitigation strategies
-- [ ] No conflicting patterns between external docs and existing codebase
-
----
-
-## Phase 4: DESIGN - UX Transformation
-
-**CREATE ASCII diagrams showing user experience before and after, then DOCUMENT interaction changes.** Read `templates/ux-diagram-format.md` now (mandatory) — it is the exact BEFORE/AFTER diagram shape and interaction-changes table to produce.
-
-**PHASE_4_CHECKPOINT:**
-
-- [ ] Before state accurately reflects current system behavior
-- [ ] After state shows ALL new capabilities
-- [ ] Data flows are traceable from input to output
-- [ ] User value is explicit and measurable
-
----
-
-## Phase 5: ARCHITECT - Strategic Design
-
-**For complex features with multiple integration points**, use `codebase-analyst` to trace how existing architecture works at the integration points identified in Phase 2 — launch with the Phase 5 architecture deep-dive prompt from `references/agent-prompts.md`.
-
-**Then ANALYZE deeply (use extended thinking if needed):**
-
-- ARCHITECTURE_FIT: How does this integrate with the existing architecture?
-- EXECUTION_ORDER: What must happen first → second → third?
-- FAILURE_MODES: Edge cases, race conditions, error scenarios?
-- PERFORMANCE: Will this scale? Database queries optimized?
-- SECURITY: Attack vectors? Data exposure risks? Auth/authz?
-- MAINTAINABILITY: Will future devs understand this code?
-
-**DECIDE and document:**
-
-```markdown
-APPROACH_CHOSEN: [description]
-RATIONALE: [why this over alternatives - reference codebase patterns]
-
-ALTERNATIVES_REJECTED:
-
-- [Alternative 1]: Rejected because [specific reason]
-- [Alternative 2]: Rejected because [specific reason]
-
-NOT_BUILDING (explicit scope limits):
-
-- [Item 1 - explicitly out of scope and why]
-- [Item 2 - explicitly out of scope and why]
-```
-
-**PHASE_5_CHECKPOINT:**
-
-- [ ] Approach aligns with existing architecture and patterns
-- [ ] Dependencies ordered correctly (types → repository → service → routes)
-- [ ] Edge cases identified with specific mitigation strategies
-- [ ] Scope boundaries are explicit and justified
-
----
-
-## Phase 6: GENERATE - Implementation Plan File
+Resolve the canonical store and save the plan to `$PRP_DIR/plans/<kebab-case-name>.plan.md`:
 
 ```bash
 # --- PRP store resolver (canonical; keep byte-identical across skills) ---
@@ -249,83 +128,50 @@ _root="$(cd "$_root" && pwd -P)"
 _name="$(basename "$_root" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9' '-' | sed 's/^-*//;s/-*$//')"
 PRP_DIR="${PRP_HOME:-$HOME/.prp}/${_name:-project}-$(printf %s "$_root" | git hash-object --stdin | cut -c1-8)"
 mkdir -p "$PRP_DIR"; [ -f "$PRP_DIR/project.json" ] || printf '{"path": "%s", "name": "%s"}\n' "$_root" "${_name:-project}" > "$PRP_DIR/project.json"
+mkdir -p "$PRP_DIR/plans"
 ```
 
-**OUTPUT_PATH**: `$PRP_DIR/plans/{kebab-case-feature-name}.plan.md`
+Read `templates/plan-template.md` and `references/task-format.md`. Keep its required human-scannable spine; set the source issue metadata when planning from a tracker, and include conditional sections only when they add information.
 
-Create directory if needed: `mkdir -p "$PRP_DIR/plans"`
+Use `references/visuals.md` when either applies:
 
-**PLAN_STRUCTURE**: Read `templates/plan-template.md` now (mandatory) — it is the exact plan document to fill and save. Keep every section heading; fill every `{placeholder}` with real, project-specific content (the template's remaining snippets and table entries are illustrative examples from one TypeScript project, not content to keep). Before writing the plan's Step-by-Step Tasks section, read `references/task-block-format.md` (mandatory) for the task-block field detail and worked examples; before filling its Validation Commands section, read `references/validation-commands.md` (mandatory) for the per-language commands to embed.
+- interaction or user-flow change → before/after UX diagram;
+- architecture, ownership, state, or data-flow change → architecture diagram.
 
-</process>
+When existing users, behavior, or stored data can be affected, include one compact Delivery Considerations section covering only what applies: discoverability, compatibility, rollout, migration, observability, reversibility, documentation, or communication.
 
-<output>
-**OUTPUT_FILE**: `$PRP_DIR/plans/{kebab-case-feature-name}.plan.md`
+Tasks describe outcomes in dependency order. Each task identifies its files and integration points, applicable precedent, implementation detail, tests, and focused validation. Acceptance criteria state the observable completed behavior once, and the validation gates prove those criteria. Use commands verified from this repository, not a generic language catalog.
 
-Set the plan's `Source PRD` and `PRD Phase` metadata when the input was a PRD; otherwise set both to `None`.
+The plan must make incomplete work unacceptable: every requested outcome is covered, and every validation has an owner. If something cannot be completed in this implementation, resolve the scope with the user before presenting the plan as ready.
 
-**If input was from a PRD**, invoke `the prp-prd-update skill planned` with the PRD path, selected phase number, and absolute plan path. Verify that the exact phase is `in-progress` and links to the plan. Do not edit PRD lifecycle state directly.
+## 7. Verify and hand off
 
-**REPORT_TO_USER** (display after creating plan): Read `templates/report-format.md` now (mandatory) and display the "Plan Created" report in exactly that structure.
+Before saving, verify:
 
-</output>
+- the invariant and recommended solution are explicit;
+- implementation acceptance is distinct from the product success signal;
+- the approach is supported by codebase evidence and any relevant spike or research;
+- tasks cover the full agreed scope and can execute top-to-bottom;
+- acceptance criteria cover the observable completed outcome without duplicating a completion checklist;
+- decisive references use real paths and line numbers;
+- tests prove behavior rather than implementation trivia;
+- validation commands exist in the project and cover the integrated outcome;
+- diagrams are present when they materially improve human review;
+- applicable rollout, compatibility, migration, observability, and reversibility concerns are owned by tasks or explicitly resolved;
+- open decisions carry recommendations and none silently change the architecture;
+- issue-derived plans account for relevant comments and linked tracker context rather than relying on the body alone;
+- no placeholders, generic examples, confidence scores, or arbitrary coverage targets remain.
 
-<verification>
-**FINAL_VALIDATION before saving plan:**
+If the input came from a PRD, invoke `the prp-prd-update skill planned` with the PRD path, selected phase, and absolute plan path. Verify that the phase is `in-progress` and links to the plan.
 
-**CONTEXT_COMPLETENESS:**
-
-- [ ] All patterns from `codebase-explorer` and `codebase-analyst` documented with file:line references
-- [ ] External docs versioned to match package.json
-- [ ] Integration points mapped with specific file paths
-- [ ] Gotchas captured with mitigation strategies
-- [ ] Every task has at least one executable validation command
-
-**IMPLEMENTATION_READINESS:**
-
-- [ ] Tasks ordered by dependency (can execute top-to-bottom)
-- [ ] Each task is atomic and independently testable
-- [ ] No placeholders - all content is specific and actionable
-- [ ] Pattern references include actual code snippets (copy-pasted, not invented)
-
-**PATTERN_FAITHFULNESS:**
-
-- [ ] Every new file mirrors existing codebase style exactly
-- [ ] No unnecessary abstractions introduced
-- [ ] Naming follows discovered conventions
-- [ ] Error/logging patterns match existing
-- [ ] Test structure matches existing tests
-
-**VALIDATION_COVERAGE:**
-
-- [ ] Every task has executable validation command
-- [ ] All 6 validation levels defined where applicable
-- [ ] Edge cases enumerated with test plans
-
-**UX_CLARITY:**
-
-- [ ] Before/After ASCII diagrams are detailed and accurate
-- [ ] Data flows are traceable
-- [ ] User value is explicit and measurable
-
-**NO_PRIOR_KNOWLEDGE_TEST**: Could an agent unfamiliar with this codebase implement using ONLY the plan?
-</verification>
-
-<success_criteria>
-**CONTEXT_COMPLETE**: All patterns, gotchas, integration points documented from actual codebase via `codebase-explorer` and `codebase-analyst` agents
-**IMPLEMENTATION_READY**: Tasks executable top-to-bottom without questions, research, or clarification
-**PATTERN_FAITHFUL**: Every new file mirrors existing codebase style exactly
-**VALIDATION_DEFINED**: Every task has executable verification command
-**UX_DOCUMENTED**: Before/After transformation is visually clear with data flows
-**ONE_PASS_TARGET**: Confidence score 8+ indicates high likelihood of first-attempt success
-</success_criteria>
+Read `templates/report-format.md` and report the recommendation, absolute plan path, source PRD or issue when applicable, evidence or spike used, visuals included, and the next step.
 
 ## Resources
 
-- `references/agent-prompts.md` — exact subagent prompts for Phases 2, 3, and 5 (mandatory read at Phase 2)
-- `templates/plan-template.md` — the plan document to fill and save (mandatory read in Phase 6)
-- `templates/ux-diagram-format.md` — the BEFORE/AFTER ASCII diagram shape and interaction-changes table (mandatory read in Phase 4)
-- `templates/report-format.md` — the "Plan Created" report displayed to the user (mandatory read in Output)
-- `references/task-block-format.md` — task-block field detail and worked examples (mandatory read in Phase 6, before writing Step-by-Step Tasks)
-- `references/validation-commands.md` — per-language validation command catalog (mandatory read in Phase 6, before filling Validation Commands)
-- `workflows/update-references.md` — the update-references mode (read only when Mode Select routes there)
+- `references/planning-craft.md` — invariant, primitive, simplicity, spike, and decision-gate reasoning
+- `references/agent-prompts.md` — adaptive prompts for the planner's evidence-gathering agents
+- `references/task-format.md` — implementation task content and sizing
+- `references/visuals.md` — conditional UX and architecture diagrams
+- `templates/plan-template.md` — adaptive plan artifact
+- `templates/report-format.md` — concise user handoff
+- `workflows/update-references.md` — bidirectional plan linking mode

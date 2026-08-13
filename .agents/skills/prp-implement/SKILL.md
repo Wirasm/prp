@@ -21,7 +21,7 @@ Use the current feature branch or assigned worktree when one exists. If running 
 
 ## 2. Implement the plan
 
-Execute tasks in dependency order. Read each referenced pattern before changing its task, then update the plan's task marker to `[wip]`. Mark it `[x]` only after its task-level validation passes; use `[f]` and explain the blocker in Agent Notes when it cannot be completed.
+Execute tasks in dependency order and read each referenced pattern before changing its task. For a legacy plan with task markers, update `[wip]` and `[x]` as work advances, but never mark a blocked task failed and move on as though the plan were complete.
 
 Apply these implementation principles:
 
@@ -34,11 +34,11 @@ Apply these implementation principles:
 
 Never defer work required by the plan or its acceptance criteria: complete it now or mark the implementation `BLOCKED`. For actionable work discovered outside the agreed scope, avoid widening the implementation; create or link a human-visible GitHub issue before reporting green, and carry that issue into the report and PR description so normal repository triage and `$prp-worklist` can pick it up. If durable tracking cannot be established, stop and ask the user where it belongs; do not bury it in the report or report green. Omit optional ideas that do not merit a commitment.
 
-Record deviations and implementation-only decisions in the plan's Agent Notes and append an Amendments entry when the plan provides those sections. Do not move or archive the plan.
+Record deviations and implementation-only decisions in the implementation report. For a legacy plan that explicitly provides maintained Agent Notes or Amendments sections, keep those current as well. Do not move or archive the plan.
 
 ## 3. Validate to green
 
-Run each task's specified validation after the coherent task, then run every applicable command in the plan's Validation Commands section and verify its Acceptance Criteria. Add or adapt a missing check only when repository evidence shows the plan's gate is incomplete.
+Run each task's specified validation after the coherent task, then run every applicable command or procedure in the plan's Validation section and verify every Acceptance criterion. For a legacy plan, honor its Validation Commands and Acceptance Criteria. Add or adapt a missing check only when repository evidence shows the plan's gate is incomplete.
 
 On failure, fix the cause and rerun the affected check before continuing. Do not trust the first passing suite blindly: inspect suspicious or weak tests and verify the behavior they claim to cover. Never report completion with a known failing required check.
 
@@ -64,7 +64,7 @@ If implementation or required validation is blocked, mark the report `BLOCKED`, 
 
 ## 5. Commit, open the PR, and update linked context
 
-When implementation is green, invoke `$prp-commit` for only the work completed from this plan. Record the resulting commit SHA in the plan's append-only Lifecycle section when present and in the report.
+When implementation is green, invoke `$prp-commit` for only the work completed from this plan. Record the resulting commit SHA in the report and in a legacy plan's append-only Lifecycle section when present.
 
 Then invoke `$prp-pr`, passing the explicit `--base` argument when supplied and any tracked follow-up issue links as context for the PR description. Let that skill resolve the base otherwise. Record the PR URL, base, and head in the report.
 

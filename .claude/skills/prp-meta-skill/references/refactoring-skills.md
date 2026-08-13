@@ -81,10 +81,10 @@ prp-plan/
 ├── templates/
 │   └── plan-document.md           # the plan skeleton — ALWAYS-needed output format
 └── references/
-    ├── task-block-format.md       # MIRROR/IMPORTS/GOTCHA detail (lazy)
-    └── validation-commands.md     # per-language command catalog (lazy)
+    ├── task-format.md             # task content and sizing detail (lazy)
+    └── visuals.md                 # conditional diagram guidance (lazy)
 ```
-SKILL.md body keeps the Phase 0–5 workflow, and at the write-the-plan step says:
-> Before writing the plan, read `templates/plan-document.md` and produce the document in that exact structure. For task-block detail see `references/task-block-format.md`; for the validation commands to embed, see `references/validation-commands.md`.
+SKILL.md keeps the workflow and decision spine, and at the write-the-plan step says:
+> Before writing the plan, read `templates/plan-document.md` and keep its required semantic spine. For task detail see `references/task-format.md`; when a diagram materially improves human review, see `references/visuals.md`.
 
-Same process, same plan output — but the body that loads every run is half the size, and the bulky catalogs load only when the planning step actually needs them.
+The body that loads every run stays focused while the output shape and conditional craft load only when the planning step needs them. When the requested change deliberately alters behavior or output, document and validate that new contract instead of claiming behavior preservation.
