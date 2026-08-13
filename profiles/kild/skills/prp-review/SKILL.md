@@ -1,6 +1,6 @@
 ---
 name: prp-review
-description: Comprehensive PR code review - checks diff, patterns, runs validation, comments on PR. Single-pass by default; pass --agents for a multi-agent specialist fan-out (comments, tests, errors, types, code, docs, simplify). Use when the user wants to review a pull request, wants a thorough/multi-agent review, or invokes the prp-review skill.
+description: Comprehensive PR code review - checks diff, patterns, runs validation, comments on PR. Single-pass by default; pass --agents for a multi-agent specialist fan-out (comments, tests, errors, types, seams, code, docs, simplify). Use when the user wants to review a pull request, wants a thorough/multi-agent review, or invokes the prp-review skill.
 ---
 
 > **Kild lane:** you are running inside a kild room, in a workspace (worktree + branch) the kild engine assigned. The driver owns isolation and publishing — SKIP any step below that creates or switches branches or worktrees, pulls or rebases the base branch, pushes, opens PRs, or moves/archives plan artifacts, and never run `gh pr checkout`. Your job ends at implement → validate → commit in the current workspace, reporting evidence. Where a step spawns subagents, do that analysis inline — or ask the room's orchestrator to invite a helper agent.
@@ -30,7 +30,7 @@ This skill has two modes:
 | Mode | Trigger | What it does |
 |------|---------|--------------|
 | **Single-pass** (default) | no `--agents` flag | One reviewer performs the full 8-phase review below |
-| **Multi-agent fan-out** | `--agents` flag present, or aspect keywords (`comments`/`tests`/`errors`/`types`/`code`/`docs`/`simplify`/`all`), or the user asks for a "multi-agent"/"thorough" review | Dispatches specialized agents in parallel, one per aspect |
+| **Multi-agent fan-out** | `--agents` flag present, or aspect keywords (`comments`/`tests`/`errors`/`types`/`seams`/`code`/`docs`/`simplify`/`all`), or the user asks for a "multi-agent"/"thorough" review | Dispatches specialized agents in parallel, one per aspect |
 
 **If multi-agent mode is selected**: follow `workflows/agents.md` instead of the phases below, then stop. Everything below this section is the single-pass review.
 

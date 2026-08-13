@@ -33,6 +33,7 @@ Before running reviews:
 | `comments` | prp-core:comment-analyzer | When comments/docstrings added |
 | `errors` | prp-core:silent-failure-hunter | When error handling changed |
 | `types` | prp-core:type-design-analyzer | When types added/modified |
+| `seams` | prp-core:seam-analyzer | When structure crosses or is reconstructed across a boundary |
 | `simplify` | prp-core:code-simplifier | When `all` or `simplify` requested - advisory polish |
 | `all` | All applicable | Default if no aspects specified |
 
@@ -55,6 +56,7 @@ Before running reviews:
 - Comments/docstrings added → `prp-core:comment-analyzer`
 - Try-catch or error handling → `prp-core:silent-failure-hunter`
 - New types or type modifications → `prp-core:type-design-analyzer`
+- Payloads, serialization, persisted/resume paths, IPC/FFI or cross-language bridges, syntax forms and their consumers, validators with multiple routes, or synchronized enumerations → `prp-core:seam-analyzer`
 
 **Include when in scope** (`all` or `simplify` requested):
 - `prp-core:code-simplifier` - Advisory polish; runs in the same parallel batch as the others
@@ -71,7 +73,7 @@ Otherwise — no aspects named, or `all` — use the Aspect Selection Logic abov
 
 - Always include `prp-core:code-reviewer`.
 - Add `prp-core:docs-impact-agent` unless the PR is trivial (see skip rules).
-- Add change-based specialists (`prp-core:pr-test-analyzer`, `prp-core:comment-analyzer`, `prp-core:silent-failure-hunter`, `prp-core:type-design-analyzer`) based on what the diff touches.
+- Add change-based specialists (`prp-core:pr-test-analyzer`, `prp-core:comment-analyzer`, `prp-core:silent-failure-hunter`, `prp-core:type-design-analyzer`, `prp-core:seam-analyzer`) based on what the diff touches.
 - Include `prp-core:code-simplifier` when `all` or `simplify` is in scope.
 
 ### Step 2 — Launch all selected agents in parallel (default)
@@ -106,6 +108,9 @@ When launching each agent via Task tool:
 
 **prp-core:type-design-analyzer**:
 > Analyze type design in PR #<number>. Rate encapsulation, invariant expression, usefulness, and enforcement. Focus on new or modified types.
+
+**prp-core:seam-analyzer**:
+> Analyze PR #<number> for missing types at seams. For changed payloads, wire formats, persisted or resumed values, IPC/FFI and cross-language boundaries, syntax forms, validators, or synchronized enumerations, leave the diff and inspect direct counterparts. Report only findings that satisfy the agent's two-sided evidence bar and apply documented build-boundary carve-outs. Do not modify files or commit.
 
 **prp-core:code-simplifier**:
 > Identify simplification opportunities in PR #<number> for clarity while preserving functionality. No nested ternaries, prefer explicit over clever. Report findings with before/after suggestions. Do not modify files or commit.
@@ -149,6 +154,9 @@ gh pr comment <PR_NUMBER> --body-file "$PRP_DIR/reviews/pr-<PR_NUMBER>-review.md
 
 # Only code and docs review
 /prp-review 42 --agents code docs
+
+# Review missing-type and counterpart drift at seams
+/prp-review 42 --agents seams
 
 # Force one-at-a-time execution (parallel is the default)
 /prp-review 42 --agents all sequential
