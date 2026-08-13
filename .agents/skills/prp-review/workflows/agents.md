@@ -48,7 +48,7 @@ Always select `code` and `seams`. Add only scopes explicitly named by the user o
 
 ## 4. Launch reviewers
 
-Dispatch every selected agent in parallel in one message. Wait for all of them before aggregation.
+Dispatch every selected agent in parallel when capacity permits, or sequentially when it does not. Every selected role remains required; wait for all of them before aggregation.
 All agents are advisory and must not modify files or post their own PR comments.
 
 When spawning each subagent:
@@ -94,10 +94,10 @@ Write the report to the expanded absolute path `$PRP_DIR/reviews/pr-{NUMBER}-rev
 
 ## 6. Publish and report
 
-Post the report with `gh pr comment` by default. Use `gh pr review --approve` only when `--approve`
+Post the complete, unabridged canonical report with `gh pr comment` by default. Use the same complete report body with `gh pr review --approve` only when `--approve`
 was explicitly requested and the verdict is `READY TO MERGE`. Use `gh pr review --request-changes`
 when explicitly requested or when the user explicitly asked the skill to submit blocking findings
 as a formal review. Never formally approve or request changes on a draft.
 
-Read the PR back to verify the comment or review exists and capture its URL. Return the PR URL,
+Read the PR back to verify the comment or review exists and capture its stable URL. Replace `publication: pending` in the local canonical report with that URL, then re-read the report and GitHub state to verify both point to the same publication. Return the PR URL,
 verdict, finding counts, validation summary, selected scopes, absolute report path, and comment URL.

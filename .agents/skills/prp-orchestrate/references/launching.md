@@ -13,7 +13,7 @@ Spawn via your delegation tool:
 - **PR-producing workstream** — one background agent in its own pre-created worktree. The agent creates its branch, commits, pushes, and opens the PR itself (that is part of its prompt's definition of done).
 - Prefer the pack's advisory agents (`code-reviewer`, `codebase-analyst`, …) when one matches the workstream.
 - Record the agent ID/name the tool returns — it is the handle for messaging, stopping, and status checks, and goes in the run file's workstream row.
-- Respect the run's `--max-parallel`: completion notifications free slots; launch the next queued workstream then.
+- Respect the run's capacity-aware `--max-parallel`: reserve two slots beyond the root and active delivery owners for a delivery's stage coordinator and leaf specialist. Completion notifications free slots; launch the next queued workstream then.
 
 ## Workstream prompt template
 
@@ -35,7 +35,9 @@ Context:
 - Other work in flight: <branches/PRs touching nearby files, and to stay off them>
 
 Definition of done: <PR opened against <base> with validations green / plan file
-written / report written>. Report the PR number and a 3-line summary as your final message.
+written / report written>. Carry the burden of proof: return every promised artifact and
+authoritative terminal signal, not only a summary. Report the PR number and a 3-line
+summary as your final message.
 
 If blocked on a decision only a human can make: STOP and report the blocker precisely
 (what you need decided, the options, your recommendation). You will receive the decision
@@ -52,14 +54,15 @@ The four added lines each replace a failure the orchestrator otherwise pays for 
 **Worktree location**: if the repo has its own convention (a `.worktrees/` directory, a worktree skill/CLI, existing sibling worktrees), tell the agent to follow it rather than relying on the isolation default. Some projects list, prune or build against their worktrees, and one parked outside that convention is invisible to those tools.
 
 The STOP-and-report clause is the escalation path: the orchestrator gates the blocker, then **message the decision to the same agent** — it continues with full context. Never replace a blocked agent with a fresh one; the fresh one has no history.
+The `prp-deliver` owner must add every applicable Standing Decision—and later gate answers—to the verbatim caller-decisions record it passes into its own fresh planning, implementation, and review agents.
 
 ## Engines per workstream type
 
 | Workstream           | Prompt core                                                                                                                                              |
 | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GitHub issue         | `Use the prp-issue skill: first investigate #N, then fix #N.`                                                                                            |
-| Feature, plan exists | `Use the prp-implement skill to execute the plan at <path>, then use the prp-pr skill to open a PR.`                                                     |
-| Feature, autonomous  | `Use the prp-loop skill for: <feature description>.` (the loop handles plan→implement→pr→review; the orchestrator then only gates the final merge)       |
+| Issue / PRD / document / idea | `Use the prp-deliver skill to own <input> autonomously through a published READY TO MERGE review. Return only the reviewed PR or a concrete blocker only a human can resolve.` |
+| Existing plan              | `Use the prp-deliver skill to own the plan at <path> autonomously through a published READY TO MERGE review. Return only the reviewed PR or a concrete blocker only a human can resolve.` |
+| Detached autonomous work   | `Use the prp-loop skill for: <input>.` (the headless loop owns persisted stage state and bounded review/fix cycles)                                      |
 | Plan only (staged)   | `Use the prp-plan skill to create an implementation plan for: <feature>.` — gate the plan, then message the same agent to proceed with prp-implement |
 | Feasibility unknown  | `Use the prp-spike skill to settle: <the question>.` — ends in a PROVEN / DISPROVEN / CONDITIONAL verdict and **no PR**; gate the verdict, then launch or drop the workstreams that depended on it |
 

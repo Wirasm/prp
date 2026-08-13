@@ -1,15 +1,16 @@
 ---
 name: prp-meta-skill
-description: Author new Claude Code skills PRP-style, and refactor existing fat skills into a lean SKILL.md plus references/. Use when the user wants to "create a skill", "write a new skill", "turn a command into a skill", "split a skill into references", "trim a SKILL.md", "extract output templates from a skill", "make a skill leaner", or invokes /prp-meta-skill.
-argument-hint: "[create <name> | refactor <path/to/SKILL.md>] (blank = ask which)"
+description: Authors, refactors, and consolidates Agent Skills PRP-style. Use when the user wants to "create a skill", "write a new skill", "trim a SKILL.md", "split a skill into references", "consolidate workflow skills", "replace duplicated skill logic with composition", redesign a skill workflow, or invokes /prp-meta-skill.
+argument-hint: "[create <name> | refactor <path> | consolidate <skills...>] (blank = ask which)"
 ---
 
-# PRP Meta-Skill — Author & Refactor Skills
+# PRP Meta-Skill — Author, Refactor & Consolidate Skills
 
-A PRP-style runbook for two jobs:
+A PRP-style runbook for three jobs:
 
 - **Create** a new skill from scratch (or from an existing command/prompt).
 - **Refactor** an existing skill — split detail into `references/`, move output formats into `templates/`, and trim `SKILL.md` to a lean spine of pointers.
+- **Consolidate** overlapping workflows — trace their contracts, choose one composition owner, reuse specialist skills, and retire duplicate paths without losing outcomes or human gates.
 
 This skill is built the way it teaches: a lean body that defers detail to `references/`. Follow that example.
 
@@ -29,13 +30,14 @@ Classify the skill first (workflow / artifact-generator / knowledge-reference / 
 1. **Context is King** — give the agent ALL the context it needs (patterns, gotchas, schemas, examples) via whichever source fits: inline, bundled and disclosed on demand, pointed to by file path or URL, or gathered from the user at runtime. Curate it — don't dump it. (`references/skill-standards.md` → Context sources.)
 2. **Validation that fits** — *workflow* skills ship verifiable gates, and prefer an external, authoritative check (exit code, file presence) over the agent's own "done" sentinel. A knowledge/reference skill has nothing to validate — don't bolt a loop onto it.
 3. **Information dense** — real trigger phrases, real examples, real `file:line`. No filler, no restating what the model already knows.
-4. **Progressive success** — ship a minimal SKILL.md that triggers correctly first, validate, then enrich with references. Don't build all the references before the spine works.
+4. **Progressive success** — ship the smallest complete SKILL.md that triggers correctly first, validate, then enrich with references. Don't build all the references before the spine works.
 
 ## Step 0 — Pick the mode
 
 - **Creating** a new skill → follow `references/creating-skills.md`.
 - **Refactoring / trimming** an existing skill → follow `references/refactoring-skills.md`.
-- Both modes obey the same rules (frontmatter spec, writing style, progressive disclosure, no-duplication, invocation control) → read `references/skill-standards.md` first.
+- **Consolidating / redesigning** overlapping workflow skills → follow `references/consolidating-workflows.md`.
+- All modes obey the same rules (frontmatter spec, writing style, progressive disclosure, no-duplication, invocation control) → read `references/skill-standards.md` first.
 
 If the argument is blank, ask which mode and what the skill/target is. Do not guess.
 
@@ -55,6 +57,14 @@ If the argument is blank, ask which mode and what the skill/target is. Do not gu
 4. **Behavior-preservation check** — the trimmed skill + references must drive the SAME process and SAME output as before. Nothing lost, nothing duplicated.
 5. **Validate** (`references/validation.md`).
 
+## Consolidate — quick spine (full detail in references/consolidating-workflows.md)
+
+1. **Trace before editing.** Inventory inputs, callers, artifacts, side effects, publication, gates, correction paths, and every terminal outcome.
+2. **Define the invariant.** Preserve the user-visible outcome and authoritative checks; distinguish intentional redesign from accidental regression.
+3. **Assign ownership.** Give each phase, durable artifact, human decision, and retry loop one maintainer. Compose specialist skills by name instead of copying their instructions.
+4. **Design handoffs.** Prefer semantic identifiers and complete durable artifacts over remembered filenames, parallel indexes, or lossy summaries. State when to preserve a context and when independence matters.
+5. **Remove the old path.** Update every caller and public surface, regenerate derived targets, then exercise the new workflow end-to-end.
+
 > The single biggest refactor risk: moving an _always-needed_ output format into a lazily-loaded reference, so the agent forgets to read it and the output silently changes. Always pair such extractions with a mandatory-read instruction. See `references/refactoring-skills.md`.
 
 ## Resources
@@ -62,6 +72,7 @@ If the argument is blank, ask which mode and what the skill/target is. Do not gu
 - `references/skill-standards.md` — frontmatter spec, progressive disclosure, writing style, no-duplication, invocation control, cross-provider notes
 - `references/creating-skills.md` — full PRP-style create runbook
 - `references/refactoring-skills.md` — full split-and-trim runbook with a before/after example
+- `references/consolidating-workflows.md` — workflow trace, ownership, context, publication, correction-loop, and retirement guidance
 - `references/validation.md` — validation gates, checklist, skill-reviewer, trigger test
 - `templates/SKILL.template.md` — lean SKILL.md skeleton
 - `templates/reference.template.md` — skeleton for an extracted reference/template file

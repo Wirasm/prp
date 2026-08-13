@@ -1,18 +1,43 @@
 ---
 name: prp-implement
-description: Implements and validates existing PRP plans. Always use when executing an implementation plan, when the user explicitly asks to build or implement a plan, when another PRP workflow reaches its implementation step, or when the user invokes /prp-implement.
-argument-hint: "<path/to/plan.md> [--base <branch>]"
+description: Implements and validates existing PRP plans and corrects reviewed pull requests. Always use when executing an implementation plan, implementing an issue that already has a local or published plan, correcting a PR from a PRP review report, when another PRP workflow reaches its implementation or correction step, or when the user invokes /prp-implement.
+argument-hint: "<plan path|planned issue> [--base <branch>] | review <review-report|PR> [finding decisions]"
 ---
 
 # Implement Plan
 
-Execute the supplied implementation plan through a validated commit and pull request. Keep implementation, commit, and PR creation in this context; leave review to its own context.
+Execute the supplied implementation plan through a validated commit and pull request, or apply review findings to that pull request. Keep implementation, commit, and PR delivery in this context; leave review judgment to its own context.
 
-**Plan**: $ARGUMENTS
+**Input**: $ARGUMENTS
+
+## Mode
+
+- A plan path starts the initial implementation.
+- `review` plus a review report, PR, or finding decisions starts a correction pass. Resolve and read the original plan, implementation report, live PR diff and comments, complete canonical review report, and any explicit finding dispositions before editing. Human dispositions are binding when supplied. Otherwise Critical or Important findings require correction or an evidence-backed disagreement; suggestions remain optional.
+
+Resume the original implementation context for corrections when it is available. In a fresh context, reconstruct the complete contract from those durable artifacts rather than from an abbreviated findings summary.
+
+Resolve the canonical project store before locating artifacts:
+
+```bash
+# --- PRP store resolver (canonical; keep byte-identical across skills) ---
+_gd="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"
+case "$_gd" in */.git) _root="${_gd%/.git}" ;; "") _root="$PWD" ;; *) _root="$_gd" ;; esac
+_root="$(cd "$_root" && pwd -P)"
+_name="$(basename "$_root" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9' '-' | sed 's/^-*//;s/-*$//')"
+PRP_DIR="${PRP_HOME:-$HOME/.prp}/${_name:-project}-$(printf %s "$_root" | git hash-object --stdin | cut -c1-8)"
+mkdir -p "$PRP_DIR"; [ -f "$PRP_DIR/project.json" ] || printf '{"path": "%s", "name": "%s"}\n' "$_root" "${_name:-project}" > "$PRP_DIR/project.json"
+```
 
 ## 1. Establish context
 
-Resolve the plan path from the arguments or conversation and read the entire file. Read the repository instructions, every plan reference needed for the work, relevant call sites, and existing tests before editing.
+Resolve the plan path from the arguments, linked implementation report, or conversation and read the entire file. When the input is an issue reference rather than a path, normalize number and URL forms to the same tracker item, search `$PRP_DIR/plans/` for matching `Source Issue` metadata, and select the single current plan. If several match, present the newest viable candidates and ask; never guess. If no local plan exists, retrieve the latest complete issue comment marked `<!-- prp-plan-id: ... -->`, persist that published plan under `$PRP_DIR/plans/`, and use it. Never substitute the issue body for a missing plan.
+
+For an issue-derived plan, read comments added after `Plan Publication` before editing. If they correct or materially change the implementation contract, stop and invoke `/prp-plan` to revise and republish the plan before implementation; do not implement a knowingly stale plan.
+
+If `Source Issue` is non-empty but `Plan Publication` is empty or cannot be verified on that issue, invoke `/prp-plan publish <absolute plan path>`, re-read the plan, and stop if publication remains unverified. Apply this gate whether the input was the issue or the plan path.
+
+Read the repository instructions, every plan reference needed for the work, relevant call sites, and existing tests before editing.
 
 Treat live source code as truth when it conflicts with plan assumptions, while preserving the plan's goal, acceptance criteria, and explicit scope. If reality makes the intended outcome ambiguous or materially changes product shape, stop and ask. If implementation would require working around a missing foundational primitive that should exist first, stop and explain the missing primitive, why it belongs earlier, and what it blocks. Otherwise record the necessary deviation and continue.
 
@@ -20,7 +45,7 @@ Use the current feature branch or assigned worktree when one exists. If running 
 
 ## 2. Implement the plan
 
-Execute tasks in dependency order and read each referenced pattern before changing its task. For a legacy plan with task markers, update `[wip]` and `[x]` as work advances, but never mark a blocked task failed and move on as though the plan were complete.
+For initial implementation, execute tasks in dependency order and read each referenced pattern before changing its task. For a correction pass, change only what the blocking findings or explicit dispositions require and preserve the plan's outcome and invariant. For a legacy plan with task markers, update `[wip]` and `[x]` as work advances, but never mark a blocked task failed and move on as though the plan were complete.
 
 Apply these implementation principles:
 
@@ -37,25 +62,15 @@ Record deviations and implementation-only decisions in the implementation report
 
 ## 3. Validate to green
 
-Run each task's specified validation after the coherent task, then run every applicable command or procedure in the plan's Validation section and verify every Acceptance criterion. For a legacy plan, honor its Validation Commands and Acceptance Criteria. Add or adapt a missing check only when repository evidence shows the plan's gate is incomplete.
+Run each task's specified validation after the coherent task, then run every applicable command or procedure in the plan's Validation section and verify every Acceptance criterion. A correction pass also runs the focused regression check for each corrected finding. For a legacy plan, honor its Validation Commands and Acceptance Criteria. Add or adapt a missing check only when repository evidence shows the plan's gate is incomplete.
+
+For an evidence-backed disagreement that requires no repository change, run the smallest decisive check that proves the finding invalid and record its output. Do not manufacture a code or documentation edit merely to create a correction commit.
 
 On failure, fix the cause and rerun the affected check before continuing. Do not trust the first passing suite blindly: inspect suspicious or weak tests and verify the behavior they claim to cover. Never report completion with a known failing required check.
 
 ## 4. Write the implementation report
 
-Resolve the canonical project store:
-
-```bash
-# --- PRP store resolver (canonical; keep byte-identical across skills) ---
-_gd="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"
-case "$_gd" in */.git) _root="${_gd%/.git}" ;; "") _root="$PWD" ;; *) _root="$_gd" ;; esac
-_root="$(cd "$_root" && pwd -P)"
-_name="$(basename "$_root" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9' '-' | sed 's/^-*//;s/-*$//')"
-PRP_DIR="${PRP_HOME:-$HOME/.prp}/${_name:-project}-$(printf %s "$_root" | git hash-object --stdin | cut -c1-8)"
-mkdir -p "$PRP_DIR"; [ -f "$PRP_DIR/project.json" ] || printf '{"path": "%s", "name": "%s"}\n' "$_root" "${_name:-project}" > "$PRP_DIR/project.json"
-```
-
-Create `$PRP_DIR/reports/` and write `$PRP_DIR/reports/{plan-name}-report.md`. Before writing it, read `templates/implementation-report.md` and follow that structure exactly.
+Create `$PRP_DIR/reports/` and write `$PRP_DIR/reports/{plan-name}-report.md`. Before writing it, read `templates/implementation-report.md` and follow that structure exactly. A correction pass updates this report to the current delivered truth, including the review decisions and new validation and commit evidence; it does not create a parallel correction artifact.
 
 The report is the durable handoff across context windows. Keep it concise and record only the outcome, validation evidence, deviations or decisions downstream agents need, completion-gate evidence, intended commit scope, and delivery evidence. Preserve the plan-based filename and include branch metadata in the report; downstream skills own discovering it.
 
@@ -63,9 +78,9 @@ If implementation or required validation is blocked, mark the report `BLOCKED`, 
 
 ## 5. Commit, open the PR, and update linked context
 
-When implementation is green, invoke `/prp-commit` for only the work completed from this plan. Record the resulting commit SHA in the report and in a legacy plan's append-only Lifecycle section when present.
+When initial implementation is green, or a correction changed repository files, invoke `/prp-commit` for only the work completed from this plan or correction pass. Record the resulting commit SHA in the report and in a legacy plan's append-only Lifecycle section when present.
 
-Then invoke `/prp-pr`, passing the explicit `--base` argument when supplied and any tracked follow-up issue links as context for the PR description. Let that skill resolve the base otherwise. Record the PR URL, base, and head in the report.
+For initial implementation, invoke `/prp-pr`, passing the explicit `--base` argument when supplied, the plan's source issue and verified `Plan Publication` URL when present, and any tracked follow-up issue links as context for the PR description. Let that skill resolve the base otherwise. For a correction pass with repository changes, push the new commit without force and verify that the existing PR now contains it. For an evidence-only disagreement, skip commit and push, verify the PR head SHA is unchanged, and record that SHA with the decisive evidence. Record the PR URL, base, head, and all delivery commits in the report.
 
 If the plan has non-empty `Source PRD` and `PRD Phase` metadata, invoke `/prp-prd-update implemented` with the PRD path, phase number, plan path, report path, and PR URL. Do not edit the PRD directly. If the plan is not based on a PRD, skip this step.
 
@@ -73,9 +88,9 @@ If committing, pushing, PR creation, or the required PRD update fails, leave the
 
 ## 6. Verify and hand off
 
-Re-read the branch diff, updated plan, and report. Confirm the intended implementation is complete, unrelated work remains untouched, every reported validation result is factual, the commit contains the intended scope, the PR targets the correct base, and the report exists at the stated absolute path.
+Re-read the branch diff, updated plan, report, and—during correction—the review report. Confirm the intended implementation or required corrections are complete, unrelated work remains untouched, every reported validation result is factual, the commit contains the intended scope, the PR targets the correct base, and the report exists at the stated absolute path.
 
-Return the implemented outcome, validation summary, deviations or blocker and recovery action, commit, PR URL, tracked follow-up issues, conditional PRD update, and absolute report path. Do not review, merge, move, or archive the plan.
+Return the implemented outcome, resolved absolute plan path, validation summary, deviations or blocker and recovery action, commit, PR URL, tracked follow-up issues, conditional PRD update, and absolute report path. Do not review, merge, move, or archive the plan.
 
 When every required validation and acceptance criterion passes and every required delivery step succeeds, end the response with exactly `VALIDATION: GREEN`. Otherwise end with `VALIDATION: FAILED` followed by the concrete blocker or failing output.
 

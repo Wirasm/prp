@@ -16,7 +16,7 @@
 
 ## Deviations and Decisions
 
-{Only deviations from the plan and decisions downstream contexts must preserve, or "None."}
+{Only deviations from the plan, dispositioned review findings, and decisions downstream contexts must preserve, or "None."}
 
 ## Completion Gate
 
@@ -31,7 +31,7 @@
 
 ## Delivery
 
-- **Commit:** `{SHA and message | Not created}`
+- **Commits:** `{SHA and message for each delivery commit | Not created}`
 - **Pull Request:** `{URL | Not opened}`
 - **Base / Head:** `{base <- head | Not applicable}`
 - **Source PRD:** `{absolute path and phase update | None}`

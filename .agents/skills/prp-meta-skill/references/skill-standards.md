@@ -2,7 +2,7 @@
 
 > **Arguments:** `$ARGUMENTS` (and `$1`, `$2`, ...) refer to the arguments given when this skill was invoked. Take them from the user's request; if absent, infer them from the conversation.
 
-The rules every skill obeys, whether being created or refactored. This is the shared "curated context" — keep it here, not duplicated into the workflow files.
+The rules every skill obeys, whether being created, refactored, or consolidated. This is the shared "curated context" — keep it here, not duplicated into the workflow files.
 
 These rules govern the **craft** of a skill (how it's built). They say nothing about a skill's **content** — the sections a plan/PRD/report should contain, the domain vocabulary, the output shape. That is the author's per-project call; there is no canonical template. Be strict on the craft, agnostic on the content.
 
@@ -69,10 +69,12 @@ The table covers the common fields, not all of them. Other optional fields exist
 Three load levels — design every skill around them:
 
 1. **Metadata** (`name` + `description`) — always in context. ~100 words. This is the trigger budget.
-2. **Body** (`SKILL.md`) — loaded when the skill triggers. Target **1,500–2,000 words**, hard ceiling ~5k. Everything here is paid for on every use.
+2. **Body** (`SKILL.md`) — loaded when the skill triggers. Use the smallest complete decision spine; investigate anything approaching ~5k words. Everything here is paid for on every use.
 3. **Resources** (`references/`, `templates/`, `scripts/`) — loaded only when the agent reaches for them. Effectively unlimited; scripts cost zero context because only their output enters the conversation.
 
 **Implication:** put the decision spine and workflow in the body; put bulky, occasionally-needed, or output-shaped detail in resources.
+
+For a composition workflow, the spine also names phase owners, context boundaries, human gates, and durable handoffs. Compose specialist skills by name instead of duplicating their craft. Preserve rich artifacts across phases; do not replace them with private summaries that discard evidence.
 
 ## Writing style — two distinct voices
 

@@ -1,7 +1,7 @@
 ---
 name: prp-pr
 description: Creates and opens GitHub pull requests. Always use when creating a PR on GitHub, when the user explicitly asks to create or open a PR, when another PRP workflow reaches its PR-creation step, or when the user invokes /prp-pr.
-argument-hint: "[--base <branch>] [--draft] [issue number or URL]"
+argument-hint: "[--base <branch>] [--draft] [issue number or URL] [published plan URL]"
 ---
 
 # Create Pull Request
@@ -74,11 +74,13 @@ If no template exists, use this fallback:
 - {Concrete manual verification, when applicable}
 
 {Fixes/Closes/Relates to #N when supported}
+{Plan: <verified published-plan URL> when supplied}
 ```
 
 - Lead with the problem, then the solution. Do not lead with an implementation inventory.
 - Report only validation that actually ran. If none ran, say so and explain why; never add generic unchecked boxes as evidence.
 - Add `Fixes` or `Closes` only when the PR fully resolves the referenced issue. Use `Relates to` for a non-closing relationship. Do not infer issue linkage from an unexplained bare number.
+- When a verified published-plan URL is supplied, link it in the repository template's Links or planning context section. This is the reviewer-accessible implementation contract; never substitute a local plan path.
 - Never add AI attribution, a generated-by footer, a robot emoji, or `Co-Authored-By: Claude`.
 
 ## 4. Push and create

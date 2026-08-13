@@ -6,7 +6,7 @@ Complete PRP (Product Requirement Prompt) workflow automation for Claude Code, p
 
 This plugin provides a comprehensive workflow for creating, executing, and shipping features using the PRP methodology — where **PRP = PRD + curated codebase intelligence + agent/runbook** — designed to enable AI agents to ship production-ready code on the first pass.
 
-Everything ships as **skills** (not slash commands), so each one is both **user-invocable** (type `/prp-core:<name>`) and **agent-invocable** (Claude loads it automatically when your request matches its description). Skills with multiple workflows, such as `prp-issue`, keep a lean router in `SKILL.md` and defer detail to `workflows/`.
+Everything ships as **skills** (not slash commands), so each one is both **user-invocable** (type `/prp-core:<name>`) and **agent-invocable** (Claude loads it automatically when your request matches its description).
 
 ## Skills
 
@@ -21,18 +21,18 @@ Everything ships as **skills** (not slash commands), so each one is both **user-
 
 | Skill | Description |
 |-------|-------------|
-| `/prp-core:prp-implement` | Execute a plan with rigorous validation loops; maintains the plan's status markers, lifecycle, and amendments |
-| `/prp-core:prp-loop` | **Autonomous** cyclic pipeline: plan → implement → pr → review, looping review→fix until clean. `--until implement` grinds a single plan to green without a PR |
-| `/prp-core:prp-orchestrate` | Turn the session into an **orchestrator**: coordinate parallel workstreams running PRP skills in git worktrees, with review gates, a standing-decisions log, and merge sequencing |
+| `/prp-core:prp-implement` | Execute a plan through validated commit and PR; write the durable implementation report |
+| `/prp-core:prp-deliver` | Autonomously take an issue, PRD, document, plan, or idea to a published `READY TO MERGE` review |
+| `/prp-core:prp-loop` | **Detached** cyclic pipeline: plan → implement → PR → review, looping review→fix until clean. `--until implement` stops after a green implementation and open PR |
+| `/prp-core:prp-orchestrate` | Turn the session into an **orchestrator**: coordinate autonomous delivery workstreams in git worktrees, with human-only and merge gates, a standing-decisions log, and merge sequencing |
 | `/prp-core:prp-commit` | Smart commit with natural-language file targeting |
 | `/prp-core:prp-pr` | Push the branch and open a PR with template support |
 
-### Review & issues
+### Review
 
 | Skill | Description |
 |-------|-------------|
 | `/prp-core:prp-review` | Agent-based PR review. Code and seam analysis run by default; named specialist scopes are additive |
-| `/prp-core:prp-issue` | Two-phase issue workflow: `investigate <issue>` → artifact, then `fix <issue>` → code, PR, self-review |
 
 ### Research & debug
 
@@ -74,7 +74,7 @@ Specialized, advisory agents used by the review and planning skills. They are re
 | `code-simplifier` | Removes avoidable machinery through proven smaller primitives |
 | `docs-impact-agent` | False or missing documentation that changes reader behavior |
 
-Review agents are invoked automatically by `/prp-core:prp-review` and `/prp-core:prp-issue fix`, or manually via the Task tool.
+Review agents are invoked automatically by `/prp-core:prp-review` and the review stage of `/prp-core:prp-deliver`, or manually via the Task tool.
 
 ## Hooks
 
@@ -90,7 +90,7 @@ The plugin ships one Stop hook, `hooks/prp-research-team-stop.sh`, which validat
 /prp-core:prp-plan ~/.prp/<project-key>/prds/user-auth.prd.md
     ↓  auto-selects the next pending phase, creates a plan
 /prp-core:prp-implement ~/.prp/<project-key>/plans/user-auth-phase-1.plan.md
-    ↓  executes, validates, updates the plan + PRD, archives
+    ↓  executes, validates, commits, opens the PR, and links delivery to the PRD
 repeat /prp-core:prp-plan for the next phase
 ```
 
@@ -108,11 +108,11 @@ repeat /prp-core:prp-plan for the next phase
     ↓  plan → implement (loop to green) → PR → review → fix → re-review → clean
 ```
 
-### Bug fixes: the issue workflow
+### Input to a reviewed PR
 
 ```
-/prp-core:prp-issue investigate 123     # analyze + artifact + post to GitHub
-/prp-core:prp-issue fix 123             # implement, PR, self-review
+/prp-core:prp-deliver 123
+    ↓  plan → implement → PR → review → correct → READY TO MERGE
 ```
 
 ## Installation
@@ -167,16 +167,13 @@ Artifacts and runtime state are written outside the repository to the target pro
 ├── project.json       # canonical project path and name
 ├── prds/              # product requirement documents
 ├── plans/             # implementation plans
-│   └── completed/     # archived after implement
 ├── research/          # codebase research
 ├── research-plans/    # multi-agent research plans
 ├── reports/           # implementation reports
 ├── reviews/           # human-readable PR reviews
-├── issues/            # issue investigation artifacts
-│   └── completed/
 ├── debug/             # root-cause analysis reports
 ├── orchestration/     # parallel-workstream run files
-└── state/             # loop state, verdicts, logs, and hook sentinels
+└── state/             # loop state, logs, and hook sentinels
 ```
 
 `<project-key>` is `<slug>-<hash8>`, where the slug comes from the canonical main-checkout basename and `hash8` is the first eight characters of Git's blob hash of that checkout path. This makes every linked worktree resolve to the same store. Set `PRP_HOME` to override the default `~/.prp` root.
@@ -192,7 +189,7 @@ If a repository moves, its path-derived key changes. Move the old store to the n
 3. **Information dense** — real patterns, file:line, commands; no filler
 4. **Progressive success** — start small, validate, then enhance
 
-Plans are living artifacts: an append-only Lifecycle header (created/modified/commits/refs), inline task status markers (`[ ] [wip] [x] [f]`), a validation loop, an Amendments log, and a free-form Agent Notes canvas for whatever the template didn't anticipate.
+Plans are durable implementation contracts. Implementation results, validation, deviations, commits, and PR delivery live in the matching report so later contexts can recover the current truth without mutating or archiving the plan.
 
 ## Troubleshooting
 

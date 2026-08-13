@@ -175,8 +175,6 @@ CODEX_SKILL_REWRITES: dict[str, list[tuple[re.Pattern, str]]] = {
     # mechanics harness-agnostic (kild rooms / subagents / headless fallback) while
     # keeping the discipline (decompose, gate, verify, merge) verbatim.
     "prp-orchestrate": [
-        (re.compile(r"launch and steer agents with the native agent tools"),
-         "launch and steer background agents with your harness's delegation tools"),
         (re.compile(
             r"\*\*Drive everything through the native agent tools\*\* — spawn with "
             r"your delegation tool \(background, worktree isolation\), steer and continue "
