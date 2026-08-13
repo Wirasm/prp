@@ -1,336 +1,96 @@
 ---
 name: prp-pr
-description: Create a PR from current branch with unpushed commits. Use when the user wants to open or create a pull request, push and PR a branch, or invokes /prp-pr.
-argument-hint: "[--base <branch>] (default: auto-detected)"
+description: Creates and opens GitHub pull requests. Always use when creating a PR on GitHub, when the user explicitly asks to create or open a PR, when another PRP workflow reaches its PR-creation step, or when the user invokes /prp-pr.
+argument-hint: "[--base <branch>] [--draft] [issue number or URL]"
 ---
 
 # Create Pull Request
 
-**Base branch override**: $ARGUMENTS
+Create a clear, reviewer-friendly GitHub pull request for the completed work on the current branch.
 
----
+**Arguments**: $ARGUMENTS
 
-## Your Mission
+## Scope
 
-Create a well-formatted pull request from the current branch, using repository PR templates if available, with a clear summary of changes.
+Run this at the PR-creation step after the requested work has been done by the current agent, a subagent, or another collaborator. Ensure every change belonging to that work is committed before opening the PR. If intended changes remain uncommitted, invoke `/prp-commit` with a natural-language target that identifies only those changes, then verify the resulting commit. Never sweep unrelated worktree changes into the commit.
 
-**Golden Rule**: PRs should tell reviewers what changed and why. Use existing templates when available.
+The pull request itself is the artifact; do not create a separate local PR document.
 
----
+## 1. Establish the PR target
 
-## Phase 0: DETECT - Base Branch
+Inspect the current branch, repository instructions, remote branches, and Git history. Determine the base in this order:
 
-### 0.1 Detect Base Branch
+1. An explicit `--base <branch>`.
+2. The base recorded on an existing PR for this branch.
+3. The repository's documented development flow.
+4. Branch ancestry against likely integration branches such as `development`, `dev`, and the remote default branch.
+5. The remote default branch as a fallback.
 
-Determine the base branch for PR target and diff comparison:
+Use the same resolved base for every log, diff, and PR command. Never assume `main`. If the evidence is genuinely ambiguous, stop and ask rather than opening the PR against a guessed target.
 
-1. **Check arguments**: If `$ARGUMENTS` contains a branch name or `--base <branch>`, use that value
-2. **Auto-detect from remote**:
-   ```bash
-   git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@'
-   ```
-3. **Fallback if detection fails**:
-   ```bash
-   git remote show origin 2>/dev/null | grep 'HEAD branch' | awk '{print $NF}'
-   ```
-4. **Last resort**: `main`
+Check whether any open or closed PR already exists for the current branch. If one exists, return its URL and state instead of creating a duplicate.
 
-**Store as `{base-branch}`** — use this value for ALL comparisons, diff commands, and PR creation. Never hardcode `main` or `master`.
+## 2. Validate the committed work
 
----
+- Re-read `git status` and the diff after any commit to confirm no intended changes were omitted.
+- Confirm the current branch is not the resolved base and contains commits ahead of it.
+- Fetch current remote state, then read the complete merge-base diff and commit range against the resolved base—not only the file list or diff stat.
+- Compare the diff with the user's requested outcome and repository instructions. Stop if the branch does not contain the intended work or includes unexplained scope.
+- Find the repository's pull request template in its supported root, `.github`, or `docs` locations. If several templates could apply and the correct one cannot be inferred, ask which to use.
 
-## Phase 1: VALIDATE - Check Prerequisites
+## 3. Write the pull request
 
-### 1.1 Verify Git State
+Treat repository rules as syntax constraints, not as the writing-quality standard.
 
-```bash
-# Current branch (must not be {base-branch})
-git branch --show-current
+### Title
 
-# Check for uncommitted changes
-git status --short
+- Write a concise, human-readable title describing the meaningful outcome.
+- Preserve enforced repository syntax such as required types, scopes, or issue identifiers.
+- Do not imitate vague or implementation-focused titles merely because they appear in repository history.
+- Use Conventional Commit style only when the repository requires or consistently uses it.
 
-# Verify we have commits to PR
-git log origin/{base-branch}..HEAD --oneline
-```
+**Bad:** `feat(core): add child run traversal and parent event aggregation`
 
-**Decision Tree:**
+**Good:** `feat(core): workflows can now include a child workflow in the parent run`
 
-| State | Action |
-|-------|--------|
-| On {base-branch} | STOP: "Cannot create PR from {base-branch}. Create a feature branch first." |
-| Uncommitted changes | WARN: "You have uncommitted changes. Commit or stash before creating PR." |
-| No commits ahead | STOP: "No commits to create PR from. Branch is up to date with {base-branch}." |
-| Has commits, clean | PROCEED |
+### Description
 
-### 1.2 Check for Existing PR
+Use the repository's pull request template whenever one exists. Preserve its structure and fill every applicable section with concrete information from the request, diff, commits, and validation evidence.
 
-```bash
-gh pr list --head $(git branch --show-current) --json number,url
-```
-
-**If PR exists:**
-```
-PR already exists for this branch: {url}
-Use `gh pr view` to see details or `gh pr edit` to modify.
-```
-
-**PHASE_1_CHECKPOINT:**
-- [ ] Not on {base-branch}
-- [ ] Working directory is clean (or user acknowledged)
-- [ ] Has commits ahead of base branch
-- [ ] No existing PR for this branch
-
----
-
-## Phase 2: DISCOVER - Gather Context
-
-### 2.1 Check for PR Template
-
-```bash
-# Check common template locations
-ls -la .github/PULL_REQUEST_TEMPLATE.md 2>/dev/null
-ls -la .github/pull_request_template.md 2>/dev/null
-ls -la .github/PULL_REQUEST_TEMPLATE/ 2>/dev/null
-ls -la docs/pull_request_template.md 2>/dev/null
-```
-
-**If template found:**
-- Read the template
-- Use it as the PR body structure
-- Fill in sections based on commits and changes
-
-**If no template:**
-- Use default format (see Phase 4)
-
-### 2.2 Analyze Commits
-
-```bash
-# Get commit messages for PR body
-git log origin/{base-branch}..HEAD --pretty=format:"- %s"
-
-# Get detailed commit info
-git log origin/{base-branch}..HEAD --pretty=format:"%h %s%n%b" --no-merges
-```
-
-### 2.3 Analyze Changed Files
-
-```bash
-# Files changed
-git diff --stat origin/{base-branch}..HEAD
-
-# Get list of changed files
-git diff --name-only origin/{base-branch}..HEAD
-```
-
-### 2.4 Determine PR Title
-
-**From commits, derive title:**
-- If single commit: Use commit message as title
-- If multiple commits: Summarize the change in imperative mood
-- Format: `{type}: {description}` (e.g., "feat: Add user authentication")
-
-**Common prefixes:**
-| Prefix | Usage |
-|--------|-------|
-| `feat:` | New feature |
-| `fix:` | Bug fix |
-| `refactor:` | Code restructuring |
-| `docs:` | Documentation |
-| `test:` | Adding tests |
-| `chore:` | Maintenance |
-
-**PHASE_2_CHECKPOINT:**
-- [ ] PR template located (or confirmed none exists)
-- [ ] Commit messages extracted
-- [ ] Changed files listed
-- [ ] PR title determined
-
----
-
-## Phase 3: PUSH - Ensure Branch is Remote
-
-### 3.1 Push to Origin
-
-```bash
-# Push with upstream tracking
-git push -u origin HEAD
-```
-
-**If push fails:**
-- Check for remote branch conflicts
-- May need `--force-with-lease` if rebased (warn user first)
-
-**PHASE_3_CHECKPOINT:**
-- [ ] Branch pushed to origin
-- [ ] Upstream tracking set
-
----
-
-## Phase 4: CREATE - Build and Submit PR
-
-### 4.1 If Template Exists
-
-Read the template and fill in each section based on:
-- Commit messages
-- Changed files
-- Any linked issues (look for `#123` or `Fixes #123` in commits)
-
-### 4.2 If No Template - Use Default Format
-
-```bash
-gh pr create \
-  --title "{title}" \
-  --base "{base-branch}" \
-  --body "$(cat <<'EOF'
-## Summary
-
-{1-2 sentence description of what this PR accomplishes}
-
-## Changes
-
-{List of commit summaries}
-- {commit 1}
-- {commit 2}
-
-## Files Changed
-
-{Count} files changed
-
-<details>
-<summary>File list</summary>
-
-{list of changed files}
-
-</details>
-
-## Testing
-
-- [ ] Type check passes
-- [ ] Tests pass
-- [ ] Manually verified
-
-## Related Issues
-
-{Any linked issues from commit messages, or "None"}
-EOF
-)"
-```
-
-### 4.3 Extract Issue References
-
-From commit messages, find patterns like:
-- `Fixes #123`
-- `Closes #123`
-- `Relates to #123`
-- `#123`
-
-Include these in the PR body under "Related Issues".
-
-**PHASE_4_CHECKPOINT:**
-- [ ] PR body generated (from template or default)
-- [ ] Title is clear and follows convention
-- [ ] Related issues linked
-
----
-
-## Phase 5: VERIFY - Confirm Creation
-
-### 5.1 Get PR Details
-
-```bash
-# Get the created PR info
-gh pr view --json number,url,title,state
-```
-
-### 5.2 Verify PR is Ready
-
-```bash
-# Check PR status
-gh pr checks
-```
-
-**PHASE_5_CHECKPOINT:**
-- [ ] PR created successfully
-- [ ] PR URL retrieved
-
----
-
-## Phase 6: OUTPUT - Report to User
+If no template exists, use this fallback:
 
 ```markdown
-## Pull Request Created
+## Problem
 
-**PR**: #{number}
-**URL**: {url}
-**Title**: {title}
-**Base**: {base-branch} <- {current-branch}
+{Explain the original problem and why it matters to the user.}
 
-### Summary
+## Solution
 
-{Brief description of what the PR contains}
+{Briefly explain how the change resolves it, focusing on behavior rather than an inventory of files and functions.}
 
-### Changes
+## Validation
 
-- {N} commits
-- {M} files changed
+- `{actual command}` — passed
+- {Concrete manual verification, when applicable}
 
-### Files
-
-{List of changed files}
-
-### Checks
-
-{Status of any CI checks, or "Pending"}
-
-### Next Steps
-
-- Wait for CI checks to pass
-- Request review if needed: `gh pr edit --add-reviewer @username`
-- View PR: `gh pr view --web`
+{Fixes/Closes/Relates to #N when supported}
 ```
 
----
+- Lead with the problem, then the solution. Do not lead with an implementation inventory.
+- Report only validation that actually ran. If none ran, say so and explain why; never add generic unchecked boxes as evidence.
+- Add `Fixes` or `Closes` only when the PR fully resolves the referenced issue. Use `Relates to` for a non-closing relationship. Do not infer issue linkage from an unexplained bare number.
+- Never add AI attribution, a generated-by footer, a robot emoji, or `Co-Authored-By: Claude`.
 
-## Handling Edge Cases
+## 4. Push and create
 
-### Branch has diverged from {base-branch}
+Push the current branch with upstream tracking when needed. If the remote branch has diverged or the push is rejected, stop and report the conflict; do not rebase or force-push as part of this skill.
 
-```bash
-# Suggest rebasing first
-git fetch origin
-git rebase origin/{base-branch}
-# Then push with lease
-git push --force-with-lease
-```
+Create a ready-for-review PR against the resolved base. Use `--draft` only when the user explicitly requests a draft. Pass the prepared title and body to `gh pr create` without opening an interactive editor.
 
-### PR template has required sections
+## 5. Verify and report
 
-- Parse template for required sections (often marked with `<!-- required -->`)
-- Ensure all required sections are filled
-- Warn if any appear incomplete
+Read the created PR back from GitHub and verify its number, URL, title, base, head, draft state, and open state. Check CI status without waiting for pending jobs.
 
-### Multiple PR templates exist
+Return the PR URL first, followed by the verified title, `base <- head`, ready/draft state, and current checks. Keep the report concise.
 
-```bash
-# If .github/PULL_REQUEST_TEMPLATE/ directory exists
-ls .github/PULL_REQUEST_TEMPLATE/
-```
-
-- If multiple templates, use the default or ask user which to use
-
-### Draft PR requested
-
-```bash
-gh pr create --draft --title "{title}" --body "{body}"
-```
-
----
-
-## Success Criteria
-
-- **BRANCH_PUSHED**: Current branch exists on origin
-- **PR_CREATED**: PR successfully created via gh
-- **TEMPLATE_USED**: If template exists, it was used
-- **ISSUES_LINKED**: Any referenced issues are linked
-- **URL_RETURNED**: User has the PR URL to share/review
+Do not report success until GitHub confirms the PR exists with the intended base and head.
