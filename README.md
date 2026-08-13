@@ -185,7 +185,7 @@ Implements and validates, then commits and opens a PR
     ↓
 Links the plan, report, and PR back to the source PRD
     ↓
-/prp-review --agents
+/prp-review
 ```
 
 ### Medium Features: Direct to Plan

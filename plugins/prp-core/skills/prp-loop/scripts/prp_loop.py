@@ -381,7 +381,7 @@ def stage_review(state: dict) -> None:
     verdict_path = REVIEW_DIR / f"pr-{num}-cycle-{cycle}.verdict.json"
     bar = state["clean_bar"]
     prompt = (
-        f"Use the prp-review skill with --agents to review PR #{num}. "
+        f"Use the prp-review skill to review PR #{num}. "
         "After the review is complete, decide whether the PR is CLEAN, where clean means "
         f"there are zero {bar} issues. Then write a JSON file to {verdict_path} with exactly this "
         'shape and nothing else:\n'

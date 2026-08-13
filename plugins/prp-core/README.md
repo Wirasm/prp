@@ -6,7 +6,7 @@ Complete PRP (Product Requirement Prompt) workflow automation for Claude Code, p
 
 This plugin provides a comprehensive workflow for creating, executing, and shipping features using the PRP methodology — where **PRP = PRD + curated codebase intelligence + agent/runbook** — designed to enable AI agents to ship production-ready code on the first pass.
 
-Everything ships as **skills** (not slash commands), so each one is both **user-invocable** (type `/prp-core:<name>`) and **agent-invocable** (Claude loads it automatically when your request matches its description). Skills that bundle multiple modes (e.g. `prp-issue`, `prp-review`) keep a lean router in `SKILL.md` and defer detail to `workflows/`.
+Everything ships as **skills** (not slash commands), so each one is both **user-invocable** (type `/prp-core:<name>`) and **agent-invocable** (Claude loads it automatically when your request matches its description). Skills with multiple workflows, such as `prp-issue`, keep a lean router in `SKILL.md` and defer detail to `workflows/`.
 
 ## Skills
 
@@ -31,7 +31,7 @@ Everything ships as **skills** (not slash commands), so each one is both **user-
 
 | Skill | Description |
 |-------|-------------|
-| `/prp-core:prp-review` | Comprehensive PR review. Single-pass by default; `--agents` fans out specialists (comments, tests, errors, types, code, docs, simplify) |
+| `/prp-core:prp-review` | Agent-based PR review. Code and seam analysis run by default; named specialist scopes are additive |
 | `/prp-core:prp-issue` | Two-phase issue workflow: `investigate <issue>` → artifact, then `fix <issue>` → code, PR, self-review |
 
 ### Research & debug
@@ -73,7 +73,7 @@ Specialized, advisory agents used by the review and planning skills. They are re
 | `code-simplifier` | Clarity and maintainability improvements |
 | `docs-impact-agent` | Flags stale documentation |
 
-Agents are invoked automatically by `/prp-core:prp-review --agents` and `/prp-core:prp-issue fix`, or manually via the Task tool.
+Review agents are invoked automatically by `/prp-core:prp-review` and `/prp-core:prp-issue fix`, or manually via the Task tool.
 
 ## Hooks
 
