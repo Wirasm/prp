@@ -68,7 +68,7 @@ Specialized, advisory agents used by the review and planning skills. They are re
 | `comment-analyzer` | Comment accuracy and maintainability |
 | `pr-test-analyzer` | Test coverage quality and gaps |
 | `silent-failure-hunter` | Error handling and silent failures |
-| `type-design-analyzer` | Type encapsulation and invariants |
+| `type-design-analyzer` | Reachable invalid states and invariant enforcement |
 | `seam-analyzer` | Missing types and drift across system boundaries |
 | `code-simplifier` | Removes avoidable machinery through proven smaller primitives |
 | `docs-impact-agent` | Flags stale documentation |

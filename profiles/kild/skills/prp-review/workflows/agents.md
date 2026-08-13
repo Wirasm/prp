@@ -71,7 +71,7 @@ For each analysis, inline:
 > Hunt for silent failures in PR #<number>, including swallowed errors, unjustified fallbacks, and non-actionable failure handling. Ground findings in reachable behavior. Do not modify files, commit, or post comments.
 
 **type-design-analyzer**:
-> Analyze new or modified types in PR #<number> for pragmatic invariant expression and enforcement. Recommend added complexity only when it prevents a concrete failure. Do not modify files, commit, or post comments.
+> Analyze new or modified types in PR #<number> for meaningful invariants they fail to enforce. Report only reachable invalid states with a concrete downstream consequence and the smallest proportional enforcement point. Do not modify files, commit, or post comments.
 
 **docs-impact-agent**:
 > Review documentation affected by PR #<number>. Find statements made stale by the change and genuinely necessary user-facing additions. Do not treat steering files as changelogs. Do not modify files, commit, or post comments.
