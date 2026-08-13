@@ -41,7 +41,7 @@ mkdir -p "$PRP_DIR"; [ -f "$PRP_DIR/project.json" ] || printf '{"path": "%s", "n
    - Review-only → `prp-review` (worktree — it runs `gh pr checkout`); research-only → `prp-codebase-question` (plain background agent)
    - **Feasibility unknown** — "can this be built here", "what would it cost to allow it" → `prp-spike` (worktree). It ends in a verdict, not a PR; what it gates is whether the downstream workstreams should exist at all, so schedule it *before* the work it informs
 3. Map dependencies and conflict risk: predict the files each workstream touches. Disjoint → parallel; overlapping → serialize or merge into one workstream.
-4. Size the batch. Default `--max-parallel 3`; raise only when workstreams are provably disjoint. More parallel agents = more merge surface and more gates.
+4. Size the batch from both conflict risk and agent capacity. A delivery owner needs room for one fresh stage coordinator and at least one leaf specialist. Reserve those two slots beyond the root and active delivery owners: `max-parallel = min(3, capacity - 3)`, with a minimum supported capacity of four. If capacity is unknown, default to one. Raise only when workstreams are disjoint and the nested-agent reserve still fits. More parallel agents = more merge surface and more gates.
 
 Before approving a plan or implementation shape that adds a subsystem, policy layer, state store, staging area, or lifecycle, probe the owning agent in its existing context:
 

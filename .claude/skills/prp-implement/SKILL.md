@@ -64,6 +64,8 @@ Record deviations and implementation-only decisions in the implementation report
 
 Run each task's specified validation after the coherent task, then run every applicable command or procedure in the plan's Validation section and verify every Acceptance criterion. A correction pass also runs the focused regression check for each corrected finding. For a legacy plan, honor its Validation Commands and Acceptance Criteria. Add or adapt a missing check only when repository evidence shows the plan's gate is incomplete.
 
+For an evidence-backed disagreement that requires no repository change, run the smallest decisive check that proves the finding invalid and record its output. Do not manufacture a code or documentation edit merely to create a correction commit.
+
 On failure, fix the cause and rerun the affected check before continuing. Do not trust the first passing suite blindly: inspect suspicious or weak tests and verify the behavior they claim to cover. Never report completion with a known failing required check.
 
 ## 4. Write the implementation report
@@ -76,9 +78,9 @@ If implementation or required validation is blocked, mark the report `BLOCKED`, 
 
 ## 5. Commit, open the PR, and update linked context
 
-When implementation is green, invoke `/prp-commit` for only the work completed from this plan or correction pass. Record the resulting commit SHA in the report and in a legacy plan's append-only Lifecycle section when present.
+When initial implementation is green, or a correction changed repository files, invoke `/prp-commit` for only the work completed from this plan or correction pass. Record the resulting commit SHA in the report and in a legacy plan's append-only Lifecycle section when present.
 
-For initial implementation, invoke `/prp-pr`, passing the explicit `--base` argument when supplied, the plan's source issue and verified `Plan Publication` URL when present, and any tracked follow-up issue links as context for the PR description. Let that skill resolve the base otherwise. For a correction pass, push the new commit without force and verify that the existing PR now contains it. Record the PR URL, base, head, and all delivery commits in the report.
+For initial implementation, invoke `/prp-pr`, passing the explicit `--base` argument when supplied, the plan's source issue and verified `Plan Publication` URL when present, and any tracked follow-up issue links as context for the PR description. Let that skill resolve the base otherwise. For a correction pass with repository changes, push the new commit without force and verify that the existing PR now contains it. For an evidence-only disagreement, skip commit and push, verify the PR head SHA is unchanged, and record that SHA with the decisive evidence. Record the PR URL, base, head, and all delivery commits in the report.
 
 If the plan has non-empty `Source PRD` and `PRD Phase` metadata, invoke `/prp-prd-update implemented` with the PRD path, phase number, plan path, report path, and PR URL. Do not edit the PRD directly. If the plan is not based on a PRD, skip this step.
 
@@ -88,7 +90,7 @@ If committing, pushing, PR creation, or the required PRD update fails, leave the
 
 Re-read the branch diff, updated plan, report, and—during correction—the review report. Confirm the intended implementation or required corrections are complete, unrelated work remains untouched, every reported validation result is factual, the commit contains the intended scope, the PR targets the correct base, and the report exists at the stated absolute path.
 
-Return the implemented outcome, validation summary, deviations or blocker and recovery action, commit, PR URL, tracked follow-up issues, conditional PRD update, and absolute report path. Do not review, merge, move, or archive the plan.
+Return the implemented outcome, resolved absolute plan path, validation summary, deviations or blocker and recovery action, commit, PR URL, tracked follow-up issues, conditional PRD update, and absolute report path. Do not review, merge, move, or archive the plan.
 
 When every required validation and acceptance criterion passes and every required delivery step succeeds, end the response with exactly `VALIDATION: GREEN`. Otherwise end with `VALIDATION: FAILED` followed by the concrete blocker or failing output.
 

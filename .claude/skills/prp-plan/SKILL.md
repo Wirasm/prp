@@ -54,7 +54,7 @@ Do not invent personas, business value, or vanity metrics. If the affected user,
 
 Read repository guidance and discover the actual project structure. Do not assume `src/`, a framework, or a validation stack.
 
-For a non-trivial code change, read `references/agent-prompts.md`, then launch these agents in parallel:
+For a non-trivial code change, read `references/agent-prompts.md`, then launch these agents in parallel when capacity permits, or sequentially when it does not. Every listed role remains required:
 
 - `prp-core:codebase-explorer` to locate relevant files, analogous behavior, tests, configuration, and existing primitives.
 - `prp-core:codebase-analyst` to trace the current control flow, data flow, state changes, contracts, and observable behavior.

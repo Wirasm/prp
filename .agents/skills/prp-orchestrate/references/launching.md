@@ -13,7 +13,7 @@ Spawn via your delegation tool:
 - **PR-producing workstream** — one background agent in its own pre-created worktree. The agent creates its branch, commits, pushes, and opens the PR itself (that is part of its prompt's definition of done).
 - Prefer the pack's advisory agents (`code-reviewer`, `codebase-analyst`, …) when one matches the workstream.
 - Record the agent ID/name the tool returns — it is the handle for messaging, stopping, and status checks, and goes in the run file's workstream row.
-- Respect the run's `--max-parallel`: completion notifications free slots; launch the next queued workstream then.
+- Respect the run's capacity-aware `--max-parallel`: reserve two slots beyond the root and active delivery owners for a delivery's stage coordinator and leaf specialist. Completion notifications free slots; launch the next queued workstream then.
 
 ## Workstream prompt template
 
@@ -54,6 +54,7 @@ The four added lines each replace a failure the orchestrator otherwise pays for 
 **Worktree location**: if the repo has its own convention (a `.worktrees/` directory, a worktree skill/CLI, existing sibling worktrees), tell the agent to follow it rather than relying on the isolation default. Some projects list, prune or build against their worktrees, and one parked outside that convention is invisible to those tools.
 
 The STOP-and-report clause is the escalation path: the orchestrator gates the blocker, then **message the decision to the same agent** — it continues with full context. Never replace a blocked agent with a fresh one; the fresh one has no history.
+The `prp-deliver` owner must add every applicable Standing Decision—and later gate answers—to the verbatim caller-decisions record it passes into its own fresh planning, implementation, and review agents.
 
 ## Engines per workstream type
 
