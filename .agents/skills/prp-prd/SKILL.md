@@ -331,16 +331,18 @@ When {situation}, I want to {motivation}, so I can {outcome}.
   STATUS: pending | in-progress | complete
   PARALLEL: phases that can run concurrently (e.g., "with 3" or "-")
   DEPENDS: phases that must complete first (e.g., "1, 2" or "-")
-  PRP: link to generated plan file once created
+  PLAN: link to generated plan file once created
+  REPORT: link to the implementation report once implemented
+  PR: link to the pull request once opened
 -->
 
-| # | Phase | Description | Status | Parallel | Depends | PRP Plan |
-|---|-------|-------------|--------|----------|---------|----------|
-| 1 | {Phase name} | {What this phase delivers} | pending | - | - | - |
-| 2 | {Phase name} | {What this phase delivers} | pending | - | 1 | - |
-| 3 | {Phase name} | {What this phase delivers} | pending | with 4 | 2 | - |
-| 4 | {Phase name} | {What this phase delivers} | pending | with 3 | 2 | - |
-| 5 | {Phase name} | {What this phase delivers} | pending | - | 3, 4 | - |
+| # | Phase | Description | Status | Parallel | Depends | Plan | Report | PR |
+|---|-------|-------------|--------|----------|---------|------|--------|----|
+| 1 | {Phase name} | {What this phase delivers} | pending | - | - | - | - | - |
+| 2 | {Phase name} | {What this phase delivers} | pending | - | 1 | - | - | - |
+| 3 | {Phase name} | {What this phase delivers} | pending | with 4 | 2 | - | - | - |
+| 4 | {Phase name} | {What this phase delivers} | pending | with 3 | 2 | - | - | - |
+| 5 | {Phase name} | {What this phase delivers} | pending | - | 3, 4 | - | - | - |
 
 ### Phase Details
 
