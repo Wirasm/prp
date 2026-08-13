@@ -43,7 +43,7 @@ Always select `code` and `seams`. Add only scopes explicitly named by the user o
 | `errors` | `silent-failure-hunter` | Swallowed failures, fallbacks, and actionable errors |
 | `types` | `type-design-analyzer` | Invariant expression and enforcement in changed types |
 | `docs` | `docs-impact-agent` | Stale or missing user and contributor documentation |
-| `simplify` | `code-simplifier` | Behavior-preserving clarity improvements |
+| `simplify` | `code-simplifier` | Avoidable machinery with a proven smaller primitive |
 
 `all` adds all six optional scopes. Explicit `code` or `seams` is redundant but valid. Ignore
 `--agents`; it exists only so older callers still receive the new default review.
@@ -56,28 +56,28 @@ All agents are advisory and must not modify files or post their own PR comments.
 For each analysis, inline:
 
 **code-reviewer**:
-> Review PR #<number> against its actual base for project guideline compliance, bugs, and quality issues. Read the repository guidance and relevant code outside the diff. Report only high-confidence findings with evidence and file:line locations. Do not modify files, commit, or post comments.
+> Review PR #<number> against its actual base for reachable behavioral defects and explicit repository-rule violations. Read direct callers and consumers beyond the diff. Report only causal findings with concrete evidence and file:line locations. Do not modify files, commit, or post comments.
 
 **seam-analyzer**:
 > Analyze PR #<number> for missing types at seams. Leave the diff to inspect direct counterparts of changed payloads, wire formats, persisted or resumed values, IPC/FFI and cross-language boundaries, syntax forms, validators, and synchronized enumerations. Enforce the two-sided evidence bar and documented carve-outs. Do not modify files, commit, or post comments.
 
 **pr-test-analyzer**:
-> Analyze behavioral test coverage for PR #<number>. Identify only gaps that protect meaningful behavior or prevent realistic regressions. Account for existing integration coverage. Do not modify files, commit, or post comments.
+> Map changed behavior in PR #<number> to existing unit, integration, and end-to-end assertions. Report only gaps with a plausible faulty implementation that current tests allow and the smallest behavioral test that would catch it. Do not modify files, commit, or post comments.
 
 **comment-analyzer**:
-> Analyze comments changed by PR #<number> for factual accuracy and long-term value. Verify them against actual behavior. Do not modify files, commit, or post comments.
+> Verify comments and docstrings changed by PR #<number> against actual code, contracts, and direct consumers. Report only materially false prose, a concrete maintenance trap, or missing durable knowledge that code and types cannot express. Do not modify files, commit, or post comments.
 
 **silent-failure-hunter**:
-> Hunt for silent failures in PR #<number>, including swallowed errors, unjustified fallbacks, and non-actionable failure handling. Ground findings in reachable behavior. Do not modify files, commit, or post comments.
+> Trace changed failure and recovery paths in PR #<number>. Report only reachable failures that become indistinguishable from success or lose evidence needed by the owner who can act; respect legitimate probes, retries, fallbacks, and propagation. Do not modify files, commit, or post comments.
 
 **type-design-analyzer**:
-> Analyze new or modified types in PR #<number> for pragmatic invariant expression and enforcement. Recommend added complexity only when it prevents a concrete failure. Do not modify files, commit, or post comments.
+> Analyze new or modified types in PR #<number> for meaningful invariants they fail to enforce. Report only reachable invalid states with a concrete downstream consequence and the smallest proportional enforcement point. Do not modify files, commit, or post comments.
 
 **docs-impact-agent**:
-> Review documentation affected by PR #<number>. Find statements made stale by the change and genuinely necessary user-facing additions. Do not treat steering files as changelogs. Do not modify files, commit, or post comments.
+> Review repository documentation affected by PR #<number>. Report only materially false guidance or missing instructions required to discover, use, operate, migrate, or maintain changed public behavior. Determine this repository's real documentation surfaces and authoritative sources; do not treat steering files as changelogs. Do not modify files, commit, or post comments.
 
 **code-simplifier**:
-> Identify behavior-preserving simplifications in PR #<number>. Prefer clarity and fewer moving parts; do not optimize for line count or propose speculative abstractions. Do not modify files, commit, or post comments.
+> Analyze PR #<number> for avoidable machinery. Establish the required outcome and invariant, find an existing or smaller primitive, and report only when evidence proves it can preserve the behavior while removing meaningful state, concepts, ownership, or synchronization. Do not modify files, commit, or post comments.
 
 ## 5. Aggregate without re-reviewing
 

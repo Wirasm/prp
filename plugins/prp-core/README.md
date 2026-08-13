@@ -64,14 +64,14 @@ Specialized, advisory agents used by the review and planning skills. They are re
 
 | Agent | Description |
 |-------|-------------|
-| `code-reviewer` | Project guidelines, bugs, type/module checks |
-| `comment-analyzer` | Comment accuracy and maintainability |
-| `pr-test-analyzer` | Test coverage quality and gaps |
-| `silent-failure-hunter` | Error handling and silent failures |
-| `type-design-analyzer` | Type encapsulation and invariants |
+| `code-reviewer` | Reachable defects and explicit repository-rule violations |
+| `comment-analyzer` | Materially false prose and concrete maintenance traps |
+| `pr-test-analyzer` | Meaningful behavior without regression protection |
+| `silent-failure-hunter` | Failure paths that become indistinguishable from success |
+| `type-design-analyzer` | Reachable invalid states and invariant enforcement |
 | `seam-analyzer` | Missing types and drift across system boundaries |
-| `code-simplifier` | Clarity and maintainability improvements |
-| `docs-impact-agent` | Flags stale documentation |
+| `code-simplifier` | Removes avoidable machinery through proven smaller primitives |
+| `docs-impact-agent` | False or missing documentation that changes reader behavior |
 
 Review agents are invoked automatically by `/prp-core:prp-review` and `/prp-core:prp-issue fix`, or manually via the Task tool.
 
