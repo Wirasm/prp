@@ -42,7 +42,7 @@ mkdir -p "$PRP_DIR"; [ -f "$PRP_DIR/project.json" ] || printf '{"path": "%s", "n
    - Review-only → `prp-review` (worktree — it runs `gh pr checkout`); research-only → `prp-codebase-question` (plain background agent)
    - **Feasibility unknown** — "can this be built here", "what would it cost to allow it" → `prp-spike` (worktree). It ends in a verdict, not a PR; what it gates is whether the downstream workstreams should exist at all, so schedule it *before* the work it informs
 3. Map dependencies and conflict risk: predict the files each workstream touches. Disjoint → parallel; overlapping → serialize or merge into one workstream.
-4. Size the batch from both conflict risk and agent capacity. A delivery owner needs room for one fresh stage coordinator and at least one leaf specialist. Reserve those two slots beyond the root and active delivery owners: `max-parallel = min(3, capacity - 3)`, with a minimum supported capacity of four. If capacity is unknown, default to one. Raise only when workstreams are disjoint and the nested-agent reserve still fits. More parallel agents = more merge surface and more gates.
+4. Set the run's configured `max-parallel` to the user's explicit value, or **10** by default. It counts active delivery owners and has no separate PRP hard cap; the user may change it at any time. Separately pace launches against dependencies, conflict risk, and current harness capacity. Every delivery owner must retain room for its fresh stage coordinator and at least one sequential leaf specialist, so when capacity is known the effective launch limit is `min(max-parallel, floor((capacity - 1) / 3))` with a minimum supported capacity of four; when capacity is unknown, start one owner while keeping the configured value unchanged. A lower effective limit never rewrites or rejects the user's configured maximum.
 
 Before approving a plan or implementation shape that adds a subsystem, policy layer, state store, staging area, or lifecycle, probe the owning agent in its existing context:
 
@@ -90,6 +90,7 @@ Monitoring is **event-driven, not polled**: background agents notify on completi
 
 **On user input at any time** — the run absorbs it live:
 - *"also do X, Y"* → run Phase 1 on the additions only (overlap-check against running workstreams), append rows, launch or queue.
+- *"set the parallel limit to N"* / *"up the parallel limit to N"* → update the run file's configured `Max parallel` immediately, recompute the effective launch limit, and launch eligible queued work up to it. If the harness rejects a spawn, keep that work pending and retry when capacity frees; do not refuse or roll back the requested value.
 - *"stop workstream N"* / *"stop everything"* → stop the task(s), record status `dropped` + reason; the worktree/branch survive for later.
 - *"tell agent N to …"* → send a message to that agent; log the instruction in the Event Log.
 - *"status?"* → answer from the run file + task list; reconcile against `gh pr list` if stale.

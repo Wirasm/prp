@@ -13,7 +13,7 @@ Spawn via your delegation tool:
 - **PR-producing workstream** — one background agent in its own pre-created worktree. The agent creates its branch, commits, pushes, and opens the PR itself (that is part of its prompt's definition of done).
 - Prefer the pack's advisory agents (`code-reviewer`, `codebase-analyst`, …) when one matches the workstream.
 - Record the agent ID/name the tool returns — it is the handle for messaging, stopping, and status checks, and goes in the run file's workstream row.
-- Respect the run's capacity-aware `--max-parallel`: reserve two slots beyond the root and active delivery owners for a delivery's stage coordinator and leaf specialist. Completion notifications free slots; launch the next queued workstream then.
+- Respect the run's configured `--max-parallel` (default 10, replaceable by the user at any time). Pace actual launches against current harness capacity, reserving room beyond every active delivery owner for its stage coordinator and one sequential leaf specialist. A lower effective limit or rejected spawn queues work without changing the configured maximum; completion notifications free slots, so retry queued work then.
 
 ## Workstream prompt template
 
