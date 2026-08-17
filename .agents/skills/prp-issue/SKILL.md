@@ -44,6 +44,7 @@ Start a fresh agent with this prompt:
 > Invoke `$prp-review` on `<PR URL or number>` with scopes `<requested scopes, if any>`. Applicable caller decisions and scope constraints, verbatim: `<decisions or "None">`. Read the linked plan and implementation report, publish the complete review to GitHub, and return the verdict, canonical review-report path, verified publication URL, and any blocker. Do not modify the PR.
 
 Require the complete canonical review report and verified GitHub publication.
+Wait until all selected review agents have finished and the review coordinator has produced the complete canonical report before addressing any finding; never start correction from partial reviewer messages.
 
 ## 4. Disposition findings and re-review
 
