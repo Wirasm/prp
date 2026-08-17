@@ -16,7 +16,15 @@
 
 ## Deviations and Decisions
 
-{Only deviations from the plan, dispositioned review findings, and decisions downstream contexts must preserve, or "None."}
+{Only deviations from the plan and decisions downstream contexts must preserve, or "None."}
+
+## Review Dispositions
+
+| ID | Disposition | Reason and evidence | Tracking |
+| --- | --- | --- | --- |
+| `R1` | `{FIXED | NOT A FINDING | TRACKED FOLLOW-UP | DECLINED}` | {why and decisive evidence} | `{issue URL | Not applicable}` |
+
+{Use `None.` when this delivery has no review findings. Never leave a finding deferred or omit it.}
 
 ## Completion Gate
 
@@ -35,4 +43,4 @@
 - **Pull Request:** `{URL | Not opened}`
 - **Base / Head:** `{base <- head | Not applicable}`
 - **Source PRD:** `{absolute path and phase update | None}`
-- **Tracked follow-ups:** `{None | human-visible GitHub issue links for actionable work outside this plan's scope}`
+- **Tracked follow-ups:** `{None | verified GitHub issue links for valuable, distinct outcomes outside this delivery}`

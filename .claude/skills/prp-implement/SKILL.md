@@ -13,7 +13,7 @@ Execute the supplied implementation plan through a validated commit and pull req
 ## Mode
 
 - A plan path starts the initial implementation.
-- `review` plus a review report, PR, or finding decisions starts a correction pass. Resolve and read the original plan, implementation report, live PR diff and comments, complete canonical review report, and any explicit finding dispositions before editing. Human dispositions are binding when supplied. Otherwise Critical or Important findings require correction or an evidence-backed disagreement; suggestions remain optional.
+- `review` plus a review report, PR, or finding decisions starts a correction pass. Resolve and read the original plan, implementation report, live PR diff and comments, complete canonical review report, and any explicit finding dispositions before editing. Human dispositions are binding when supplied. Otherwise resolve every finding: Critical or Important findings require correction or an evidence-backed disagreement; prefer fixing a valid Suggestion now when the correction is narrow, low-risk, aligned, and cheaper than recovering the work in another delivery cycle.
 - `ci` plus a PR and failing-check evidence starts a correction pass. Resolve the original plan, implementation report, live PR diff, complete check status and logs, and reproduce the failure before editing. Correct only PR-caused failures; preserve evidence when the failure is external or pre-existing.
 
 Resume the original implementation context for corrections when it is available. In a fresh context, reconstruct the complete contract from those durable artifacts rather than from an abbreviated findings summary.
@@ -46,7 +46,7 @@ Use the current feature branch or assigned worktree when one exists. If running 
 
 ## 2. Implement the plan
 
-For initial implementation, execute tasks in dependency order and read each referenced pattern before changing its task. For a correction pass, change only what the blocking findings, failing checks, or explicit dispositions require and preserve the plan's outcome and invariant. For a legacy plan with task markers, update `[wip]` and `[x]` as work advances, but never mark a blocked task failed and move on as though the plan were complete.
+For initial implementation, execute tasks in dependency order and read each referenced pattern before changing its task. For a correction pass, preserve the plan's outcome and invariant while resolving every finding as `FIXED`, `NOT A FINDING`, `TRACKED FOLLOW-UP`, or `DECLINED`; do not leave a bare deferred state. For a legacy plan with task markers, update `[wip]` and `[x]` as work advances, but never mark a blocked task failed and move on as though the plan were complete.
 
 Apply these implementation principles:
 
@@ -57,7 +57,11 @@ Apply these implementation principles:
 - Write focused tests that prove changed behavior and acceptance criteria, not one test per function. For bug fixes, add a regression test that fails before the fix and passes after it when practical. Prefer behavioral contracts over snapshots or implementation-detail assertions. Do not add coverage theater, smoke-test volume, or tests whose only purpose is preserving removed behavior.
 - Keep comments and documentation accurate when behavior changes. Comment important intent and constraints, not every line.
 
-Never defer work required by the plan or its acceptance criteria: complete it now or mark the implementation `BLOCKED`. For actionable work discovered outside the agreed scope, avoid widening the implementation; create or link a human-visible GitHub issue before reporting green, and carry that issue into the report and PR description so normal repository triage and `/prp-worklist` can pick it up. If durable tracking cannot be established, stop and ask the user where it belongs; do not bury it in the report or report green. Omit optional ideas that do not merit a commitment.
+Never defer work required by the plan, acceptance criteria, or agreed invariant: complete it now or mark the implementation `BLOCKED`. Prefer fixing other valid findings now when the correction is narrow, low-risk, directionally correct, and cheaper than preserving and recovering the context in another delivery cycle.
+
+Track work separately only when it is clearly valuable but represents a distinct outcome, requires a product or architectural decision, or would materially widen the current delivery. Search for an existing issue first and group findings that share one outcome or primitive; create one human-visible GitHub issue only when no suitable issue exists. Carry verified links into the report and PR description.
+
+Decline speculative defense-in-depth, unnecessary generalization, overengineering, preferences presented as defects, and findings that point in an unclear or undesirable direction. Record the reason; do not turn them into backlog noise. Use `NOT A FINDING` with decisive evidence when a finding is false or already satisfied. Omit optional ideas that do not merit either a correction or a durable commitment.
 
 Record deviations and implementation-only decisions in the implementation report. For a legacy plan that explicitly provides maintained Agent Notes or Amendments sections, keep those current as well. Do not move or archive the plan.
 
