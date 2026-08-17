@@ -47,9 +47,9 @@ Require the complete canonical review report and verified GitHub publication.
 
 ## 4. Disposition findings and re-review
 
-Read the complete report in this implementation context. Fix Critical or Important findings that are correct and material to the requested outcome. Record concrete evidence when a finding is false, already satisfied, conflicts with an explicit decision, or belongs outside the agreed invariant. Treat Suggestions as optional; adopt one only when it clearly improves this delivery without widening scope or risk.
+Read the complete report in this implementation context and disposition every finding. Fix valid Critical or Important findings. Prefer fixing a valid Suggestion now when the correction is narrow, low-risk, aligned, and cheaper than another delivery cycle. Use `NOT A FINDING` with decisive evidence when it is false or already satisfied. Use `TRACKED FOLLOW-UP` only for clearly valuable, distinct work with a verified issue link. Use `DECLINED` for speculative defense-in-depth, overengineering, preference, or unclear or undesirable direction; record why and do not create an issue. Never leave a bare deferred state.
 
-Invoke `$prp-implement` in review-correction mode in this same context. After every correction or evidence-backed disagreement, start a fresh `$prp-review` agent against the current PR head. Repeat until the independent verdict is `READY TO MERGE`. Resolve `REVIEW INCOMPLETE` by obtaining its missing validation or evidence; stop only when that is genuinely unavailable.
+Invoke `$prp-implement` in review-correction mode in this same context. After every correction or disposition, start a fresh `$prp-review` agent against the current PR head. Repeat until the independent verdict is `READY TO MERGE` and every finding has a terminal disposition. Resolve `REVIEW INCOMPLETE` by obtaining its missing validation or evidence; stop only when that is genuinely unavailable.
 
 ## 5. Require green CI
 

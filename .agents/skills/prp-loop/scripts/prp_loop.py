@@ -261,6 +261,14 @@ def review_contract(report_path: Path) -> tuple[str | None, str | None]:
     return (verdict.group(1) if verdict else None, publication.group(1) if publication else None)
 
 
+def review_open_findings(report_path: Path) -> int | None:
+    """Read the count of findings that still require a delivery-owner disposition."""
+    if not report_path.exists():
+        return None
+    match = re.search(r"^open_findings:\s*(\d+)\s*$", report_path.read_text(), re.M)
+    return int(match.group(1)) if match else None
+
+
 def publication_exists(pr_number: int, publication_url: str) -> bool:
     """Verify the recorded review publication is still attached to this PR on GitHub."""
     out = subprocess.run(
@@ -429,7 +437,8 @@ def stage_review(state: dict) -> None:
     state["artifacts"]["review_report"] = str(report_path)
     state["artifacts"]["review_publication"] = publication
 
-    if verdict == "READY TO MERGE":
+    open_findings = review_open_findings(report_path)
+    if verdict == "READY TO MERGE" and open_findings in (None, 0):
         record(state, "review", "clean")
         state["stage"] = "done"
         state["status"] = "done"
@@ -440,7 +449,7 @@ def stage_review(state: dict) -> None:
     if verdict == "REVIEW INCOMPLETE":
         halt(state, f"review incomplete; inspect the published report at {report_path}")
 
-    record(state, "review", "needs-fixes")
+    record(state, "review", "needs-disposition" if verdict == "READY TO MERGE" else "needs-fixes")
     if state["cycle"] >= state["max_cycles"]:
         halt(state, f"review still dirty after {state['max_cycles']} cycles; PR #{num} left open for review")
     state["cycle"] += 1
@@ -469,8 +478,8 @@ def stage_fix(state: dict) -> None:
     initial = (
         f"Use the prp-implement skill in review-correction mode for PR #{pr_num}. "
         f"Read the complete review report at {review_report} and the original plan at {plan}. "
-        "Address every Critical and Important finding, preserve optional Suggestions as optional, "
-        "run ALL validations, and commit. End your message with exactly "
+        "Disposition every finding under the skill's fix-now and follow-up rules, "
+        "run ALL validations, and commit any repository changes. End your message with exactly "
         f"'{GREEN}' when everything passes, otherwise 'VALIDATION: FAILED' + the output."
     )
     handoff = (
@@ -480,12 +489,13 @@ def stage_fix(state: dict) -> None:
     if not implement_until_green(state, initial, "fix", handoff):
         halt(state, f"fix pass not green after {state['max_implement_iterations']} iterations")
     ensure_committed(state)
-    if git("rev-parse", "HEAD") == head_before:
-        halt(state, "fix pass produced no new commit (no progress) — halting to avoid an infinite loop")
-    push = subprocess.run(["git", "push"], cwd=ROOT, capture_output=True, text=True)
-    if push.returncode != 0:
-        halt(state, f"git push failed: {push.stderr[:300]}")
-    record(state, "fix", "pushed")
+    if git("rev-parse", "HEAD") != head_before:
+        push = subprocess.run(["git", "push"], cwd=ROOT, capture_output=True, text=True)
+        if push.returncode != 0:
+            halt(state, f"git push failed: {push.stderr[:300]}")
+        record(state, "fix", "pushed")
+    else:
+        record(state, "fix", "evidence-only disposition")
     state["stage"] = "review"
     save_state(state)
 

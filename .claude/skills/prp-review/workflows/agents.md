@@ -11,8 +11,9 @@ title, body, author, state, base, head, files, reviews, comments, and complete d
 - Review a draft normally, but post a comment rather than approving or requesting changes.
 - Check out the PR branch with `gh pr checkout` unless it is already checked out.
 - Read repository guidance, the full changed files, and directly relevant tests and precedents.
-- Read matching implementation reports, completed plans, or issue artifacts under `$PRP_DIR` when
-  they exist. Treat documented deviations as context, not automatic defects.
+- Read matching implementation reports, completed plans, issue artifacts, and the previous canonical
+  review under `$PRP_DIR` when they exist. Treat documented deviations as context, not automatic
+  defects. On re-review, read every recorded finding disposition and its evidence.
 - If the only matching artifact is under a legacy `.claude/PRPs/` path, stop and tell the user to
   run the PRP home-store migration.
 
@@ -77,16 +78,35 @@ When launching each agent via Task tool:
 **prp-core:code-simplifier**:
 > Analyze PR #<number> for avoidable machinery. Establish the required outcome and invariant, find an existing or smaller primitive, and report only when evidence proves it can preserve the behavior while removing meaningful state, concepts, ownership, or synchronization. Do not modify files, commit, or post comments.
 
-## 5. Aggregate without re-reviewing
+## 5. Synthesize without re-reviewing
 
-Read `../templates/review-report.md` before writing. Merge duplicate findings, preserve meaningful
-disagreement, and map agent language into the canonical severity categories. Do not invent findings,
-raise severity without evidence, or perform another code review during aggregation.
+Read `../templates/review-report.md` before writing. Lead with the review's central signal: the
+outcome, the few conclusions that determine readiness, and the common cause when findings converge.
+Merge duplicate findings into one causal item, attribute every contributing agent, preserve meaningful
+disagreement, and map agent language into the canonical severity categories. Retain every distinct
+issue the agents found, but keep raw agent prose and supporting paths in the finding's detail rather
+than the scanning layer. Record every selected scope, including agents that returned no finding.
+
+Assign stable finding IDs (`R1`, `R2`, ...) on the first review. On re-review, preserve IDs for the
+same causal finding, allocate new IDs after the prior maximum, verify each recorded disposition, and
+never make an earlier finding disappear. Use only these states:
+
+- `OPEN` — unresolved;
+- `FIXED` — the changed head proves the correction;
+- `NOT A FINDING` — decisive evidence disproves it or shows it was already satisfied;
+- `TRACKED FOLLOW-UP` — valuable, separate work with a verified existing or newly created issue;
+- `DECLINED` — non-actionable, speculative, overengineered, or directionally wrong, with a recorded reason.
+
+Accept `TRACKED FOLLOW-UP` or `DECLINED` only when the independent evidence confirms the work is not
+required by the PR's outcome or invariant. Otherwise keep the finding `OPEN`.
+
+Do not invent findings, raise severity without evidence, or perform another code review during
+aggregation. Synthesis connects and prioritizes reviewer evidence; it does not create new evidence.
 
 Verdict rules:
 
-- `READY TO MERGE`: no Critical or Important findings and all required validation passed.
-- `NEEDS FIXES`: at least one Critical or Important finding, or a PR-caused required validation failure.
+- `READY TO MERGE`: no `OPEN` Critical or Important findings and all required validation passed.
+- `NEEDS FIXES`: at least one `OPEN` Critical or Important finding, or a PR-caused required validation failure.
 - `REVIEW INCOMPLETE`: required validation or decisive evidence could not be obtained.
 - Suggestions, including every `simplify` finding, never block by themselves.
 
@@ -94,10 +114,20 @@ Write the report to the expanded absolute path `$PRP_DIR/reviews/pr-{NUMBER}-rev
 
 ## 6. Publish and report
 
-Post the complete, unabridged canonical report with `gh pr comment` by default. Use the same complete report body with `gh pr review --approve` only when `--approve`
-was explicitly requested and the verdict is `READY TO MERGE`. Use `gh pr review --request-changes`
-when explicitly requested or when the user explicitly asked the skill to submit blocking findings
-as a formal review. Never formally approve or request changes on a draft.
+Maintain one canonical GitHub issue comment for the complete report. When the previous canonical
+report points to an existing issue comment on this PR—or a PR comment carries the template's
+`prp-review-id` marker—edit that exact comment by ID; otherwise create it with `gh pr comment`. Do not
+use “edit last” or append another complete report for a correction cycle. After first creation,
+capture the stable URL, add it to the local report, update that same comment so its frontmatter
+contains the URL too, and verify the local and GitHub bodies agree.
 
-Read the PR back to verify the comment or review exists and capture its stable URL. Replace `publication: pending` in the local canonical report with that URL, then re-read the report and GitHub state to verify both point to the same publication. Return the PR URL,
-verdict, finding counts, validation summary, selected scopes, absolute report path, and comment URL.
+When `--approve` was explicitly requested and the verdict is `READY TO MERGE`, submit a concise formal
+approval that links to the canonical comment. Submit a concise request-changes review linking to the
+canonical comment only when explicitly requested or when the user explicitly asked for blocking
+findings as a formal review. Never formally approve or request changes on a draft.
+
+Read the PR back to verify the canonical comment exists and capture its stable URL. Replace
+`publication: pending` in the local report and comment after first creation; on re-review, preserve the
+existing URL. Then re-read the report and GitHub state to verify their bodies agree. Return the PR URL,
+verdict, finding and disposition counts, validation summary, selected scopes, absolute report path,
+and canonical comment URL.

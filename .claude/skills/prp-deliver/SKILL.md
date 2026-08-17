@@ -53,13 +53,13 @@ Require the canonical `$PRP_DIR/reviews/pr-{number}-review.md`, its complete Git
 
 ## 4. Correct and re-review until ready
 
-For `NEEDS FIXES` or `REVIEW INCOMPLETE`, send the complete review report—not an abbreviated finding list—to the implementation agent:
+For `NEEDS FIXES`, `REVIEW INCOMPLETE`, or any `OPEN` finding, send the complete review report—not an abbreviated finding list—to the implementation agent:
 
-> Continue this delivery by invoking `/prp-implement` in review-correction mode for `<PR>`. Read `<plan>`, `<implementation report>`, and the complete review at `<review report>`. Applicable caller decisions and finding dispositions, verbatim: `<decisions or "None">`. Resolve every undispositioned blocking finding; if evidence proves one invalid, record that evidence. Restore `VALIDATION: GREEN` and update the implementation report. Commit and push only when repository changes are required; for an evidence-only disagreement, prove the PR head is unchanged.
+> Continue this delivery by invoking `/prp-implement` in review-correction mode for `<PR>`. Read `<plan>`, `<implementation report>`, and the complete review at `<review report>`. Applicable caller decisions and finding dispositions, verbatim: `<decisions or "None">`. Disposition every finding under the skill's fix-now, follow-up, and decline rules. Restore `VALIDATION: GREEN` and update the implementation report. Commit and push only when repository changes are required; for an evidence-only disposition, prove the PR head is unchanged.
 
-Let the implementation agent disposition the report using its plan and code context: fix correct findings material to the requested outcome, preserve evidence-backed disagreements, and treat Suggestions as optional unless they clearly improve this delivery without widening scope or risk.
+Let the implementation agent disposition the report using its plan and code context. Prefer fixing valid, narrow, low-risk findings now; track only valuable distinct outcomes, and decline speculative or directionally wrong work without creating backlog noise.
 
-If that agent is unavailable, start a fresh correction agent with the same complete artifact bundle. After every correction or evidence-backed disagreement, start another fresh review agent and publish the complete new report. Repeat until `READY TO MERGE` or a genuine blocker survives without new evidence or progress.
+If that agent is unavailable, start a fresh correction agent with the same complete artifact bundle. After every correction or disposition, start another fresh review agent and update the canonical publication. Repeat until `READY TO MERGE` with every finding terminal, or a genuine blocker survives without new evidence or progress.
 
 ## 5. Require green CI
 
