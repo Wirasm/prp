@@ -5,15 +5,21 @@ Review the target PR through specialist agents, then publish one evidence-based 
 ## 1. Resolve the PR and context
 
 Resolve a number, URL, branch, or the current branch's PR with `gh pr view` / `gh pr list`. Read its
-title, body, author, state, base, head, files, reviews, comments, and complete diff.
+title, body, author, state, base, head, files, reviews, and comments.
 
 - Stop when the PR is merged. Warn before reviewing a closed PR.
 - Review a draft normally, but post a comment rather than approving or requesting changes.
 - Check out the PR branch with `gh pr checkout` unless it is already checked out.
-- Read repository guidance, the full changed files, and directly relevant tests and precedents.
+- For a full review, read the complete diff, repository guidance, full changed files, and directly
+  relevant tests and precedents.
 - Read matching implementation reports, completed plans, issue artifacts, and the previous canonical
   review under `$PRP_DIR` when they exist. Treat documented deviations as context, not automatic
   defects. On re-review, read every recorded finding disposition and its evidence.
+- With `--verify-corrections`, use the previous report's `reviewed_head` and the current head to bound
+  the correction diff. Read only the prior findings, their dispositions, that diff, and the direct
+  context needed to verify them and detect correction-caused defects. If the previous head is missing,
+  is not an ancestor, or the correction materially changes the outcome, architecture, or scope, run
+  one full review instead and record why.
 - If the only matching artifact is under a legacy `.claude/PRPs/` path, stop and tell the user to
   run the PRP home-store migration.
 
@@ -22,8 +28,10 @@ Do not edit files, resolve conflicts, rebase, commit, or push. Review the PR as 
 ## 2. Run repository validation
 
 Discover authoritative checks from repository guidance, package scripts, task runners, and CI.
-Run the applicable type check, lint, tests, build, and any focused validation the changed behavior
-requires. Do not invent a generic command merely to fill a category.
+For a full review, run the applicable type check, lint, tests, build, and any focused validation the
+changed behavior requires. For correction verification, preserve still-applicable prior results and
+rerun the focused check for every correction or disputed finding plus any authoritative gate the
+correction could invalidate. Do not invent a generic command merely to fill a category.
 
 Record the exact command, result, and decisive output. A missing or inapplicable check is `not run`,
 not a pass. Distinguish a PR-caused failure from an unrelated or pre-existing failure when evidence
@@ -31,7 +39,9 @@ allows; otherwise report the uncertainty.
 
 ## 3. Select scopes
 
-Always select `code` and `seams`. Add only scopes explicitly named by the user or calling workflow:
+Always select `code` and `seams`. In correction verification, also retain any prior specialist scope
+that owns a finding being verified; do not repeat optional agents that had no affected finding. Add
+other scopes only when explicitly named by the user or calling workflow:
 
 | Scope | Agent | Focus |
 |---|---|---|
@@ -51,6 +61,12 @@ Always select `code` and `seams`. Add only scopes explicitly named by the user o
 
 Dispatch every selected agent in parallel when capacity permits, or sequentially when it does not. Every selected role remains required; wait for all of them before aggregation.
 All agents are advisory and must not modify files or post their own PR comments.
+
+In correction verification, give every selected agent the previous and current head SHAs, the bounded
+diff, and the exact prior findings and dispositions relevant to its scope. Require it to verify those
+findings and inspect the correction for regressions. Reopen a prior finding when evidence disproves
+its disposition; allocate a new finding only for a defect caused by the correction. Do not review
+unchanged parts of the original PR for unrelated findings.
 
 When spawning each subagent:
 
@@ -102,6 +118,10 @@ required by the PR's outcome or invariant. Otherwise keep the finding `OPEN`.
 
 Do not invent findings, raise severity without evidence, or perform another code review during
 aggregation. Synthesis connects and prioritizes reviewer evidence; it does not create new evidence.
+In correction verification, reject a proposed new finding unless its evidence reaches the correction
+diff and proves the correction caused it; a disproven disposition reopens its existing finding ID.
+Carry the complete prior ledger forward even when only a subset of agents ran. State the verified
+head range—or the reason for a full-review fallback—in the report's Signal.
 
 Verdict rules:
 

@@ -50,11 +50,13 @@ Wait until all selected review agents have finished and the review coordinator h
 
 Read the complete report in this implementation context and disposition every finding. Fix valid Critical or Important findings. Prefer fixing a valid Suggestion now when the correction is narrow, low-risk, aligned, and cheaper than another delivery cycle. Use `NOT A FINDING` with decisive evidence when it is false or already satisfied. Use `TRACKED FOLLOW-UP` only for clearly valuable, distinct work with a verified issue link. Use `DECLINED` for speculative defense-in-depth, overengineering, preference, or unclear or undesirable direction; record why and do not create an issue. Never leave a bare deferred state.
 
-Invoke `$prp-implement` in review-correction mode in this same context. After every correction or disposition, start a fresh `$prp-review` agent against the current PR head. Repeat until the independent verdict is `READY TO MERGE` and every finding has a terminal disposition. Resolve `REVIEW INCOMPLETE` by obtaining its missing validation or evidence; stop only when that is genuinely unavailable.
+Batch every accepted correction and evidence-backed disposition into one coherent pass, then invoke `$prp-implement` in review-correction mode in this same context. Start one fresh `$prp-review --verify-corrections` agent with the previous reviewed head, current PR head, complete canonical report, and dispositions. Never start another review when neither the head nor disposition evidence changed.
+
+Repeat correction and focused verification only for an unresolved prior blocker, a disproven disposition, or a defect caused by the correction. Return to a full review only when the correction materially changed the PR's outcome, architecture, or scope. Continue until the independent verdict is `READY TO MERGE` and every finding has a terminal disposition. Resolve `REVIEW INCOMPLETE` by obtaining its missing validation or evidence; stop only when that is genuinely unavailable.
 
 ## 5. Require green CI
 
-After `READY TO MERGE`, wait for every required CI check. A pending check is not green. For a PR-caused failure, invoke `$prp-implement` in CI-correction mode with the PR and complete failing-check evidence in this context, then run a fresh review against the changed head. When no required CI exists, rerun the repository's authoritative local gate and record it instead.
+After `READY TO MERGE`, wait for every required CI check. A pending check is not green. For a PR-caused failure, invoke `$prp-implement` in CI-correction mode with the PR and complete failing-check evidence in this context, then run `$prp-review --verify-corrections` against the changed head. When no required CI exists, rerun the repository's authoritative local gate and record it instead.
 
 ## 6. Return proof and follow-ups
 
