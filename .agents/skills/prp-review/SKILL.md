@@ -1,6 +1,6 @@
 ---
 name: prp-review
-description: Reviews GitHub pull requests through specialist review agents, runs repository validation, aggregates findings, and posts the result. Always uses the code reviewer and seam analyzer; add tests, comments, errors, types, docs, or simplify when the user requests those scopes. Use when the user asks to review a PR, check whether a PR is ready to merge, run review agents, or invokes $prp-review.
+description: Reviews GitHub pull requests through specialist review agents, runs repository validation, verifies corrections, aggregates findings, and posts the result. Always uses the code reviewer and seam analyzer; add tests, comments, errors, types, docs, or simplify when the user requests those scopes. Use when the user asks to review a PR, re-review fixes, check whether a PR is ready to merge, run review agents, or invokes $prp-review.
 ---
 
 > **Arguments:** `$ARGUMENTS` (and `$1`, `$2`, ...) refer to the arguments given when this skill was invoked. Take them from the user's request; if absent, infer them from the conversation.
@@ -19,6 +19,10 @@ Always run:
 
 Named scopes are additive. Run their specialist agents only when explicitly requested; `all` adds
 every specialist. Accept the old `--agents` token as a no-op compatibility alias.
+
+`--verify-corrections` is a focused independent re-review. Require the previous canonical report and
+reviewed head; verify its findings and dispositions against the current head and correction diff. Do
+not repeat a full PR review unless that diff materially changes the outcome, architecture, or scope.
 
 Resolve the canonical store before starting:
 
