@@ -45,10 +45,12 @@ resetting it.
 A background owner receives no conversation history. Pass the source and only the context needed to
 preserve the operator's meaning:
 
+- For checkout-bearing work, add `Work in <branch>, created from origin/<base>.`
+- For PR-producing work, add `Open the PR against <base>.`
+- Omit both instructions when they do not apply.
+
 ```text
 Run the <prp-skill> skill against <source or complete natural-language request>.
-
-Own this workstream in <branch>, created from origin/<base>. Open any PR against <base>.
 
 Relevant operator context:
 <context or decisions that materially affect this workstream; omit when none>

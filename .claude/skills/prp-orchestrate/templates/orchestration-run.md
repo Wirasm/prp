@@ -21,12 +21,12 @@ natural-language request when no other source exists. Do not replace it with a l
 Use a run-local alias such as `ws1` for a native agent. Process-backed integrations may record their
 PID in the Owner column. Keep ephemeral native agent handles in the live orchestrator session.
 
-Status vocabulary: `pending` | `running` | `needs-gate` | `pr-open` | `merged` |
+Status vocabulary: `pending` | `running` | `needs-gate` | `pr-open` | `complete` | `merged` |
 `verdict:<PROVEN\|DISPROVEN\|CONDITIONAL>` | `failed` | `dropped` | `handed-back`.
 
-Use `verdict:*` as the terminal status for a spike and put its report path in PR or artifact. Use
-`handed-back` when recoverable work is intentionally returned to the operator without claiming failure
-or completion.
+Use `complete` when a non-PR skill produced its promised artifact and proof. Use `verdict:*` for a
+spike and put its report path in PR or artifact. Use `handed-back` when recoverable work is
+intentionally returned to the operator without claiming failure or completion.
 
 ## Standing decisions
 

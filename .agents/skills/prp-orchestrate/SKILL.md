@@ -92,10 +92,10 @@ Launch eligible owners as background agents. Record a run-local alias in the run
 a process-backed integration needs one. Keep ephemeral agent handles in the live session. Queue other
 work and launch it as effective capacity frees.
 
-Give each owner the complete source or relevant user context and the exact branch and base. Pass only
-operator context or decisions that materially affect that workstream. Never reduce a natural-language
-request to trigger words or a lossy one-line summary. Let the selected skill own its validation and
-terminal contract.
+Give each owner the complete source or relevant user context. Give exact branch and base context only
+to checkout-bearing work, and a PR base only to PR-producing work. Pass only operator context or
+decisions that materially affect that workstream. Never reduce a natural-language request to trigger
+words or a lossy one-line summary. Let the selected skill own its validation and terminal contract.
 
 ## 4. Monitor and steer
 
@@ -151,7 +151,7 @@ the local gate when no required CI exists, before the next merge.
 
 ## 7. Close out
 
-When every row is terminal (`merged`, `verdict:*`, `failed`, `dropped`, or `handed-back`), set the run
+When every row is terminal (`complete`, `merged`, `verdict:*`, `failed`, `dropped`, or `handed-back`), set the run
 status to `complete`. Reconcile cleanup deferred after a merge. Keep the run file as the record.
 
 Fill the template's Final handoff from verified state. Put shipped outcomes and proof first. Put

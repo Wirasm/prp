@@ -7,6 +7,9 @@ Review the target PR through specialist agents, then publish one evidence-based 
 Resolve a number, URL, branch, or the current branch's PR with `gh pr view` / `gh pr list`. Read its
 title, body, author, state, base, head, files, reviews, and comments.
 
+Capture `headRefOid` as `reviewed_head`. After checkout, require `git rev-parse HEAD` to equal that SHA.
+Use the same immutable head for repository validation and every reviewer.
+
 - Stop when the PR is merged. Warn before reviewing a closed PR.
 - Review a draft normally, but post a comment rather than approving or requesting changes.
 - Check out the PR branch with `gh pr checkout` unless it is already checked out.
@@ -69,41 +72,16 @@ current default review.
 Dispatch every selected agent in parallel when capacity permits, or sequentially when it does not. Every selected role remains required; wait for all of them before aggregation.
 All agents are advisory and must not modify files or post their own PR comments.
 
-Append this instruction to every reviewer prompt:
+Spawn every selected agent in its named reviewer role. Do not paraphrase the role's defect class in the
+launch prompt; the agent definition owns it. Give every reviewer this shared instruction:
 
-> Suggest `Critical`, `Important`, or `Suggestion` for each finding based on its actual consequence. The coordinator independently determines final severity and merge readiness.
+> Review PR #<number> at exact head `<reviewed_head>` against its actual base. Do not follow a newer head. Suggest `Critical`, `Important`, or `Suggestion` for each finding based on its actual consequence. The coordinator independently determines final severity and merge readiness. Do not modify files, commit, or post comments.
 
 In correction verification, give every selected agent the previous and current head SHAs, the bounded
 diff, and the exact prior findings and dispositions relevant to its scope. Require it to verify those
 findings and inspect the correction for regressions. Reopen a prior finding when evidence disproves
 its disposition; allocate a new finding only for a defect caused by the correction. Do not review
 unchanged parts of the original PR for unrelated findings.
-
-When launching each agent via Task tool:
-
-**prp-core:code-reviewer**:
-> Review PR #<number> against its actual base and intended outcome. Return the general code review without modifying files or posting comments.
-
-**prp-core:seam-analyzer**:
-> Analyze PR #<number> for missing types at seams. Leave the diff to inspect direct counterparts of changed payloads, wire formats, persisted or resumed values, IPC/FFI and cross-language boundaries, syntax forms, validators, and synchronized enumerations. Enforce the two-sided evidence bar and documented carve-outs. Do not modify files, commit, or post comments.
-
-**prp-core:pr-test-analyzer**:
-> Map changed behavior in PR #<number> to existing unit, integration, and end-to-end assertions. Report only gaps with a plausible faulty implementation that current tests allow and the smallest behavioral test that would catch it. Do not modify files, commit, or post comments.
-
-**prp-core:comment-analyzer**:
-> Verify comments and docstrings changed by PR #<number> against actual code, contracts, and direct consumers. Report only materially false prose, a concrete maintenance trap, or missing durable knowledge that code and types cannot express. Do not modify files, commit, or post comments.
-
-**prp-core:silent-failure-hunter**:
-> Trace changed failure and recovery paths in PR #<number>. Report only reachable failures that become indistinguishable from success or lose evidence needed by the owner who can act; respect legitimate probes, retries, fallbacks, and propagation. Do not modify files, commit, or post comments.
-
-**prp-core:type-design-analyzer**:
-> Analyze changed typed contracts in PR #<number> for meaningful invariants or semantic distinctions they fail to enforce. Inspect reachable invalid construction, unsafe compiler escape hatches, boundary parsing, schema derivation, and exhaustive variant handling. Report only concrete downstream consequences and the smallest proportional enforcement point. Leave writer/reader drift and alternate boundary routes to the seam analyzer. Do not modify files, commit, or post comments.
-
-**prp-core:docs-impact-agent**:
-> Review repository documentation affected by PR #<number>. Report only materially false guidance or missing instructions required to discover, use, operate, migrate, or maintain changed public behavior. Determine this repository's real documentation surfaces and authoritative sources; do not treat steering files as changelogs. Do not modify files, commit, or post comments.
-
-**prp-core:code-simplifier**:
-> Review whether PR #<number> achieves its outcome through the smallest coherent structure. Check data shapes, ownership, concurrency, decision locality, threaded signals, call paths, and premature machinery. Report only evidence-backed smaller primitives that preserve the required behavior and meaningful invariants. Do not modify files, commit, or post comments.
 
 ## 5. Synthesize without re-reviewing
 
@@ -168,6 +146,10 @@ Verdict rules:
 Write the report to the expanded absolute path `$PRP_DIR/reviews/pr-{NUMBER}-review.md`.
 
 ## 6. Publish and report
+
+Immediately before publication, re-read the live `headRefOid`. Publish only when it still equals
+`reviewed_head`. If it changed, discard the candidate verdict and rerun a full review on the new head;
+when that cannot finish, publish `REVIEW INCOMPLETE` rather than claiming current-head coverage.
 
 Maintain one canonical GitHub issue comment for the complete report. When the previous canonical
 report points to an existing issue comment on this PR—or a PR comment carries the template's

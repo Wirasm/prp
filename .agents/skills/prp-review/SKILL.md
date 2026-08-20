@@ -12,25 +12,9 @@ do not add an inline review pass before or after them.
 
 **Input**: $ARGUMENTS (if absent, use the current branch's PR).
 
-Run by default:
-
-- `code-reviewer` for a general review of correctness, sanity, scope, and repository fit;
-- `seam-analyzer` for missing types, counterpart drift, and bypassed boundaries;
-- `code-simplifier` for premature machinery and smaller structures that preserve the outcome.
-
-Also run `type-design-analyzer` when the change materially touches types, schemas,
-constructors or factories, public signatures, state variants, or compiler escape hatches. Select it
-by reading the change, not by file extension or keyword parsing. Skip it when no typed contract changed.
-
-Interpret scope instructions by intent, not as a command grammar. With no scope instruction, run the
-three unconditional defaults plus the conditional type scope when applicable. A named or added scope
-augments them: “add tests” means the applicable defaults plus `tests`. An explicit restriction
-replaces them: “only tests” means exactly `tests`. Honor any other explicit operator inclusion or
-exclusion. `all` selects every scope. Accept the old `--agents` token as a no-op compatibility alias.
-
-`--verify-corrections` is a focused independent re-review. Require the previous canonical report and
-reviewed head; verify its findings and dispositions against the current head and correction diff. Do
-not repeat a full PR review unless that diff materially changes the outcome, architecture, or scope.
+Let `workflows/agents.md` own scope selection, reviewer dispatch, correction verification,
+aggregation, and publication. Pass the operator's scope intent and flags through without rebuilding
+those contracts here.
 
 Resolve the canonical store before starting:
 
