@@ -51,6 +51,9 @@ For initial implementation, execute tasks in dependency order and read each refe
 Apply these implementation principles:
 
 - Prefer the simplest solution that solves the actual problem. Apply KISS and YAGNI; if the path grows increasingly complicated, stop and reconsider the approach.
+- Treat generated code as cheap and maintenance as expensive. Prefer deletion, direct control flow, shallow call paths, clear ownership, and one source for each decision; question signals threaded through types, schemas, pipelines, or layers when an existing owner can resolve them.
+- Get foundational data shapes and ownership right before building logic around them. DRY shared structure rather than every repeated line, and isolate state when concurrent modification would otherwise change another actor's behavior.
+- Remove dead weight before adding scaffold. Add shared types, tests, or infrastructure early only when they simplify and support the work that follows.
 - Reproduce bugs before fixing them whenever reasonably possible. When reproduction is impossible, establish other concrete evidence and record it.
 - Existing code is evidence, not proof that its design is correct. Rewrite only when that clearly reduces complexity without widening scope or risk.
 - Use the type system to express meaningful invariants. Avoid unsound escape hatches when a practical sound type exists.
@@ -65,13 +68,37 @@ Decline speculative defense-in-depth, unnecessary generalization, overengineerin
 
 Record deviations and implementation-only decisions in the implementation report. For a legacy plan that explicitly provides maintained Agent Notes or Amendments sections, keep those current as well. Do not move or archive the plan.
 
-## 3. Validate to green
+## 3. Prove the outcome
 
-Run each task's specified validation after the coherent task, then run every applicable command or procedure in the plan's Validation section and verify every Acceptance criterion. A correction pass also reruns the focused check for each corrected finding or CI failure. For a legacy plan, honor its Validation Commands and Acceptance Criteria. Add or adapt a missing check only when repository evidence shows the plan's gate is incomplete.
+After each coherent task, ask: “How do I prove this actually works?” Run its planned validation, then
+run every applicable command or procedure in the plan's Validation section and prove every Acceptance
+criterion. A correction pass also reruns the focused proof for each corrected finding or CI failure.
+For a legacy plan, honor its Validation Commands and Acceptance Criteria. Add or adapt a missing check
+only when repository evidence shows the planned gate cannot prove the outcome.
 
-For an evidence-backed disagreement that requires no repository change, run the smallest decisive check that proves the finding invalid and record its output. Do not manufacture a code or documentation edit merely to create a correction commit.
+Verify changed behavior at the cheapest authoritative boundary:
 
-On failure, fix the cause and rerun the affected check before continuing. Do not trust the first passing suite blindly: inspect suspicious or weak tests and verify the behavior they claim to cover. Never report completion with a known failing required check.
+- Exercise the actual feature path when behavior changed. Build, lint, and type-check are necessary
+  when applicable, but they do not prove runtime behavior by themselves.
+- Verify the complete input-to-output or communication path when integration is the claim.
+- Read actual state rather than inferring it from cached or derived representations.
+- For delegated work, inspect the diff, files, produced artifacts, and runtime behavior rather than
+  trusting the delegate's summary.
+- Map every Acceptance criterion to a direct observation.
+
+Prefer existing deterministic tests and scripts. When they cannot establish the outcome, create the
+smallest repeatable check that can. Commit it only when it provides lasting regression, migration, or
+operational value; otherwise record the command and evidence in the implementation report rather than
+adding permanent verification machinery.
+
+For an evidence-backed disagreement that requires no repository change, run the smallest decisive
+check that proves the finding invalid and record its output. Do not manufacture a code or
+documentation edit merely to create a correction commit.
+
+When verification fails, test the observation method as a competing hypothesis rather than assuming
+either the system or the check is wrong. Fix the proven cause and rerun the affected proof. Do not
+trust the first passing suite blindly: inspect suspicious or weak tests and verify the behavior they
+claim to cover. Never report completion with a known failing required check.
 
 ## 4. Write the implementation report
 

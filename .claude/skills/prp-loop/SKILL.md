@@ -41,7 +41,7 @@ uv run .claude/skills/prp-loop/scripts/prp_loop.py "$ARGUMENTS" --until implemen
 1. **plan** — `prp-plan` writes the plan under the project's PRP store at `$PRP_DIR/plans/<feature>.plan.md`.
 2. **implement** — `prp-implement` executes and validates the plan, commits the work, and opens the PR (bounded by `--max-implement-iterations`).
 3. **pr compatibility** — if an older implementation run did not open a PR, `prp-pr` does so once.
-4. **review** — `prp-review` runs its default code and seam reviewers, writes the canonical report, and publishes that complete report to GitHub.
+4. **review** — `prp-review` runs its current default review, writes the canonical report, and publishes that complete report to GitHub.
 5. **cycle** — if the verdict needs fixes, the complete report, plan, and live PR feed into a fresh `prp-implement` correction pass → push → re-review, up to `--max-cycles`. Ready to merge → done; review incomplete → halt.
 
 ## Safety

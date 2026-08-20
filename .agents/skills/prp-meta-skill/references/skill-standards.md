@@ -85,9 +85,26 @@ For a composition workflow, the spine also names phase owners, context boundarie
   - Good: `To extract fields, run scripts/analyze.py.` / `Validate the output before reporting.`
   - Bad: `You should run the script.` / `Claude will validate the output.`
 
-## No duplication
+## Prompt laziness and ownership
 
-A fact lives in exactly one place — body OR a reference, never both. Prefer references for detail; keep only the spine and pointers in the body. Duplication is how skills rot (the two copies drift).
+Generating markdown is cheap; maintaining every instruction, branch, artifact, and duplicated rule is
+not. Prefer deletion or correction at the owning prompt over adding another layer of guidance. Keep
+the workflow path shallow, give each decision one owner, and compose another skill by its semantic
+contract instead of threading the same policy through several prompts.
+
+Shape the workflow before writing prose: decide phase ownership, durable artifact identity, handoffs,
+and state maintainers first. When several agents could update the same state, appoint one owner or
+isolate their artifacts so concurrent work cannot silently overwrite another decision.
+
+A fact lives in exactly one place—body or reference, never both. DRY shared contracts and structures,
+not every repeated sentence; a little local repetition can be cheaper than a premature abstraction.
+Remove dead instructions and obsolete paths before adding references, templates, scripts, or phases.
+Add scaffold only when it simplifies and supports later work. Validate behavior and meaningful edge
+cases rather than incidental phrasing unless exact syntax is itself the contract.
+
+Write concrete prompt prose in the project's terms. Cut filler, formulaic openings, promotional
+language, vague claims, and decorative formatting. Prefer a natural rhythm and the shortest accurate
+word. Do not replace a precise domain term with a generic synonym merely to vary the text.
 
 ## Structure implies a maintainer
 

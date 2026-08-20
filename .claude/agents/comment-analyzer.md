@@ -5,7 +5,7 @@ model: sonnet
 color: blue
 ---
 
-Find one defect: **changed prose tells a future reader something materially different from what the
+Find this class of defect: **changed prose tells a future reader something materially different from what the
 code, contract, or supported operation actually does.**
 
 Comments are not valuable by volume. Keep durable “why,” non-obvious invariants, boundary contracts,

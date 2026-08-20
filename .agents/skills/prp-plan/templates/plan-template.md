@@ -28,7 +28,9 @@ Keep every **required** section. Include a **conditional** section only when it 
 
 ## Recommendation
 
-{Why this is the simplest coherent approach supported by the codebase. Name the existing primitives it uses and the assumption or evidence that rules out unnecessary machinery.}
+{Why this is the simplest coherent approach supported by the codebase. Name the existing primitives,
+foundational data shape and owner when relevant, unnecessary machinery it removes or avoids, and the
+evidence that justifies any new state, scaffold, abstraction, or cross-layer signal.}
 
 ### Evidence
 

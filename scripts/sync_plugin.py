@@ -167,68 +167,17 @@ CODEX_SKILL_REWRITES: dict[str, list[tuple[re.Pattern, str]]] = {
         (re.compile(r'prp_loop\.py "\$ARGUMENTS"'), 'prp_loop.py "$ARGUMENTS" --cli codex'),
         (re.compile(r"prp_loop\.py --resume"), "prp_loop.py --resume --cli codex"),
     ],
-    # Orchestrate is written against Claude Code's native agent tools; render the
-    # mechanics harness-agnostic while
-    # keeping the discipline (decompose, gate, verify, merge) verbatim.
+    # Claude can create an isolated worktree as part of the spawn. Codex needs the
+    # same checkout created explicitly before delegation.
     "prp-orchestrate": [
-        (re.compile(
-            r"\*\*Drive workstreams through the native agent tools\*\* — spawn with "
-            r"your delegation tool \(background, worktree isolation\), steer and continue "
-            r"with SendMessage, stop with the task-stop tool, and check with the "
-            r"task-list/status tools\."),
-         "**Drive workstreams through your harness's delegation tools** — spawn background "
-         "workstream agents in isolated workspaces through your subagent mechanism, "
-         "steer a running agent by sending it a follow-up "
-         "message, stop it and check status with the matching controls."),
-        (re.compile(r"via SendMessage with the answer"), "via a follow-up message with the answer"),
-        (re.compile(r"SendMessage the decision back to the same agent"),
-         "message the decision back to the same agent"),
-        (re.compile(r"\*\*SendMessage the decision to the same agent\*\*"),
-         "**message the decision to the same agent**"),
-        (re.compile(r"→ SendMessage to that agent"), "→ send a message to that agent"),
-        (re.compile(r"then SendMessage the same agent to proceed"),
-         "then message the same agent to proceed"),
-        (re.compile(r"and SendMessage them to running agents"), "and send them to running agents"),
-        (re.compile(r"either SendMessage a nudge"), "either send a nudge"),
-        (re.compile(r"convey it — SendMessage to the affected agent\(s\)"),
-         "convey it — message the affected agent(s)"),
-        (re.compile(r"prefer SendMessage to the owning agent"), "prefer messaging the owning agent"),
-        (re.compile(r"SendMessage continues an agent \*\*with its context intact\*\* — always prefer it"),
-         "A follow-up message continues an agent **with its context intact** — always prefer that"),
-        (re.compile(r"the handle for SendMessage, stop, and status"),
-         "the handle for messaging, stopping, and status checks"),
-        (re.compile(r"\*\*Steer / continue\*\*: SendMessage to the agent ID"),
-         "**Steer / continue**: send a message to the agent ID"),
-        (re.compile(r"agent-tool call shapes, the workstream prompt template, SendMessage/stop/status patterns"),
-         "launch call shapes, the workstream prompt template, steering/stop/status patterns"),
-        # Isolation is a spawn *parameter* on Claude Code and does not exist as one
-        # elsewhere; on other harnesses the checkout has to be made before the spawn.
-        (re.compile(r"\*\*`isolation: \"worktree\"` is the default\.\*\* Spawn every workstream that "
-                    r"touches the working tree into its own checkout"),
-         "**Isolation is the default, and here it is explicit.** Your spawn tool has no isolation "
-         "parameter, so create the checkout first — use the prp-worktree skill to create the "
-         "workstream's branch, then pass the agent its absolute path and tell it to work there. "
-         "Every workstream that touches the working tree gets one"),
+        (re.compile(r"\*\*`isolation: \"worktree\"` is the default\.\*\* Spawn every workstream that\s+"
+                    r"touches the working tree into\s+its own checkout\. Before editing, require the "
+                    r"owner to verify or create `<branch>` from\s+`origin/<base>`\."),
+         "**Isolation is explicit.** Before spawning, use `prp-worktree` to create `<branch>` from "
+         "`origin/<base>`, then pass the absolute checkout path to the owner. Require the owner to "
+         "verify that exact base before editing."),
         (re.compile(r"one agent, `run_in_background` \(the default\), worktree-isolated\."),
          "one background agent in its own pre-created worktree."),
-        # No harness-managed worktrees here: everything was created explicitly, so
-        # everything needs explicit teardown. The Claude text says the opposite.
-        (re.compile(r"A worktree under `\.worktrees/` was created by the prp-worktree skill and "
-                    r"needs explicit teardown; anything else is the agent tool's and cleans up "
-                    r"after itself\."),
-         "Every worktree here was created explicitly, so every one needs explicit teardown — "
-         "nothing is reclaimed for you."),
-        (re.compile(r"Agent-tool worktrees are auto-removed when their owner is released and the "
-                    r"checkout is unchanged; verify rather than assume\. For worktrees created "
-                    r"via `prp-worktree`, use the same skill to remove the checkout"),
-         "No worktree here is auto-removed; use `prp-worktree` to remove the checkout"),
-        (re.compile(r"\*\*Stop\*\*: the task-stop tool against the workstream's task\."),
-         "**Stop**: your harness's stop control against the workstream's agent."),
-        (re.compile(r"\*\*Status\*\*: the task-list/status tools give live agent state"),
-         "**Status**: the agent list/status controls give live agent state"),
-        (re.compile(r"wire project hooks on the relevant events \(e\.g\. SubagentStop\) in `\.claude/settings\.json`"),
-         "wire hooks on the relevant agent-stop events if your harness supports them"),
-        (re.compile(r" — consult the current Claude Code hooks docs for event names and payloads\."), "."),
     ],
     # Meta-skill: only its meta-documentation of Claude-only mechanics needs a touch;
     # authored-skill paths are handled by the global .claude/skills -> .agents/skills map.

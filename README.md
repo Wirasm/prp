@@ -130,6 +130,7 @@ The `.claude/skills/` directory contains the core PRP workflow as Agent Skills â
 | `/prp-codebase-question` | Research how the codebase works using parallel agents                    |
 | `/prp-research-team`     | Design a multi-agent research team and executable research plan          |
 | `/prp-meta-skill`        | Author new skills, or refactor fat skills into lean SKILL.md + references |
+| `/prp-technical-writing` | Write and edit developer documentation that is clear, concrete, and verified |
 
 ---
 

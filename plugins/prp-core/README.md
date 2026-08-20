@@ -32,7 +32,7 @@ Everything here ships as **skills** (not slash commands), so each one is both **
 
 | Skill | Description |
 |-------|-------------|
-| `/prp-core:prp-review` | Agent-based PR review. Code and seam analysis run by default; named specialist scopes are additive |
+| `/prp-core:prp-review` | Agent-based PR review using the skill's current default reviewer set; named specialist scopes are additive |
 
 ### Research & debug
 
@@ -47,6 +47,7 @@ Everything here ships as **skills** (not slash commands), so each one is both **
 | Skill | Description |
 |-------|-------------|
 | `/prp-core:prp-meta-skill` | Author new skills and refactor fat skills into a lean `SKILL.md` + `references/` (prescribes the craft, not your project's content) |
+| `/prp-core:prp-technical-writing` | Write and edit developer documentation that is clear, concrete, and verified |
 
 ## Agents
 
@@ -65,7 +66,7 @@ Specialized, advisory agents used by the review and planning skills. They are re
 
 | Agent | Description |
 |-------|-------------|
-| `code-reviewer` | Reachable defects and explicit repository-rule violations |
+| `code-reviewer` | General correctness, sanity, scope, and repository fit |
 | `comment-analyzer` | Materially false prose and concrete maintenance traps |
 | `pr-test-analyzer` | Meaningful behavior without regression protection |
 | `silent-failure-hunter` | Failure paths that become indistinguishable from success |

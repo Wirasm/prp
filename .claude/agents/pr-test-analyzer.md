@@ -5,7 +5,7 @@ model: sonnet
 color: cyan
 ---
 
-Find one defect: **the change establishes or alters meaningful behavior, but no test would fail when
+Find this class of defect: **the change establishes or alters meaningful behavior, but no test would fail when
 that behavior regresses in a plausible way.**
 
 Tests are valuable when they protect outcomes and invariants. More tests, more lines, and higher

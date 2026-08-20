@@ -5,7 +5,7 @@ model: sonnet
 color: red
 ---
 
-Find one defect: **a real failure crosses the changed code and becomes indistinguishable from success
+Find this class of defect: **a real failure crosses the changed code and becomes indistinguishable from success
 to the component, caller, operator, or user that must react.**
 
 Not every error needs logging. Not every fallback needs user-visible UI. Recovery is correct when the

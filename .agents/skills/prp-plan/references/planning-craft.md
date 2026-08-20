@@ -36,9 +36,19 @@ Ask:
 - Which constraints are product decisions, and which are assumptions about the current implementation?
 - At which process, layer, or interface can the invariant actually be observed?
 
-## Search for primitives
+## Choose foundations before logic
 
-A primitive is an existing capability that can compose into the outcome: a configuration switch, command, API, prompt contract, event, schema field, state transition, extension point, or established domain operation.
+Generated code is cheap; structural decisions are expensive to reverse. Get the foundational data
+shape and owner right before planning logic around them. Trace the dominant access paths, converge core
+types and representations, and keep each decision at one source of truth. A late data-shape change is
+often a rewrite; early, it may be one line.
+
+When integrating a new requirement, derive the counterfactual design first: if the requirement had
+been foundational from day one, what would the system look like? Read the affected design
+holistically and use that answer to expose bolt-ons, stale representations, and misplaced ownership.
+It is a reference shape, not automatic permission for a broad rewrite. Plan the smallest safe
+increment toward it, and carry the changed concept through every affected type, contract, caller,
+test, example, document, and rationale rather than leaving the old model half-alive.
 
 Search from cheapest to most structural:
 
@@ -48,31 +58,38 @@ Search from cheapest to most structural:
 4. A new abstraction with a clear owner.
 5. A new subsystem and lifecycle.
 
-Do not choose the first item blindly. Choose the first one that satisfies the invariant cleanly and can be validated authoritatively.
+Choose the first shape that satisfies the invariant cleanly and can be validated authoritatively, not
+the first familiar pattern. Treat these as signs of a missing primitive:
 
-## Detect missing primitives
-
-Warning signs that the requested feature is working around a missing foundation:
-
-- the same policy must be reimplemented at several entry points;
-- state has no obvious owner;
+- the same policy or representation must be maintained at several entry points;
+- state or a decision has no obvious owner;
+- a new signal must be threaded through types, schemas, pipelines, or layers that do not own it;
 - a feature-specific mechanism imitates a domain operation that should be general;
-- compatibility logic dominates the requested behavior;
-- the plan needs lifecycle, cleanup, recovery, and synchronization solely to emulate a simpler capability.
+- compatibility logic, lifecycle, cleanup, recovery, or synchronization dominates the outcome.
 
-When a missing primitive is load-bearing, recommend building it first and explain what it unlocks. Do not hide that recommendation in risks or agent notes.
+When a missing primitive is load-bearing, recommend building it first and explain what it unlocks.
+Each increment should land one coherent abstraction or deepen one that already exists, not spread a
+new capability across callers as special-case coordination.
 
-## Challenge complexity
+Before sharing state between actors, ask what happens if another actor modifies it concurrently. If
+the answer is not “nothing,” isolate ownership rather than planning more synchronization by default.
 
-For every proposed abstraction, background process, state store, staging directory, or policy layer, ask:
+## Apply the laziness test
 
-- Which invariant requires this?
-- What evidence says an existing primitive cannot satisfy it?
-- What new ownership and failure modes does it create?
-- What is the smallest credible alternative?
-- What would disappear if that alternative worked?
+Prefer deletion, direct control flow, shallow call paths, clear ownership, and one resolved decision
+over pass-through helpers or policy repeated across layers. DRY shared structure and data models, not
+every repeated line; explicit repetition can be simpler than a premature abstraction.
 
-Creative solutions often come from testing the observable mechanism directly: toggle a configuration field, remove an advertised capability, compose existing commands, inject a minimal prompt, or exercise the real boundary with a tiny fixture.
+For every proposed abstraction, state store, background process, configuration surface, scaffold, or
+defensive path, ask which invariant requires it, what evidence rules out the smaller primitive, what
+new failure modes it creates, and what disappears if it is removed. Remove dead weight first. Add
+shared types, test infrastructure, CI, or other scaffold early only when it simplifies and supports
+the work that follows; do not build defenses or tests around unsupported hypothetical behavior.
+
+Creative solutions often come from testing the observable mechanism directly: toggle a configuration
+field, remove an advertised capability, compose existing commands, inject a minimal prompt, or
+exercise the real boundary with a tiny fixture. Simplicity means fewer states, representations,
+concepts, synchronization points, and ownership boundaries—not merely fewer lines.
 
 ## Decide when to spike
 
