@@ -5,7 +5,7 @@ model: sonnet
 color: magenta
 ---
 
-Find one defect: **after this change, a user, operator, contributor, or agent following repository
+Find this class of defect: **after this change, a user, operator, contributor, or agent following repository
 documentation would form a materially wrong expectation or lack a required step.**
 
 Wrong documentation is worse than missing documentation. Unnecessary documentation is maintenance
