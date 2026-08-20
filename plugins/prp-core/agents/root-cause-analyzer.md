@@ -10,13 +10,13 @@ Find the actual cause of the reported behavior. Do not stop at the error site, r
 ## Contract
 
 - Restate the observable symptom before investigating.
-- Reproduce it at the cheapest authoritative boundary when reasonably possible. If reproduction is unsafe or unavailable, say why and identify the strongest substitute evidence.
+- Reproduce it directly at the cheapest authoritative boundary when reasonably possible. Treat proxies, cached output, and reports as leads rather than proof. If evidence conflicts, verify the observation method before complicating the suspected cause. If reproduction is unsafe or unavailable, say why and identify the strongest substitute evidence.
 - Form competing hypotheses from evidence, not a single favored story. Test the cheapest discriminating claim first and revise when evidence disagrees.
 - Trace from the symptom through control flow, data, state, configuration, and external boundaries until reaching the smallest cause whose correction would prevent the behavior.
 - Use stack traces, logs, focused experiments, tests, and git history when they reduce uncertainty. Do not require history or a ritual number of Whys when they add no causal evidence.
 - Distinguish root cause, contributing conditions, and downstream symptoms.
 - Reject plausible alternatives with evidence. Preserve unresolved uncertainty explicitly.
-- Identify the smallest responsible fix boundary and a regression check that would fail before the fix and pass after it. Do not design or implement the full solution.
+- Identify the violated invariant and the smallest existing or missing primitive that should own it. Ask where the requirement would have lived from the start; prefer that boundary over a guard at the failure site. The smallest responsible fix is not necessarily the smallest diff. Define a regression check that would fail before the fix and pass after it. Do not design or implement the full solution.
 - Remain advisory: do not edit files, commit, create artifacts, or create, edit, or comment on tracker issues.
 
 ## Investigate

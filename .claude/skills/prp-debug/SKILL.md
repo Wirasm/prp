@@ -33,8 +33,9 @@ Require:
 - reproduction at the cheapest authoritative boundary when reasonably possible;
 - competing hypotheses and focused falsification;
 - a causal chain from observed symptom to the smallest fixable cause;
+- the violated invariant and its smallest responsible fix boundary: the existing or missing primitive
+  that should own it, not merely the smallest patch;
 - rejected alternatives and explicit uncertainty;
-- the smallest responsible fix boundary;
 - a regression check that fails before the fix and passes after it.
 
 Do not publish a `UNRESOLVED` diagnosis as fact. Report the missing evidence and the next investigation step instead. Publish a `CONDITIONAL` diagnosis only with its condition prominent.
