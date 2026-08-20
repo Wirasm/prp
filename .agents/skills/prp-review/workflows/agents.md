@@ -39,28 +39,39 @@ allows; otherwise report the uncertainty.
 
 ## 3. Select scopes
 
-Always select `code` and `seams`. In correction verification, also retain any prior specialist scope
-that owns a finding being verified; do not repeat optional agents that had no affected finding. Add
-other scopes only when explicitly named by the user or calling workflow:
+With no operator scope instruction, select `code`, `seams`, and `simplify`. Also select `types` when
+the diff materially changes types, schemas, constructors or factories, public signatures, state
+variants, or compiler escape hatches. Make that decision by reading the change rather than parsing
+file extensions or keywords; skip it when no typed contract changed. Treat named or added scopes as
+additive to the applicable defaults; “add tests” means those defaults plus `tests`. Treat an explicit
+restriction as replacement; “only tests” means exactly `tests`. Honor any other explicit operator
+inclusion or exclusion by intent rather than parsing fixed syntax.
+
+In correction verification, retain any prior scope that owns a finding being verified unless the
+operator explicitly narrows the pass; do not repeat other optional agents that had no affected finding.
 
 | Scope | Agent | Focus |
 |---|---|---|
-| `code` | `code-reviewer` | Correctness, repository rules, high-confidence defects |
+| `code` | `code-reviewer` | General correctness, sanity, scope, and repository fit |
 | `seams` | `seam-analyzer` | Missing types, counterpart drift, bypassed boundaries |
 | `tests` | `pr-test-analyzer` | Behavioral coverage and valuable regression protection |
 | `comments` | `comment-analyzer` | Accuracy and long-term value of changed comments |
 | `errors` | `silent-failure-hunter` | Swallowed failures, fallbacks, and actionable errors |
-| `types` | `type-design-analyzer` | Invariant expression and enforcement in changed types |
+| `types` | `type-design-analyzer` | Invalid states, semantic distinctions, boundary parsing, schema ownership, and exhaustive variants |
 | `docs` | `docs-impact-agent` | Stale or missing user and contributor documentation |
-| `simplify` | `code-simplifier` | Avoidable machinery with a proven smaller primitive |
+| `simplify` | `code-simplifier` | Premature machinery and smaller coherent structures |
 
-`all` adds all six optional scopes. Explicit `code` or `seams` is redundant but valid. Ignore
-`--agents`; it exists only so older callers still receive the new default review.
+`all` selects every scope. Ignore `--agents`; it exists only so older callers still receive the
+current default review.
 
 ## 4. Launch reviewers
 
 Dispatch every selected agent in parallel when capacity permits, or sequentially when it does not. Every selected role remains required; wait for all of them before aggregation.
 All agents are advisory and must not modify files or post their own PR comments.
+
+Append this instruction to every reviewer prompt:
+
+> Suggest `Critical`, `Important`, or `Suggestion` for each finding based on its actual consequence. The coordinator independently determines final severity and merge readiness.
 
 In correction verification, give every selected agent the previous and current head SHAs, the bounded
 diff, and the exact prior findings and dispositions relevant to its scope. Require it to verify those
@@ -71,7 +82,7 @@ unchanged parts of the original PR for unrelated findings.
 When spawning each subagent:
 
 **code-reviewer**:
-> Review PR #<number> against its actual base for reachable behavioral defects and explicit repository-rule violations. Read direct callers and consumers beyond the diff. Report only causal findings with concrete evidence and file:line locations. Do not modify files, commit, or post comments.
+> Review PR #<number> against its actual base and intended outcome. Return the general code review without modifying files or posting comments.
 
 **seam-analyzer**:
 > Analyze PR #<number> for missing types at seams. Leave the diff to inspect direct counterparts of changed payloads, wire formats, persisted or resumed values, IPC/FFI and cross-language boundaries, syntax forms, validators, and synchronized enumerations. Enforce the two-sided evidence bar and documented carve-outs. Do not modify files, commit, or post comments.
@@ -86,22 +97,46 @@ When spawning each subagent:
 > Trace changed failure and recovery paths in PR #<number>. Report only reachable failures that become indistinguishable from success or lose evidence needed by the owner who can act; respect legitimate probes, retries, fallbacks, and propagation. Do not modify files, commit, or post comments.
 
 **type-design-analyzer**:
-> Analyze new or modified types in PR #<number> for meaningful invariants they fail to enforce. Report only reachable invalid states with a concrete downstream consequence and the smallest proportional enforcement point. Do not modify files, commit, or post comments.
+> Analyze changed typed contracts in PR #<number> for meaningful invariants or semantic distinctions they fail to enforce. Inspect reachable invalid construction, unsafe compiler escape hatches, boundary parsing, schema derivation, and exhaustive variant handling. Report only concrete downstream consequences and the smallest proportional enforcement point. Leave writer/reader drift and alternate boundary routes to the seam analyzer. Do not modify files, commit, or post comments.
 
 **docs-impact-agent**:
 > Review repository documentation affected by PR #<number>. Report only materially false guidance or missing instructions required to discover, use, operate, migrate, or maintain changed public behavior. Determine this repository's real documentation surfaces and authoritative sources; do not treat steering files as changelogs. Do not modify files, commit, or post comments.
 
 **code-simplifier**:
-> Analyze PR #<number> for avoidable machinery. Establish the required outcome and invariant, find an existing or smaller primitive, and report only when evidence proves it can preserve the behavior while removing meaningful state, concepts, ownership, or synchronization. Do not modify files, commit, or post comments.
+> Review whether PR #<number> achieves its outcome through the smallest coherent structure. Check data shapes, ownership, concurrency, decision locality, threaded signals, call paths, and premature machinery. Report only evidence-backed smaller primitives that preserve the required behavior and meaningful invariants. Do not modify files, commit, or post comments.
 
 ## 5. Synthesize without re-reviewing
 
 Read `../templates/review-report.md` before writing. Lead with the review's central signal: the
 outcome, the few conclusions that determine readiness, and the common cause when findings converge.
 Merge duplicate findings into one causal item, attribute every contributing agent, preserve meaningful
-disagreement, and map agent language into the canonical severity categories. Retain every distinct
-issue the agents found, but keep raw agent prose and supporting paths in the finding's detail rather
-than the scanning layer. Record every selected scope, including agents that returned no finding.
+disagreement, and retain every distinct useful issue the agents found. Keep raw agent prose and
+supporting paths in the finding's detail rather than the scanning layer. Record every selected scope,
+including agents that returned no finding.
+
+Write the synthesis in plain, concrete language. Cut generic praise, formulaic transitions, and vague
+claims; use the repository's exact terms and name the behavior or consequence directly.
+
+Treat agent labels as advisory evidence. Independently judge each finding by the actual consequence of
+merging the current head:
+
+- `Critical` — a plausible security compromise, data loss or corruption, widespread outage, or
+  unrecoverable contract break on a supported path;
+- `Important` — materially wrong, unsafe, or incomplete behavior on a reachable supported path, or a
+  PR-caused failure of an authoritative merge gate; also a proved premature structural decision that
+  creates material, durable state, ownership, or coordination cost disproportionate to the outcome;
+- `Suggestion` — a useful observation that does not make the delivered outcome materially incorrect.
+
+Weigh simplification while the change is still cheap to correct. A passing happy path does not make a
+foundation sound: premature defensive machinery, tests for unsupported behavior, shared state,
+duplicated representations, cross-layer signal threading, or a decision that needlessly closes future
+options can harden into an expensive contract. Give that evidence real weight when a narrow, proven
+smaller primitive removes the cost now. Do not elevate line-count reductions, stylistic alternatives,
+speculative future reuse, or removal of tests that protect required behavior.
+
+Repository guidance informs this judgment, but violating a written preference or process instruction
+is not automatically blocking. The coordinator—not any individual reviewer—owns severity and the
+readiness verdict.
 
 Assign stable finding IDs (`R1`, `R2`, ...) on the first review. On re-review, preserve IDs for the
 same causal finding, allocate new IDs after the prior maximum, verify each recorded disposition, and
@@ -128,7 +163,7 @@ Verdict rules:
 - `READY TO MERGE`: no `OPEN` Critical or Important findings and all required validation passed.
 - `NEEDS FIXES`: at least one `OPEN` Critical or Important finding, or a PR-caused required validation failure.
 - `REVIEW INCOMPLETE`: required validation or decisive evidence could not be obtained.
-- Suggestions, including every `simplify` finding, never block by themselves.
+- Suggestions never block by themselves.
 
 Write the report to the expanded absolute path `$PRP_DIR/reviews/pr-{NUMBER}-review.md`.
 

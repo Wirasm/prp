@@ -88,6 +88,11 @@ For requests that do not assert broken current behavior, skip this step.
 
 Read `references/planning-craft.md` and challenge the first plausible design before committing to it.
 
+Apply its foundation and laziness tests to the candidate design. Establish the data shape and owner,
+the existing or missing primitive, where each decision belongs, what coordination the design avoids,
+and what can be deleted. Justify any shared state, scaffold, new abstraction, or cross-layer signal by
+the invariant it protects rather than by hypothetical future need.
+
 Answer:
 
 1. What observable outcome is actually required?
@@ -96,6 +101,9 @@ Answer:
 4. What assumption forces new state, lifecycle, abstraction, or subsystem?
 5. Can that assumption be tested cheaply?
 6. What machinery disappears if the simpler mechanism works?
+7. Which data shape and owner make the required behavior simplest?
+8. If state is shared, what happens when another actor changes it concurrently?
+9. If this requirement had existed from day one, would this still be the design?
 
 Prefer the smallest valuable vertical slice: it must deliver or directly unlock the user outcome, not merely create an elegant technical primitive. Reuse proven primitives, keep ownership clear, and avoid speculative flexibility. Simplicity is not fewer plan details; it is fewer moving parts in the proposed system.
 
@@ -143,6 +151,8 @@ mkdir -p "$PRP_DIR/plans"
 ```
 
 Read `templates/plan-template.md` and `references/task-format.md`. Keep its required human-scannable spine; assign a stable plan ID, reusing it when revising the same plan, set the source issue metadata when planning from a tracker, and include conditional sections only when they add information. The source metadata is the store lookup key; do not add a separate plan index that can drift.
+
+Write in plain, concrete language. Use the repository's exact terms, remove filler and formulaic phrasing, and keep one name for each concept throughout the plan.
 
 Use `references/visuals.md` when either applies:
 

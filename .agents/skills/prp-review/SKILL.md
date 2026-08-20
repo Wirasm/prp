@@ -1,6 +1,6 @@
 ---
 name: prp-review
-description: Reviews GitHub pull requests through specialist review agents, runs repository validation, verifies corrections, aggregates findings, and posts the result. Always uses the code reviewer and seam analyzer; add tests, comments, errors, types, docs, or simplify when the user requests those scopes. Use when the user asks to review a PR, re-review fixes, check whether a PR is ready to merge, run review agents, or invokes $prp-review.
+description: Reviews GitHub pull requests through specialist review agents, runs repository validation, verifies corrections, aggregates findings, and posts the result. Defaults to code, seam, and simplification review, and adds type design when typed contracts change; the operator can add scopes or explicitly request only selected scopes. Use when the operator asks to review a PR, re-review fixes, check whether a PR is ready to merge, run review agents, or invokes $prp-review.
 ---
 
 > **Arguments:** `$ARGUMENTS` (and `$1`, `$2`, ...) refer to the arguments given when this skill was invoked. Take them from the user's request; if absent, infer them from the conversation.
@@ -12,13 +12,21 @@ do not add an inline review pass before or after them.
 
 **Input**: $ARGUMENTS (if absent, use the current branch's PR).
 
-Always run:
+Run by default:
 
-- `code-reviewer` for correctness, project rules, and high-confidence defects;
-- `seam-analyzer` for missing types, counterpart drift, and bypassed boundaries.
+- `code-reviewer` for a general review of correctness, sanity, scope, and repository fit;
+- `seam-analyzer` for missing types, counterpart drift, and bypassed boundaries;
+- `code-simplifier` for premature machinery and smaller structures that preserve the outcome.
 
-Named scopes are additive. Run their specialist agents only when explicitly requested; `all` adds
-every specialist. Accept the old `--agents` token as a no-op compatibility alias.
+Also run `type-design-analyzer` when the change materially touches types, schemas,
+constructors or factories, public signatures, state variants, or compiler escape hatches. Select it
+by reading the change, not by file extension or keyword parsing. Skip it when no typed contract changed.
+
+Interpret scope instructions by intent, not as a command grammar. With no scope instruction, run the
+three unconditional defaults plus the conditional type scope when applicable. A named or added scope
+augments them: “add tests” means the applicable defaults plus `tests`. An explicit restriction
+replaces them: “only tests” means exactly `tests`. Honor any other explicit operator inclusion or
+exclusion. `all` selects every scope. Accept the old `--agents` token as a no-op compatibility alias.
 
 `--verify-corrections` is a focused independent re-review. Require the previous canonical report and
 reviewed head; verify its findings and dispositions against the current head and correction diff. Do

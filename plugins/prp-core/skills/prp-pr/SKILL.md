@@ -41,6 +41,8 @@ Check whether any open or closed PR already exists for the current branch. If on
 ## 3. Write the pull request
 
 Treat repository rules as syntax constraints, not as the writing-quality standard.
+Write in plain, natural language. Cut filler, generic praise, formulaic transitions, and vague claims.
+Use the repository's exact terms and name concrete behavior and evidence.
 
 ### Title
 

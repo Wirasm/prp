@@ -214,6 +214,9 @@ Ask final clarifying questions:
 
 ## Phase 7: GENERATE - Write PRD
 
+Use plain, specific language and the product's actual terms. Cut filler, invented jargon, generic
+claims, and formulaic phrasing.
+
 ```bash
 # --- PRP store resolver (canonical; keep byte-identical across skills) ---
 _gd="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"

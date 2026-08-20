@@ -69,6 +69,7 @@ Get the skills one of two ways (see the main `README.md` for details):
 | `/prp-codebase-question` | Answer "how does the codebase do X?"          |
 | `/prp-research-team`     | Plan multi-agent research on a question       |
 | `/prp-meta-skill`        | Create new skills or slim down fat ones       |
+| `/prp-technical-writing` | Write or edit clear, verified developer docs   |
 
 ---
 

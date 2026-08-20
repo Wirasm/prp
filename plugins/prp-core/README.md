@@ -47,6 +47,7 @@ Everything here ships as **skills** (not slash commands), so each one is both **
 | Skill | Description |
 |-------|-------------|
 | `/prp-core:prp-meta-skill` | Author new skills and refactor fat skills into a lean `SKILL.md` + `references/` (prescribes the craft, not your project's content) |
+| `/prp-core:prp-technical-writing` | Write and edit developer documentation that is clear, concrete, and verified |
 
 ## Agents
 
