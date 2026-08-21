@@ -1,7 +1,8 @@
 # Orchestration run: {run-id}
 
 > Maintained by the orchestrator for the run's lifetime. Stored in the project's shared PRP store and
-> never committed by a workstream. Resume with `$prp-orchestrate --resume`.
+> never committed by a workstream. The tables are current state and are rewritten as the run changes;
+> the Event log is append-only history. Resume with `$prp-orchestrate --resume`.
 
 **Concern**: {plain-language concern or responsibility entrusted to the run}
 **Status**: active | complete | abandoned
@@ -17,6 +18,8 @@
 
 Use the Workstream column as the durable source: an issue or plan identifier, or the relevant
 natural-language request when no other source exists. Do not replace it with a lossy private summary.
+When a gate folds work in, adds a workstream, reassigns an owner, or reorders priority, update the row
+here and log the change.
 
 Use a run-local alias such as `ws1` for a native agent. Process-backed integrations may record their
 PID in the Owner column. Keep ephemeral native agent handles in the live orchestrator session.
@@ -30,12 +33,28 @@ intentionally returned to the operator without claiming failure or completion.
 
 ## Standing decisions
 
+A standing decision is a precomputed answer to a question that will be asked again. The orchestrator
+writes these rows, reading the operator's intent from what they actually said rather than waiting for a
+rule-shaped sentence. The authority stays the operator's: never record a rule they did not decide, and
+never grant the run a permission they did not give. Before adding a row, phrase it as "For the rest of
+this run, ..."; when that sentence reads as false or absurd, the answer belongs somewhere else.
+
 | SD | Decision | Scope | Source | At |
 |---|---|---|---|---|
 | SD-1 | Base branch is `development` | this run | user | {HH:MM} |
+| SD-2 | Fix doc-only review findings without asking | delivery workstreams | user | {HH:MM} |
 
-Only the user creates a Standing Decision, either up front or at a gate. Record autonomous actions in
-the Event log by citing the applicable decision.
+Route the rest by what it is, not by who said it:
+
+- A one-time authorization to perform a named action, such as merging a specific PR or closing one and
+  starting over: Event log.
+- A change to the workstream set, its scope, its owner, or its priority: the Workstreams table, plus an
+  Event log line.
+- An answer carrying live status, such as a sign-off with residual work still in flight: Event log.
+- An autonomous orchestrator action: Event log, citing the standing decision that allowed it.
+
+When the operator changes a standing answer, rewrite that row in place and keep its number so earlier
+citations still resolve, then log the change. Never leave two rows answering the same question.
 
 ## Merge queue
 
@@ -45,11 +64,15 @@ the Event log by citing the applicable decision.
 
 ## Event log
 
-Append only durable transitions, human decisions, exceptional steering, blockers, and merges. Do not
-log routine polling, checks, progress narration, or duplicate the current row state.
+Never edit or remove a line here. Add durable transitions, human decisions, exceptional steering,
+blockers, merges, and every change to a standing decision. Do not log routine polling, checks, progress
+narration, or duplicate the current row state. Every gate answer is logged here, whether or not it also
+becomes a standing decision.
 
 - {HH:MM} launched ws1
-- {HH:MM} gate: {question} -> {answer} (new SD-{n})
+- {HH:MM} gate: {question} -> {answer}; {action taken}
+- {HH:MM} gate: {question} -> {answer}, recorded as SD-{n}
+- {HH:MM} gate: {question} -> {answer}; SD-{n} rewritten to {new rule}
 - {HH:MM} steered ws2: {material instruction}
 - {HH:MM} merged PR #{n}; queued ws3 for rebase
 
