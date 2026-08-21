@@ -59,9 +59,10 @@ SRC_SKILLS = ROOT / ".claude" / "skills"
 SRC_AGENTS = ROOT / ".claude" / "agents"
 
 # Manual experiments remain top-level so Claude Code can discover explicit
-# invocations. They are kept out of the plugin other people install, but still
-# render to .agents/skills so the author can exercise them in Codex.
-PLUGIN_EXCLUDED_SKILLS = {"prp-deliver"}
+# invocations. Register a skill here to keep it out of the plugin other people
+# install; it still renders to .agents/skills so the author can exercise it in
+# Codex. Currently empty.
+PLUGIN_EXCLUDED_SKILLS: set[str] = set()
 
 PRP_RESOLVER_BLOCK = """# --- PRP store resolver (canonical; keep byte-identical across skills) ---
 _gd="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"
