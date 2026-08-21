@@ -26,13 +26,24 @@ local branch.
 
 Spawn via the Agent/Task tool:
 
-**`isolation: "worktree"` is the default.** Spawn every workstream that touches the working tree into
-its own checkout. Before editing, require the owner to verify or create `<branch>` from
-`origin/<base>`. If an existing branch has work, preserve it and verify its intended base rather than
-resetting it.
+**A checkout's lifetime belongs to its workstream, not to the agent holding it.** Owners are resumed
+between phases as a matter of course, so create the checkout before launching and keep it until the
+workstream is merged or dropped:
 
-- Give PR-producing work one agent, `run_in_background` (the default), worktree-isolated.
-- Give `prp-review` a worktree because it runs `gh pr checkout`.
+```text
+/prp-worktree create <branch> --base <base>
+```
+
+Pass the absolute path it prints to the owner. Before editing, require the owner to verify or create
+`<branch>` from `origin/<base>`. If an existing branch has work, preserve it and verify its intended
+base rather than resetting it.
+
+Do not use the Agent tool's `isolation: "worktree"` for a workstream that may be resumed. The harness
+reclaims that checkout once it releases an unchanged owner, which is what a finished delivery looks
+like, and the next resume lands silently in the operator's own checkout.
+
+- Give PR-producing work one agent, `run_in_background` (the default), in its own managed worktree.
+- Give `prp-review` a managed worktree because it runs `gh pr checkout`.
 - Run work that does not modify the checkout as a plain background agent: `prp-codebase-question`,
   `prp-debug`, `prp-plan`, and `prp-prd`. Assign only one `prp-debug` owner per GitHub issue because it
   can publish there.
@@ -45,7 +56,7 @@ resetting it.
 A background owner receives no conversation history. Pass the source and only the context needed to
 preserve the operator's meaning:
 
-- For checkout-bearing work, add `Work in <branch>, created from origin/<base>.`
+- For checkout-bearing work, add `Work in <absolute worktree path> on <branch>, created from origin/<base>.`
 - For PR-producing work, add `Open the PR against <base>.`
 - Omit both instructions when they do not apply.
 
@@ -63,7 +74,10 @@ with the recommendation.
 ## Steer and report status
 
 - **Steer or continue**: send the owner a follow-up message. Preserve its context for corrections and
-  conflict resolution.
+  conflict resolution. A resumed owner may no longer hold the checkout it had, and a lost one silently
+  becomes the operator's. Restate its absolute worktree path in every follow-up and require
+  `git rev-parse --show-toplevel` to confirm it before any git command. Recreate the worktree when it
+  is gone rather than letting the owner work wherever it landed.
 - **Stop**: use the native stop control. Record `dropped` and the reason. Preserve the worktree and
   branch unless later cleanup proves deletion safe.
 - **Status**: reconcile native task status, the run row, and GitHub. Return a compact outcome table and

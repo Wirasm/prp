@@ -170,17 +170,17 @@ CODEX_SKILL_REWRITES: dict[str, list[tuple[re.Pattern, str]]] = {
         (re.compile(r'prp_loop\.py "\$ARGUMENTS"'), 'prp_loop.py "$ARGUMENTS" --cli codex'),
         (re.compile(r"prp_loop\.py --resume"), "prp_loop.py --resume --cli codex"),
     ],
-    # Claude can create an isolated worktree as part of the spawn. Codex needs the
-    # same checkout created explicitly before delegation.
+    # Both harnesses now pre-create the checkout with prp-worktree, so only the
+    # Claude-only spawn mechanics need removing: a warning about an `isolation`
+    # parameter Codex does not have, and `run_in_background`.
     "prp-orchestrate": [
-        (re.compile(r"\*\*`isolation: \"worktree\"` is the default\.\*\* Spawn every workstream that\s+"
-                    r"touches the working tree into\s+its own checkout\. Before editing, require the "
-                    r"owner to verify or create `<branch>` from\s+`origin/<base>`\."),
-         "**Isolation is explicit.** Before spawning, use `prp-worktree` to create `<branch>` from "
-         "`origin/<base>`, then pass the absolute checkout path to the owner. Require the owner to "
-         "verify that exact base before editing."),
-        (re.compile(r"one agent, `run_in_background` \(the default\), worktree-isolated\."),
-         "one background agent in its own pre-created worktree."),
+        (re.compile(r"Do not use the Agent tool's `isolation: \"worktree\"` for a workstream that may be "
+                    r"resumed\. The harness\s+reclaims that checkout once it releases an unchanged owner, "
+                    r"which is what a finished delivery looks\s+like, and the next resume lands silently in "
+                    r"the operator's own checkout\.\n\n"),
+         ""),
+        (re.compile(r"one agent, `run_in_background` \(the default\), in its own managed worktree\."),
+         "one background agent in its own managed worktree."),
     ],
     # Meta-skill: only its meta-documentation of Claude-only mechanics needs a touch;
     # authored-skill paths are handled by the global .claude/skills -> .agents/skills map.
