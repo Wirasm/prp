@@ -59,7 +59,7 @@ For `NEEDS FIXES`, `REVIEW INCOMPLETE`, or any `OPEN` finding, send the complete
 
 Let the implementation agent disposition the report using its plan and code context. Prefer fixing valid, narrow, low-risk findings now; track only valuable distinct outcomes, and decline speculative or directionally wrong work without creating backlog noise.
 
-If that agent is unavailable, start a fresh correction agent with the same complete artifact bundle. After every correction or disposition, start another fresh review agent with the caller constraints, the complete canonical report, and the dispositions under verification, then update the canonical publication. Repeat until `READY TO MERGE` with every finding terminal, or a genuine blocker survives without new evidence or progress.
+If that agent is unavailable, start a fresh correction agent with the same complete artifact bundle. After every correction or disposition, start another fresh review agent with the caller constraints, the complete canonical report, and the dispositions under verification, then update the canonical publication. Repeat until `READY TO MERGE` with every finding terminal, or a genuine blocker survives without new evidence or progress. Do not wait for or check CI between rounds; CI clears once, at the end of the delivery, on the final head.
 
 ## 5. Require green CI
 
