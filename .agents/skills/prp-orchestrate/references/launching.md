@@ -39,7 +39,6 @@ Pass the absolute path it prints to the owner. Before editing, require the owner
 base rather than resetting it.
 
 - Give PR-producing work one background agent in its own managed worktree.
-- Give `prp-review` a managed worktree because it runs `gh pr checkout`.
 - Run work that does not modify the checkout as a plain background agent: `prp-codebase-question`,
   `prp-debug`, `prp-plan`, and `prp-prd`. Assign only one `prp-debug` owner per GitHub issue because it
   can publish there.

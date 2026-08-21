@@ -7,12 +7,27 @@ Review the target PR through specialist agents, then publish one evidence-based 
 Resolve a number, URL, branch, or the current branch's PR with `gh pr view` / `gh pr list`. Read its
 title, body, author, state, base, head, files, reviews, and comments.
 
-Capture `headRefOid` as `reviewed_head`. After checkout, require `git rev-parse HEAD` to equal that SHA.
-Use the same immutable head for repository validation and every reviewer.
+Capture `headRefOid` as `reviewed_head`. Use that same immutable head for repository validation and
+every reviewer.
+
+Work only in a checkout this review created. Fetch the head, then add a detached worktree pinned to it:
+
+```bash
+git fetch origin <headRefName>
+git worktree add --detach .worktrees/review-pr-<number> <reviewed_head>
+git -C .worktrees/review-pr-<number> rev-parse HEAD   # must equal reviewed_head
+```
+
+Detach instead of checking out the branch. A delivery owner usually holds that branch, and git refuses
+the same branch in two worktrees, so a branch checkout leaves only two moves: take over the owner's
+tree, or detach. Detaching also makes `rev-parse HEAD` equal `reviewed_head` by construction, so no
+reset is ever needed to reach the reviewed head.
+
+Remove the checkout with `git worktree remove .worktrees/review-pr-<number>` as the review's last act,
+including when the review stops early. The canonical report lives under `$PRP_DIR` and outlives it.
 
 - Stop when the PR is merged. Warn before reviewing a closed PR.
 - Review a draft normally, but post a comment rather than approving or requesting changes.
-- Check out the PR branch with `gh pr checkout` unless it is already checked out.
 - For a full review, read the complete diff, repository guidance, full changed files, and directly
   relevant tests and precedents.
 - Read matching implementation reports, completed plans, issue artifacts, and the previous canonical
@@ -28,9 +43,15 @@ Use the same immutable head for repository validation and every reviewer.
 
 Do not edit files, resolve conflicts, rebase, commit, or push. Review the PR as it exists.
 
+Never run a tree-moving command outside this review's own checkout. `gh pr checkout`, `git checkout`,
+`git reset`, and `git stash` move whichever tree they run in; a delivery owner is often working in that
+tree, and moving its HEAD silently reverts committed work. When the review's checkout is missing,
+create it again rather than working wherever the shell happens to be.
+
 ## 2. Run repository validation
 
-Discover authoritative checks from repository guidance, package scripts, task runners, and CI.
+Run every check in the review's own checkout. Discover authoritative checks from repository guidance,
+package scripts, task runners, and CI.
 For a full review, run the applicable type check, lint, tests, build, and any focused validation the
 changed behavior requires. For correction verification, preserve still-applicable prior results and
 rerun the focused check for every correction or disputed finding plus any authoritative gate the
@@ -75,7 +96,7 @@ All agents are advisory and must not modify files or post their own PR comments.
 Spawn every selected agent in its named reviewer role. Do not paraphrase the role's defect class in the
 launch prompt; the agent definition owns it. Give every reviewer this shared instruction:
 
-> Review PR #<number> at exact head `<reviewed_head>` against its actual base. Do not follow a newer head. Suggest `Critical`, `Important`, or `Suggestion` for each finding based on its actual consequence. The coordinator independently determines final severity and merge readiness. Do not modify files, commit, or post comments.
+> Review PR #<number> at exact head `<reviewed_head>` against its actual base. Work only in `<review checkout path>`; never run a command that moves any other tree. Do not follow a newer head. Suggest `Critical`, `Important`, or `Suggestion` for each finding based on its actual consequence. The coordinator independently determines final severity and merge readiness. Do not modify files, commit, or post comments.
 
 In correction verification, give every selected agent the previous and current head SHAs, the bounded
 diff, and the exact prior findings and dispositions relevant to its scope. Require it to verify those

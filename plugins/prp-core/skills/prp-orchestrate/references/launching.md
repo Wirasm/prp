@@ -43,7 +43,6 @@ reclaims that checkout once it releases an unchanged owner, which is what a fini
 like, and the next resume lands silently in the operator's own checkout.
 
 - Give PR-producing work one agent, `run_in_background` (the default), in its own managed worktree.
-- Give `prp-review` a managed worktree because it runs `gh pr checkout`.
 - Run work that does not modify the checkout as a plain background agent: `prp-codebase-question`,
   `prp-debug`, `prp-plan`, and `prp-prd`. Assign only one `prp-debug` owner per GitHub issue because it
   can publish there.
