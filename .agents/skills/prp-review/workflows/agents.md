@@ -101,8 +101,10 @@ launch prompt; the agent definition owns it. Give every reviewer this shared ins
 In correction verification, give every selected agent the previous and current head SHAs, the bounded
 diff, and the exact prior findings and dispositions relevant to its scope. Require it to verify those
 findings and inspect the correction for regressions. Reopen a prior finding when evidence disproves
-its disposition; allocate a new finding only for a defect caused by the correction. Do not review
-unchanged parts of the original PR for unrelated findings.
+its disposition; allocate a new finding only for a defect caused by the correction. A corrected
+comment or documentation finding closes when the new text is accurate; improvable wording is neither
+a disproven disposition nor a correction-caused defect. Do not review unchanged parts of the
+original PR for unrelated findings.
 
 ## 5. Synthesize without re-reviewing
 
