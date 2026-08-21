@@ -74,9 +74,10 @@ it without another question. Do not launch before approval. That approval covers
 Read `templates/orchestration-run.md`, create `$PRP_DIR/orchestration/<run-id>.md` from it, and record
 its expanded path. Use `YYYY-MM-DD-<slug>` for the run ID. Do not send a separate progress message.
 
-Seed Standing Decisions with the confirmed base and the user's other decisions. Maintain the run file
-for the run's lifetime. Keep current state in each workstream row. Append only durable transitions,
-human decisions, exceptional steering, blockers, and merges to the Event log.
+Seed Standing Decisions with the confirmed base and any other user decision that will govern a later
+choice, following the template's routing rules. Maintain the run file for the run's lifetime. Keep
+current state in each workstream row. Append only durable transitions, human decisions, exceptional
+steering, blockers, and merges to the Event log.
 
 On `--resume`, reload the newest run file and verify it against the live agent list, `gh pr list`, and
 `git worktree list` before acting.
@@ -113,7 +114,7 @@ Interpret new user messages by intent:
 - A new parallel limit: update the configured value, recalculate effective capacity from `references/launching.md`, and launch eligible work. If the harness rejects a spawn, keep the work pending without rejecting or rewriting the user's value.
 - Stop or steer: use the native task control, preserve recoverable work, and record the durable action.
 - Status: reconcile the run file, live agents, and GitHub, then return a concise outcome table with anything needing attention last.
-- A new Standing Decision: record its scope and send it to affected owners as a follow-up message.
+- A decision or instruction: record it by the routing rules in section 5 and send it to affected owners as a follow-up message.
 
 If an owner is silent well past its engine's expected runtime, inspect its status and output. Send a
 focused follow-up or stop it and gate retry, reassignment, or dropping. After two failed restarts, stop
@@ -127,8 +128,10 @@ the review is ready and CI is green.
 
 Apply an in-scope Standing Decision when one exists and record the action. Otherwise send a standalone
 digest: what happened, the recommendation and its risk, then the exact decision needed at the end.
-Group simultaneous decisions into one message. Record the answer with explicit scope and send it to
-the affected owner as a follow-up.
+Group simultaneous decisions into one message. Log every answer in the Event log and send it to the
+affected owner as a follow-up. Promote an answer to a Standing Decision only when it also settles a
+question that will be asked again. A one-time authorization stays an event, and a change to the
+workstream set or its scope updates the Workstreams table.
 
 Never merge to a protected branch until the user has approved that merge path in the run. Never delete
 a branch or worktree with unmerged commits.

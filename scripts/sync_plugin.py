@@ -4,8 +4,8 @@
 Targets:
 
 1. plugins/prp-core/ — the Claude Code plugin.
-   - skills/  <- active skills under .claude/skills/, excluding manual
-     experiments named in IN_PROCESS_SKILLS,
+   - skills/  <- skills under .claude/skills/, minus PLUGIN_EXCLUDED_SKILLS
+     (personal experiments that must not reach anyone else's install),
      verbatim except SKILL.md launcher paths in
      LAUNCHER_REWRITES (scripts invoked from a .claude/ path locally) are
      rewritten to their ${CLAUDE_PLUGIN_ROOT} form
@@ -26,7 +26,9 @@ Targets:
    is shared with every other Codex skill the user installs. That sharing cuts
    both ways: the stale prune below deletes anything in .agents/skills that
    .claude/skills did not generate, so nothing foreign should be parked there.
-   Skills from .claude/skills/ minus CODEX_EXCLUDED_SKILLS, with Claude-isms
+   Skills from .claude/skills/ minus CODEX_EXCLUDED_SKILLS. Personal
+   experiments render here on purpose: this target is the author's own Codex
+   install, not a public distribution. With Claude-isms
    rewritten (CODEX_REWRITES): Task-tool subagent dispatch -> explicit
    "spawn the X subagent" delegation, prp-core: namespace dropped (Codex agent
    names are flat), /prp-x -> $prp-x mentions, launcher paths, an Arguments
@@ -57,8 +59,9 @@ SRC_SKILLS = ROOT / ".claude" / "skills"
 SRC_AGENTS = ROOT / ".claude" / "agents"
 
 # Manual experiments remain top-level so Claude Code can discover explicit
-# invocations, but are deliberately absent from every generated target.
-IN_PROCESS_SKILLS = {"prp-deliver"}
+# invocations. They are kept out of the plugin other people install, but still
+# render to .agents/skills so the author can exercise them in Codex.
+PLUGIN_EXCLUDED_SKILLS = {"prp-deliver"}
 
 PRP_RESOLVER_BLOCK = """# --- PRP store resolver (canonical; keep byte-identical across skills) ---
 _gd="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"
@@ -260,18 +263,15 @@ def _walk(base: Path) -> list[Path]:
     )
 
 
-def _active_skill_files() -> list[Path]:
-    return [
-        src for src in _walk(SRC_SKILLS)
-        if src.relative_to(SRC_SKILLS).parts[0] not in IN_PROCESS_SKILLS
-    ]
+def _all_skill_files() -> list[Path]:
+    return _walk(SRC_SKILLS)
 
 
 def expected_files() -> dict[Path, bytes]:
     """Map of repo-relative path -> expected content, across all targets."""
     expected: dict[Path, bytes] = {}
 
-    for src in _active_skill_files():
+    for src in _all_skill_files():
         if src.suffix != ".md":
             continue
         text = src.read_text()
@@ -279,9 +279,11 @@ def expected_files() -> dict[Path, bytes]:
             sys.exit(f"{src}: PRP store resolver differs from the canonical block")
 
     # 1. Claude Code plugin
-    for src in _active_skill_files():
+    for src in _all_skill_files():
         rel = src.relative_to(SRC_SKILLS)
         skill = rel.parts[0]
+        if skill in PLUGIN_EXCLUDED_SKILLS:
+            continue
         content = src.read_bytes()
         if skill in LAUNCHER_REWRITES and rel == Path(skill) / "SKILL.md":
             local, plugin, _ = LAUNCHER_REWRITES[skill]
@@ -296,7 +298,7 @@ def expected_files() -> dict[Path, bytes]:
         expected[PLUGIN_AGENTS / src.relative_to(SRC_AGENTS)] = src.read_bytes()
 
     # 2. Codex skills render
-    for src in _active_skill_files():
+    for src in _all_skill_files():
         rel = src.relative_to(SRC_SKILLS)
         skill = rel.parts[0]
         if skill in CODEX_EXCLUDED_SKILLS:
