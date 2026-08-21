@@ -16,7 +16,7 @@ grep -nE '`(references|templates|scripts|assets)/' .agents/skills/<name>/SKILL.m
 ## Gate 2 — Description quality (the trigger)
 
 - For active skills: third person; not "Use this when you…"; states WHAT and WHEN; includes literal trigger phrases and the `/name` invocation.
-- `user-invocable` and `disable-model-invocation` are NOT set. For an in-process experiment registered in `IN_PROCESS_SKILLS`, verify it lives in this repository's authored `.claude` skill source tree rather than `.agents/skills/`, its description is only `This is an experimental skill. Never use it unless the user explicitly tells you to invoke /<name>.`, explicit user and agent invocation work, and it is absent from generated distributions and active composition callers.
+- `user-invocable` and `disable-model-invocation` are NOT set. For an in-process experiment registered in `PLUGIN_EXCLUDED_SKILLS`, verify it is authored in this repository's `.claude` skill source tree, its description is only `This is an experimental skill. Never use it unless the user explicitly tells you to invoke /<name>.`, explicit user and agent invocation work, it is absent from the public plugin and from active composition callers, and its Codex render exists so the author can exercise it.
 
 ## Gate 3 — Body style & size
 
