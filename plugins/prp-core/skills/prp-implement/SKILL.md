@@ -38,7 +38,7 @@ For an issue-derived plan, read comments added after `Plan Publication` before e
 
 If `Source Issue` is non-empty but `Plan Publication` is empty or cannot be verified on that issue, invoke `/prp-plan publish <absolute plan path>`, re-read the plan, and stop if publication remains unverified. Apply this gate whether the input was the issue or the plan path.
 
-Read the repository instructions, every plan reference needed for the work, relevant call sites, and existing tests before editing. Read `engineering.md` when the project has one, in the repository root, `.prp/`, or wherever repository guidance keeps it; it carries the craft and review values this repository holds itself to. Absence is normal; never create it.
+Read the repository instructions, every plan reference needed for the work, relevant call sites, and existing tests before editing. Read `engineering.md` when the project has one, in the repository root, `.prp/`, or wherever repository guidance keeps it; it carries the standard this repository checks work against, in an engineering manager's voice rather than instructions for doing the work. Absence is normal; never create it.
 
 Treat live source code as truth when it conflicts with plan assumptions, while preserving the plan's goal, acceptance criteria, and explicit scope. If reality makes the intended outcome ambiguous or materially changes product shape, stop and ask. If implementation would require working around a missing foundational primitive that should exist first, stop and explain the missing primitive, why it belongs earlier, and what it blocks. Otherwise record the necessary deviation and continue.
 

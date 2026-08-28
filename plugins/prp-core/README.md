@@ -85,11 +85,12 @@ the repository root or in `.prp/`; if you keep them elsewhere, link them from yo
 | File | Holds | Read by |
 |------|-------|---------|
 | `direction.md` | Product direction and scope: what this project is for, and what it declines to become | `prp-plan`, `prp-review` |
-| `engineering.md` | Engineering craft and review values this project holds itself to | `prp-plan`, `prp-implement`, `prp-review` and its review agents |
+| `engineering.md` | The standard work is checked against, in an engineering manager's voice: the objective function, the taste, the risk posture, what review is for | `prp-plan`, `prp-implement`, `prp-review` and its review agents |
 
 They exist to keep judgment out of prompts. `AGENTS.md` carries durable, short guidance; product
-direction changes and belongs in `direction.md`; craft and review values that are aspirations rather
-than machine-checkable rules belong in `engineering.md`. A change that contradicts stated product
+direction changes and belongs in `direction.md`; the standard work is checked against belongs in
+`engineering.md`, which holds what needs judgment and hands anything that becomes machine-checkable
+to a lint rule, a type, or a CI check. A change that contradicts stated product
 direction is a scope question for the operator, not a defect the author can fix in the diff.
 
 ## Hooks
