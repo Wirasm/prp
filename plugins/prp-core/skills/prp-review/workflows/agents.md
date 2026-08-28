@@ -30,6 +30,10 @@ including when the review stops early. The canonical report lives under `$PRP_DI
 - Review a draft normally, but post a comment rather than approving or requesting changes.
 - For a full review, read the complete diff, repository guidance, full changed files, and directly
   relevant tests and precedents.
+- Read the project's optional sidecars when they exist: `direction.md` for product direction and
+  scope, and `engineering.md` for engineering craft and review values. Look in the repository root
+  and `.prp/`, and follow the path repository guidance names when it keeps them elsewhere. Absence
+  is normal; never create them.
 - Read matching implementation reports, completed plans, issue artifacts, and the previous canonical
   review under `$PRP_DIR` when they exist. Treat documented deviations as context, not automatic
   defects. On re-review, read every recorded finding disposition and its evidence.
@@ -94,7 +98,7 @@ All agents are advisory and must not modify files or post their own PR comments.
 Spawn every selected agent in its named reviewer role. Do not paraphrase the role's defect class in the
 launch prompt; the agent definition owns it. Give every reviewer this shared instruction:
 
-> Review PR #<number> at exact head `<reviewed_head>` against its actual base. Work only in `<review checkout path>`; never run a command that moves any other tree. Do not follow a newer head. Suggest `Critical`, `Important`, or `Suggestion` for each finding based on its actual consequence. When one finding proves that a member of a finite class violates an invariant, enumerate that class with a deterministic repository search before reporting, and return one finding naming the invariant, the search you ran, every affected member, and every member you examined and found clean; a member you could not examine is unexamined, never clean. The coordinator independently determines final severity and merge readiness. Do not modify files, commit, or post comments.
+> Review PR #<number> at exact head `<reviewed_head>` against its actual base. Work only in `<review checkout path>`; never run a command that moves any other tree. Do not follow a newer head. Read `engineering.md` when the project has one, in the repository root, `.prp/`, or wherever repository guidance keeps it, and judge the change against the values it states. Suggest `Critical`, `Important`, or `Suggestion` for each finding based on its actual consequence. When one finding proves that a member of a finite class violates an invariant, enumerate that class with a deterministic repository search before reporting, and return one finding naming the invariant, the search you ran, every affected member, and every member you examined and found clean; a member you could not examine is unexamined, never clean. The coordinator independently determines final severity and merge readiness. Do not modify files, commit, or post comments.
 
 Persist what each reviewer returns. This review's round is `1` when `$PRP_DIR/reviews/pr-<number>/`
 holds no `round-*` directory, and one higher than the largest otherwise. Create
@@ -141,8 +145,10 @@ options can harden into an expensive contract. Give that evidence real weight wh
 smaller primitive removes the cost now. Do not elevate line-count reductions, stylistic alternatives,
 speculative future reuse, or removal of tests that protect required behavior.
 
-Repository guidance informs this judgment, but violating a written preference or process instruction
-is not automatically blocking. The coordinator—not any individual reviewer—owns severity and the
+Repository guidance, including `direction.md` and `engineering.md` when the project has them, informs
+this judgment, but violating a written preference or process instruction is not automatically blocking.
+A change that contradicts stated product direction is a finding about scope, for the operator to settle,
+not a defect the author can fix in the diff. The coordinator—not any individual reviewer—owns severity and the
 readiness verdict.
 
 Close a proved causal class before publishing. When an aggregated Critical or Important finding

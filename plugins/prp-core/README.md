@@ -76,6 +76,22 @@ Specialized, advisory agents used by the review and planning skills. They are re
 
 Review agents are invoked automatically by `/prp-core:prp-review` and the review stage of `/prp-core:prp-issue`, or manually via the Task tool.
 
+## Project sidecars
+
+Two optional documents, if your project has them, are read by the skills that need them. Keep them in
+the repository root or in `.prp/`; if you keep them elsewhere, link them from your `AGENTS.md` or
+`CLAUDE.md`. Nothing creates them and nothing fails when they are absent.
+
+| File | Holds | Read by |
+|------|-------|---------|
+| `direction.md` | Product direction and scope: what this project is for, and what it declines to become | `prp-plan`, `prp-review` |
+| `engineering.md` | Engineering craft and review values this project holds itself to | `prp-plan`, `prp-implement`, `prp-review` and its review agents |
+
+They exist to keep judgment out of prompts. `AGENTS.md` carries durable, short guidance; product
+direction changes and belongs in `direction.md`; craft and review values that are aspirations rather
+than machine-checkable rules belong in `engineering.md`. A change that contradicts stated product
+direction is a scope question for the operator, not a defect the author can fix in the diff.
+
 ## Hooks
 
 The plugin ships one Stop hook, `hooks/prp-research-team-stop.sh`, which validates `prp-research-team` output. The skill writes its plan path to a sentinel file in `~/.prp/<project-key>/state/prp-research-team.state`; on Stop, the hook checks the plan for the six required sections and, if any are missing, blocks completion once with the list of what's absent. It cleans up the sentinel on success, ignores stale sentinels (older than 2 hours), and never blocks twice in a row. Note: the hook ships only with the plugin — if you copy the skill into `.claude/skills/` directly, this validation does not run.
