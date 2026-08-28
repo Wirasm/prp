@@ -94,6 +94,15 @@ def resolve_project(cwd: Path) -> tuple[Path, Path, str, bool]:
     ).stdout.strip()
     if not hashed:
         raise MigrationError("git hash-object returned an empty hash")
+
+    # Adopt the store that already records this root, whatever key minted it.
+    home = Path(os.environ.get("PRP_HOME", str(Path.home() / ".prp"))).expanduser()
+    for registration in sorted(home.glob("*/project.json")):
+        try:
+            if json.loads(registration.read_text()).get("path") == str(root):
+                return root, checkout, registration.parent.name, linked
+        except (json.JSONDecodeError, OSError):
+            continue
     return root, checkout, f"{name}-{hashed[:8]}", linked
 
 

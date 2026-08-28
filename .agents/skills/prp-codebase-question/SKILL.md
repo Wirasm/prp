@@ -205,11 +205,15 @@ basename $(git rev-parse --show-toplevel)
 
 ```bash
 # --- PRP store resolver (canonical; keep byte-identical across skills) ---
+# Adopt the store that already records this root; mint a key only when none does.
 _gd="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"
 case "$_gd" in */.git) _root="${_gd%/.git}" ;; "") _root="$PWD" ;; *) _root="$_gd" ;; esac
 _root="$(cd "$_root" && pwd -P)"
 _name="$(basename "$_root" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9' '-' | sed 's/^-*//;s/-*$//')"
-PRP_DIR="${PRP_HOME:-$HOME/.prp}/${_name:-project}-$(printf %s "$_root" | git hash-object --stdin | cut -c1-8)"
+_home="${PRP_HOME:-$HOME/.prp}"
+_hit="$(grep -lsF "\"path\": \"$_root\"" "$_home"/*/project.json 2>/dev/null | head -1)"
+PRP_DIR="${_hit%/project.json}"
+[ -n "$PRP_DIR" ] || PRP_DIR="$_home/${_name:-project}-$(printf %s "$_root" | git hash-object --stdin | cut -c1-8)"
 mkdir -p "$PRP_DIR"; [ -f "$PRP_DIR/project.json" ] || printf '{"path": "%s", "name": "%s"}\n' "$_root" "${_name:-project}" > "$PRP_DIR/project.json"
 mkdir -p "$PRP_DIR/research"
 ```

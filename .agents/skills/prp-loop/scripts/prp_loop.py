@@ -56,6 +56,21 @@ def _project_root() -> Path:
     return Path.cwd()
 
 
+def _registered_store(home: Path, root: Path) -> Path | None:
+    """The store that already records this root, whatever key minted it.
+
+    Keeps one store per project when an older or foreign resolver minted the key
+    a different way; the hash only names a store nothing has claimed yet.
+    """
+    for registration in sorted(home.glob("*/project.json")):
+        try:
+            if json.loads(registration.read_text()).get("path") == str(root):
+                return registration.parent
+        except (json.JSONDecodeError, OSError):
+            continue
+    return None
+
+
 def _prp_dir() -> Path:
     """Resolve the per-project PRP store shared by the main checkout and worktrees."""
     common = subprocess.run(
@@ -79,7 +94,8 @@ def _prp_dir() -> Path:
         text=True,
         check=True,
     ).stdout.strip()[:8]
-    prp_dir = Path(os.environ.get("PRP_HOME", Path.home() / ".prp")) / f"{name}-{hashed}"
+    home = Path(os.environ.get("PRP_HOME", Path.home() / ".prp"))
+    prp_dir = _registered_store(home, root) or home / f"{name}-{hashed}"
     prp_dir.mkdir(parents=True, exist_ok=True)
     registration = prp_dir / "project.json"
     if registration.exists():
