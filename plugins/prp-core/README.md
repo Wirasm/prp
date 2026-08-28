@@ -70,12 +70,30 @@ Specialized, advisory agents used by the review and planning skills. They are re
 | `comment-analyzer` | Materially false prose and concrete maintenance traps |
 | `pr-test-analyzer` | Meaningful behavior without regression protection |
 | `silent-failure-hunter` | Failure paths that become indistinguishable from success |
-| `type-design-analyzer` | Reachable invalid states and invariant enforcement |
 | `seam-analyzer` | Missing types and drift across system boundaries |
 | `code-simplifier` | Removes avoidable machinery through proven smaller primitives |
 | `docs-impact-agent` | False or missing documentation that changes reader behavior |
 
 Review agents are invoked automatically by `/prp-core:prp-review` and the review stage of `/prp-core:prp-issue`, or manually via the Task tool.
+
+## Project sidecars
+
+Two optional documents, if your project has them, are read by the skills that need them. Keep them
+anywhere in your repository. Link them from your `AGENTS.md` or `CLAUDE.md` so agents reach them
+immediately; otherwise the skills find them by name. Do not put them in the PRP store, which lives
+outside the repository and holds generated artifacts: these are yours, and they belong in version
+control beside the code they govern. Nothing creates them and nothing fails when they are absent.
+
+| File | Holds | Read by |
+|------|-------|---------|
+| `direction.md` | Product direction and scope: what this project is for, and what it declines to become | `prp-plan`, `prp-review` |
+| `engineering.md` | The standard work is checked against, in an engineering manager's voice: the objective function, the taste, the risk posture, what review is for | `prp-plan`, `prp-implement`, `prp-review` and its review agents |
+
+They exist to keep judgment out of prompts. `AGENTS.md` carries durable, short guidance; product
+direction changes and belongs in `direction.md`; the standard work is checked against belongs in
+`engineering.md`, which holds what needs judgment and hands anything that becomes machine-checkable
+to a lint rule, a type, or a CI check. A change that contradicts stated product
+direction is a scope question for the operator, not a defect the author can fix in the diff.
 
 ## Hooks
 

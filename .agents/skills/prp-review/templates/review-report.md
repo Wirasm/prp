@@ -45,7 +45,9 @@ common cause connecting the findings.>
 
 **Evidence:** `path:line`, <decisive validation or causal path>
 
-**Required outcome:** <smallest valid correction, or why no correction is required>
+**Required outcome:** <smallest valid correction covering every member below, or why no correction is required>
+
+**Class:** <omit unless one invariant has several members. The invariant, the search that enumerated it, every affected member, every member examined and found clean.>
 
 **Found by:** `<agent>`[, `<agent>`]
 
@@ -76,6 +78,9 @@ Rules:
 - Preserve every machine-metadata key and keep `verdict`, `open_findings`, and `publication` on exact
   unindented lines; deterministic consumers parse them from the raw report.
 - Every Critical or Important finding needs a concrete impact and file:line evidence.
+- A finding that closes a causal class states the invariant, the search that enumerated it, every
+  affected member, and every member examined and found clean, and its required outcome covers the
+  class rather than the instance. A member nobody examined is unexamined, never clean.
 - Every distinct useful issue returned by an agent appears once. Merge duplicates and attribute all
   contributing agents; validation failures use `validation`.
 - Preserve finding IDs across re-reviews. Never delete a prior finding; update its state and evidence.

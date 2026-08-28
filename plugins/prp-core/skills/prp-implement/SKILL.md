@@ -38,7 +38,7 @@ For an issue-derived plan, read comments added after `Plan Publication` before e
 
 If `Source Issue` is non-empty but `Plan Publication` is empty or cannot be verified on that issue, invoke `/prp-plan publish <absolute plan path>`, re-read the plan, and stop if publication remains unverified. Apply this gate whether the input was the issue or the plan path.
 
-Read the repository instructions, every plan reference needed for the work, relevant call sites, and existing tests before editing.
+Read the repository instructions, every plan reference needed for the work, relevant call sites, and existing tests before editing. Read `engineering.md` when the project has one, wherever it lives in the repository. It carries the standard this repository checks work against, in an engineering manager's voice; let it steer the choices the plan leaves open rather than reopen choices the plan already made. Absence is normal; never create it.
 
 Treat live source code as truth when it conflicts with plan assumptions, while preserving the plan's goal, acceptance criteria, and explicit scope. If reality makes the intended outcome ambiguous or materially changes product shape, stop and ask. If implementation would require working around a missing foundational primitive that should exist first, stop and explain the missing primitive, why it belongs earlier, and what it blocks. Otherwise record the necessary deviation and continue.
 
@@ -46,7 +46,7 @@ Use the current feature branch or assigned worktree when one exists. If running 
 
 ## 2. Implement the plan
 
-For initial implementation, execute tasks in dependency order and read each referenced pattern before changing its task. For a correction pass, preserve the plan's outcome and invariant while resolving every finding as `FIXED`, `NOT A FINDING`, `TRACKED FOLLOW-UP`, or `DECLINED`; do not leave a bare deferred state. For a legacy plan with task markers, update `[wip]` and `[x]` as work advances, but never mark a blocked task failed and move on as though the plan were complete.
+For initial implementation, execute tasks in dependency order and read each referenced pattern before changing its task. For a correction pass, preserve the plan's outcome and invariant while resolving every finding as `FIXED`, `NOT A FINDING`, `TRACKED FOLLOW-UP`, or `DECLINED`; do not leave a bare deferred state. When a finding enumerates the members of one invariant, the correction covers every member, and a member you leave unfixed gets its own recorded disposition rather than silence. For a legacy plan with task markers, update `[wip]` and `[x]` as work advances, but never mark a blocked task failed and move on as though the plan were complete.
 
 Apply these implementation principles:
 

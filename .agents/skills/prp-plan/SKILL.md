@@ -55,6 +55,8 @@ Do not invent personas, business value, or vanity metrics. If the affected user,
 
 Read repository guidance and discover the actual project structure. Do not assume `src/`, a framework, or a validation stack.
 
+Read the project's optional sidecars when they exist: `direction.md` for product direction and scope, and `engineering.md` for the standard work is checked against, the engineering-manager sidecar. They live anywhere in the repository: follow the path repository guidance names, or find them by name with `git ls-files`. Absence is normal; never create them. Product direction bounds what this plan may propose, and a proposal that contradicts it needs the user's decision before it becomes tasks.
+
 For a non-trivial code change, read `references/agent-prompts.md`, then launch these agents in parallel when capacity permits, or sequentially when it does not. Every listed role remains required:
 
 - `codebase-explorer` to locate relevant files, analogous behavior, tests, configuration, and existing primitives.
