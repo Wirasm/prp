@@ -78,9 +78,11 @@ Review agents are invoked automatically by `/prp-core:prp-review` and the review
 
 ## Project sidecars
 
-Two optional documents, if your project has them, are read by the skills that need them. Keep them in
-the repository root or in `.prp/`; if you keep them elsewhere, link them from your `AGENTS.md` or
-`CLAUDE.md`. Nothing creates them and nothing fails when they are absent.
+Two optional documents, if your project has them, are read by the skills that need them. Keep them
+anywhere in your repository. Link them from your `AGENTS.md` or `CLAUDE.md` so agents reach them
+immediately; otherwise the skills find them by name. Do not put them in the PRP store, which lives
+outside the repository and holds generated artifacts: these are yours, and they belong in version
+control beside the code they govern. Nothing creates them and nothing fails when they are absent.
 
 | File | Holds | Read by |
 |------|-------|---------|
