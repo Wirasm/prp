@@ -1,6 +1,6 @@
 ---
 name: prp-review
-description: Reviews GitHub pull requests through specialist review agents, runs repository validation, verifies corrections, aggregates findings, and posts the result. Defaults to code, seam, and simplification review, and adds type design when typed contracts change; the operator can add scopes or explicitly request only selected scopes. Use when the operator asks to review a PR, re-review fixes, check whether a PR is ready to merge, run review agents, or invokes /prp-review.
+description: Reviews GitHub pull requests through specialist review agents, runs repository validation, verifies corrections, aggregates findings, and posts the result. Defaults to code, seam, and simplification review; the operator can add scopes or explicitly request only selected scopes. Use when the operator asks to review a PR, re-review fixes, check whether a PR is ready to merge, run review agents, or invokes /prp-review.
 argument-hint: "<pr-number|pr-url|branch> [add <scopes>|only <scopes>|all] [--verify-corrections] [--approve|--request-changes]"
 ---
 

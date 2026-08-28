@@ -47,7 +47,7 @@ Use the current feature branch or assigned worktree when one exists. If running 
 
 ## 2. Implement the plan
 
-For initial implementation, execute tasks in dependency order and read each referenced pattern before changing its task. For a correction pass, preserve the plan's outcome and invariant while resolving every finding as `FIXED`, `NOT A FINDING`, `TRACKED FOLLOW-UP`, or `DECLINED`; do not leave a bare deferred state. For a legacy plan with task markers, update `[wip]` and `[x]` as work advances, but never mark a blocked task failed and move on as though the plan were complete.
+For initial implementation, execute tasks in dependency order and read each referenced pattern before changing its task. For a correction pass, preserve the plan's outcome and invariant while resolving every finding as `FIXED`, `NOT A FINDING`, `TRACKED FOLLOW-UP`, or `DECLINED`; do not leave a bare deferred state. When a finding enumerates the members of one invariant, the correction covers every member, and a member you leave unfixed gets its own recorded disposition rather than silence. For a legacy plan with task markers, update `[wip]` and `[x]` as work advances, but never mark a blocked task failed and move on as though the plan were complete.
 
 Apply these implementation principles:
 

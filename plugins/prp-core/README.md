@@ -70,7 +70,6 @@ Specialized, advisory agents used by the review and planning skills. They are re
 | `comment-analyzer` | Materially false prose and concrete maintenance traps |
 | `pr-test-analyzer` | Meaningful behavior without regression protection |
 | `silent-failure-hunter` | Failure paths that become indistinguishable from success |
-| `type-design-analyzer` | Reachable invalid states and invariant enforcement |
 | `seam-analyzer` | Missing types and drift across system boundaries |
 | `code-simplifier` | Removes avoidable machinery through proven smaller primitives |
 | `docs-impact-agent` | False or missing documentation that changes reader behavior |

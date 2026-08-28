@@ -63,11 +63,10 @@ allows; otherwise report the uncertainty.
 
 ## 3. Select scopes
 
-With no operator scope instruction, select `code`, `seams`, and `simplify`. Also select `types` when
-the diff materially changes types, schemas, constructors or factories, public signatures, state
-variants, or compiler escape hatches. Make that decision by reading the change rather than parsing
-file extensions or keywords; skip it when no typed contract changed. Treat named or added scopes as
-additive to the applicable defaults; “add tests” means those defaults plus `tests`. Treat an explicit
+With no operator scope instruction, select `code`, `seams`, and `simplify`. Those three are the
+standing review. The seam reviewer owns type design, including a type that admits a state the code
+forbids, so there is no separate types scope; an operator asking for `types` gets `seams`. Treat
+named or added scopes as additive to the applicable defaults; “add tests” means those defaults plus `tests`. Treat an explicit
 restriction as replacement; “only tests” means exactly `tests`. Honor any other explicit operator
 inclusion or exclusion by intent rather than parsing fixed syntax.
 
@@ -81,7 +80,6 @@ operator explicitly narrows the pass; do not repeat other optional agents that h
 | `tests` | `pr-test-analyzer` | Behavioral coverage and valuable regression protection |
 | `comments` | `comment-analyzer` | Accuracy and long-term value of changed comments |
 | `errors` | `silent-failure-hunter` | Swallowed failures, fallbacks, and actionable errors |
-| `types` | `type-design-analyzer` | Invalid states, semantic distinctions, boundary parsing, schema ownership, and exhaustive variants |
 | `docs` | `docs-impact-agent` | Stale or missing user and contributor documentation |
 | `simplify` | `code-simplifier` | Premature machinery and smaller coherent structures |
 
@@ -96,14 +94,22 @@ All agents are advisory and must not modify files or post their own PR comments.
 Spawn every selected agent in its named reviewer role. Do not paraphrase the role's defect class in the
 launch prompt; the agent definition owns it. Give every reviewer this shared instruction:
 
-> Review PR #<number> at exact head `<reviewed_head>` against its actual base. Work only in `<review checkout path>`; never run a command that moves any other tree. Do not follow a newer head. Suggest `Critical`, `Important`, or `Suggestion` for each finding based on its actual consequence. The coordinator independently determines final severity and merge readiness. Do not modify files, commit, or post comments.
+> Review PR #<number> at exact head `<reviewed_head>` against its actual base. Work only in `<review checkout path>`; never run a command that moves any other tree. Do not follow a newer head. Suggest `Critical`, `Important`, or `Suggestion` for each finding based on its actual consequence. When one finding proves that a member of a finite class violates an invariant, enumerate that class with a deterministic repository search before reporting, and return one finding naming the invariant, the search you ran, every affected member, and every member you examined and found clean; a member you could not examine is unexamined, never clean. The coordinator independently determines final severity and merge readiness. Do not modify files, commit, or post comments.
+
+Persist what each reviewer returns. This review's round is `1` when `$PRP_DIR/reviews/pr-<number>/`
+holds no `round-*` directory, and one higher than the largest otherwise. Create
+`$PRP_DIR/reviews/pr-<number>/round-<n>/` and write every reviewer's report to `<scope>.md` there,
+verbatim, including a scope that reported no finding. The coordinator does the writing: reviewers stay
+advisory and write nothing, to the store or the repository.
 
 In correction verification, give every selected agent the previous and current head SHAs, the bounded
 diff, and the exact prior findings and dispositions relevant to its scope. Require it to verify those
 findings and inspect the correction for regressions. Reopen a prior finding when evidence disproves
 its disposition; allocate a new finding only for a defect caused by the correction. A corrected
 comment or documentation finding closes when the new text is accurate; improvable wording is neither
-a disproven disposition nor a correction-caused defect. Do not review unchanged parts of the
+a disproven disposition nor a correction-caused defect. When a prior finding recorded a class, spend
+one deliberate probe on the enumeration's completeness instead of hunting siblings fresh: a member it
+missed reopens that finding rather than allocating a new one. Do not review unchanged parts of the
 original PR for unrelated findings.
 
 ## 5. Synthesize without re-reviewing
@@ -139,6 +145,15 @@ Repository guidance informs this judgment, but violating a written preference or
 is not automatically blocking. The coordinator—not any individual reviewer—owns severity and the
 readiness verdict.
 
+Close a proved causal class before publishing. When an aggregated Critical or Important finding
+proves that one member of a finite class violates an invariant and no reviewer enumerated that class,
+run the enumeration yourself as focused validation: a deterministic repository search, recorded in the
+validation table with its command and decisive result. Carry the invariant, every affected member, and
+every member examined and found clean into the finding, and let the required outcome cover the class
+rather than the instance. This is how a class closes in one round instead of surfacing one sibling per
+correction round. Physical proximity, shared file ownership, and "easy while here" are not a causal
+class, and closing one is not permission to review unrelated code.
+
 Assign stable finding IDs (`R1`, `R2`, ...) on the first review. On re-review, preserve IDs for the
 same causal finding, allocate new IDs after the prior maximum, verify each recorded disposition, and
 never make an earlier finding disappear. Use only these states:
@@ -166,7 +181,9 @@ Verdict rules:
 - `REVIEW INCOMPLETE`: required validation or decisive evidence could not be obtained.
 - Suggestions never block by themselves.
 
-Write the report to the expanded absolute path `$PRP_DIR/reviews/pr-{NUMBER}-review.md`.
+Write the report to the expanded absolute path `$PRP_DIR/reviews/pr-{NUMBER}-review.md`, then copy it
+to `$PRP_DIR/reviews/pr-{NUMBER}/round-{n}/report.md`. The canonical path always holds the current
+report; the round directory keeps what each round actually said.
 
 ## 6. Publish and report
 
@@ -185,6 +202,18 @@ When `--approve` was explicitly requested and the verdict is `READY TO MERGE`, s
 approval that links to the canonical comment. Submit a concise request-changes review linking to the
 canonical comment only when explicitly requested or when the user explicitly asked for blocking
 findings as a formal review. Never formally approve or request changes on a draft.
+
+Append this round to `$PRP_DIR/reviews/rounds.jsonl`, creating the file when absent, as one JSON
+line and never rewriting an earlier one:
+
+```json
+{"pr":2879,"round":3,"reviewed_head":"<sha>","reviewed":"<ISO timestamp>","verdict":"NEEDS FIXES","scopes":["code","seams","simplify"],"findings":[{"id":"R1","severity":"Critical","state":"FIXED","found_by":["seams","code"],"class_members":4}]}
+```
+
+`found_by` names scopes, not agents, and carries every contributing scope. Omit `class_members` unless
+the finding enumerated a class. A scope that ran and found nothing appears in `scopes` and in no
+`found_by`; that absence is the measurement, so record the scopes that ran even when the round found
+nothing at all.
 
 Read the PR back to verify the canonical comment exists and capture its stable URL. Replace
 `publication: pending` in the local report and comment after first creation; on re-review, preserve the
