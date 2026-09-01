@@ -68,7 +68,7 @@ Inspect the relevant code and architecture far enough to identify work that must
 
 Check the foundations the outcome actually depends on, including existing primitives and ownership, data shapes and typed seams, persistence models or database tables, and the observability needed to verify and operate the result. Follow the affected path across boundaries when that is necessary to see whether the repository has a sound place for the change. Stop before designing the solution.
 
-Treat a needed refactor or simplification of a function, seam, type, file, or surrounding code the issue must already touch as issue-owned enabling work by default. Code is cheap in agentic engineering; a separate blocking agent run is not. Split the cleanup out only when it cannot remain part of one coherent workstream.
+Treat a needed refactor or simplification of a function, seam, type, file, or surrounding code the issue must already touch as issue-owned enabling work by default. Code is cheap in agentic engineering; a separate blocking agent run is not. Add the cleanup to the engineering acceptance criteria when delivery should verify it. Split it out only when it cannot remain part of one coherent workstream.
 
 For each missing or unsuitable foundation, decide whether:
 
