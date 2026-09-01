@@ -16,6 +16,7 @@ Everything here ships as **skills** (not slash commands). Most are both **user-i
 |-------|-------------|
 | `/prp-core:prp-prd` | Interactive, problem-first PRD generator with an implementation-phases table |
 | `/prp-core:prp-plan` | Create an implementation plan (from a PRD or free-form). Also wires bidirectional plan references via its `update-references` workflow |
+| `/prp-core:prp-issue-contract` | Create an issue or check its preconditions before agent automation |
 
 ### Build & ship
 
@@ -92,8 +93,8 @@ control beside the code they govern. Nothing creates them and nothing fails when
 
 | File | Holds | Read by |
 |------|-------|---------|
-| `direction.md` | Product direction and scope: what this project is for, and what it declines to become | `prp-plan`, `prp-review`, `prp-maintainer-triage` |
-| `engineering.md` | The standard work is checked against, in an engineering manager's voice: the objective function, the taste, the risk posture, what review is for | `prp-plan`, `prp-implement`, `prp-review` and its review agents, `prp-maintainer-triage` |
+| `direction.md` | Product direction and scope: what this project is for, and what it declines to become | `prp-plan`, `prp-review`, `prp-issue-contract`, `prp-maintainer-triage` |
+| `engineering.md` | The standard work is checked against, in an engineering manager's voice: the objective function, the taste, the risk posture, what review is for | `prp-plan`, `prp-implement`, `prp-review` and its review agents, `prp-issue-contract`, `prp-maintainer-triage` |
 
 They exist to keep judgment out of prompts. `AGENTS.md` carries durable, short guidance; product
 direction changes and belongs in `direction.md`; the standard work is checked against belongs in
