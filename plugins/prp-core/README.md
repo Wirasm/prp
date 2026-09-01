@@ -6,7 +6,7 @@ Complete PRP (Product Requirement Prompt) workflow automation for Claude Code, p
 
 This plugin provides a comprehensive workflow for creating, executing, and shipping features using the PRP methodology — where **PRP = PRD + curated codebase intelligence + agent/runbook** — designed to enable AI agents to ship production-ready code on the first pass.
 
-Everything here ships as **skills** (not slash commands), so each one is both **user-invocable** (type `/prp-core:<name>`) and **agent-invocable** (Claude loads it automatically when your request matches its description). Manual experiments under the source repository's `.claude/skills/in-process/` are not distributed.
+Everything here ships as **skills** (not slash commands). Most are both **user-invocable** (type `/prp-core:<name>`) and **agent-invocable** (Claude loads them automatically when a request matches their description). The maintainer triage skill is user-invocable only because it can comment, label, or close another person's contribution. Manual experiments under the source repository's `.claude/skills/in-process/` are not distributed.
 
 ## Skills
 
@@ -33,6 +33,12 @@ Everything here ships as **skills** (not slash commands), so each one is both **
 | Skill | Description |
 |-------|-------------|
 | `/prp-core:prp-review` | Agent-based PR review using the skill's current default reviewer set; named specialist scopes are additive |
+
+### Maintainer triage
+
+| Skill | Description |
+|-------|-------------|
+| `/prp-core:prp-maintainer-triage` | Route a contributor PR or reported issue through its lightweight maintainer triage workflow |
 
 ### Research & debug
 
@@ -86,8 +92,8 @@ control beside the code they govern. Nothing creates them and nothing fails when
 
 | File | Holds | Read by |
 |------|-------|---------|
-| `direction.md` | Product direction and scope: what this project is for, and what it declines to become | `prp-plan`, `prp-review` |
-| `engineering.md` | The standard work is checked against, in an engineering manager's voice: the objective function, the taste, the risk posture, what review is for | `prp-plan`, `prp-implement`, `prp-review` and its review agents |
+| `direction.md` | Product direction and scope: what this project is for, and what it declines to become | `prp-plan`, `prp-review`, `prp-maintainer-triage` |
+| `engineering.md` | The standard work is checked against, in an engineering manager's voice: the objective function, the taste, the risk posture, what review is for | `prp-plan`, `prp-implement`, `prp-review` and its review agents, `prp-maintainer-triage` |
 
 They exist to keep judgment out of prompts. `AGENTS.md` carries durable, short guidance; product
 direction changes and belongs in `direction.md`; the standard work is checked against belongs in

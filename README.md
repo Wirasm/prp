@@ -102,6 +102,14 @@ The `.claude/skills/` directory contains the core PRP workflow as Agent Skills â
 | ------------------------ | ------------------------------------------------ |
 | `/prp-debug`             | Diagnose a root cause and publish the evidence to the matching GitHub issue |
 
+### Maintainer Triage
+
+This skill requires explicit invocation because it can comment, label, or close another person's contribution.
+
+| Command | Description |
+| ------- | ----------- |
+| `/prp-maintainer-triage` | Route a contributor PR or reported issue through its lightweight maintainer triage workflow |
+
 ### Git & Review
 
 | Command       | Description                                       |
