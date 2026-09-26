@@ -33,8 +33,9 @@ including when the review stops early. The canonical report lives under `$PRP_DI
 - Read the project's optional sidecars when they exist: `direction.md` for product direction and
   scope, and `engineering.md` for the standard work is checked against, the engineering-manager
   sidecar. They live anywhere in the repository:
-  follow the path repository guidance names, or find them by name with `git ls-files`. Absence is
-  normal; never create them.
+  follow the path repository guidance names, or find them by name with `git ls-files`. When they are
+  absent, the equivalent may be a `docs/direction.md` or an architecture section in `AGENTS.md`. Absence
+  is normal; never create them. Pass every path you found to the reviewers.
 - Read matching implementation reports, completed plans, issue artifacts, and the previous canonical
   review under `$PRP_DIR` when they exist. Treat documented deviations as context, not automatic
   defects. On re-review, read every recorded finding disposition and its evidence.
@@ -68,10 +69,13 @@ allows; otherwise report the uncertainty.
 
 ## 3. Select scopes
 
-With no operator scope instruction, scale the scopes to the change's risk. Select `code` alone for a
-small fix, a deletion, or a mechanical refactor. Select `code`, `seams`, and `simplify`, the standing
-review, for anything that touches a wire format, persisted state, concurrency, isolation, security, or
-possible data loss, and whenever the risk is unclear. Record the risk call in the report's Signal.
+With no operator scope instruction, scale the scopes to the change's risk. `code` covers general
+correctness and always runs. Add `seams` for anything that touches types, contracts, payloads, or
+state, including wire formats, persistence, concurrency, isolation, and security; it has found the most
+important defects, so include it whenever the risk is unclear. A small fix, a deletion, or a mechanical
+refactor that touches none of those gets `code` alone. `simplify` is not a late gate: the delivery
+owner runs the simplifier early, on the plan or first implementation, so add it here only when the
+operator asks or when that early pass did not happen. Record the risk call in the report's Signal.
 
 The seam reviewer owns type design, including a type that admits a state the code forbids, so there is
 no separate types scope; an operator asking for `types` gets `seams`. Treat named or added scopes as
@@ -103,7 +107,7 @@ All agents are advisory and must not modify files or post their own PR comments.
 Spawn every selected agent in its named reviewer role. Do not paraphrase the role's defect class in the
 launch prompt; the agent definition owns it. Give every reviewer this shared instruction:
 
-> Review PR #<number> at exact head `<reviewed_head>` against its actual base. Work only in `<review checkout path>`; never run a command that moves any other tree. Do not follow a newer head. Read `engineering.md` when the project has one, wherever it lives in the repository, and judge the change against the standard it sets. Suggest `Critical`, `Important`, or `Suggestion` for each finding based on its actual consequence. When one finding proves that a member of a finite class violates an invariant, enumerate that class with a deterministic repository search before reporting, and return one finding naming the invariant, the search you ran, every affected member, and every member you examined and found clean; a member you could not examine is unexamined, never clean. The coordinator independently determines final severity and merge readiness. Do not modify files, commit, or post comments. Do not spawn agents. The coordinator has run the repository gate; run only a focused check that proves a specific finding. Never build system-level experiments such as fake app bundles, copied system binaries, launchd jobs, or GUI windows; report the claim as unverified instead.
+> Review PR #<number> at exact head `<reviewed_head>` against its actual base. Work only in `<review checkout path>`; never run a command that moves any other tree. Do not follow a newer head. Read the project's direction and engineering docs at `<paths, or "none found">` and judge the change and every finding's fit against them. Suggest `Critical`, `Important`, or `Suggestion` for each finding based on its actual consequence. When one finding proves that a member of a finite class violates an invariant, enumerate that class with a deterministic repository search before reporting, and return one finding naming the invariant, the search you ran, every affected member, and every member you examined and found clean; a member you could not examine is unexamined, never clean. The coordinator independently determines final severity and merge readiness. Do not modify files, commit, or post comments. Do not spawn agents. The coordinator has run the repository gate; run only a focused check that proves a specific finding. Never build system-level experiments such as fake app bundles, copied system binaries, launchd jobs, or GUI windows; report the claim as unverified instead.
 
 Persist what each reviewer returns. This review's round is `1` when `$PRP_DIR/reviews/pr-<number>/`
 holds no `round-*` directory, and one higher than the largest otherwise. Create
@@ -144,8 +148,9 @@ head would leave in the code. Code that runs is not enough: it must also be simp
 - `Suggestion` — fix now, in the same loop: a simplification, a clearer name, a missing type for an
   invariant, or stale documentation, in or adjacent to what the change works on.
 
-A real finding completely unrelated to the change is a follow-up, not a fix for this PR; pure taste is
-not a finding. Report the first as a `Suggestion` whose required outcome says `follow-up` and why. The
+A real finding completely unrelated to the change is a follow-up, not a fix for this PR. Judge a
+taste-level finding by the project's direction and engineering docs: one that aligns with them is a
+fix-now `Suggestion`; one that contradicts them, or has no basis in them, is not a finding. Report the first as a `Suggestion` whose required outcome says `follow-up` and why. The
 owner judges every finding, fixes what matters, and records each disposition (fixed, follow-up, or
 declined, with a reason) in one PR comment.
 
