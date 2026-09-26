@@ -4,19 +4,13 @@ Use native background agents. Never construct detached CLI processes here.
 
 ## Resolve capacity
 
-Keep the run's configured `max-parallel` at the user's value or `10`. Count active delivery owners,
-not their nested review agents. Reserve enough harness capacity for the root, each active delivery
-owner, one fresh stage coordinator per delivery, and one sequential leaf specialist per coordinator.
+Keep the run's configured `max-parallel` at the user's value or `10`, and count active delivery owners,
+not their nested review agents. Launch up to that value; queue the rest and retry as slots free.
+Dependencies, overlap, or a rejected spawn can lower actual concurrency without changing the configured
+maximum.
 
-When total harness capacity is known, use:
-
-```text
-effective delivery owners = min(configured max-parallel, floor((capacity - 1) / 3))
-```
-
-Require capacity of at least four for one delivery. When capacity is unknown, launch one delivery
-owner and keep the configured value unchanged. Dependencies, overlap, or a rejected spawn can lower
-actual concurrency without changing the configured maximum. Retry queued work when a slot frees.
+Nesting stops at three levels: orchestrator, owner, review coordinator, reviewer. An agent at the bottom
+cannot spawn, so give leaf agents no fan-out work.
 
 ## Prepare the exact checkout
 
@@ -30,19 +24,20 @@ Spawn via your delegation tool:
 between phases as a matter of course, so create the checkout before launching and keep it until the
 workstream is merged or dropped:
 
-```text
-$prp-worktree create <branch> --base <base>
+```bash
+git worktree add -b <branch> .worktrees/<name> origin/<base>
 ```
 
-Pass the absolute path it prints to the owner. Before editing, require the owner to verify or create
+When the repository does not ignore `.worktrees/`, add it to `.git/info/exclude` once. Pass the
+worktree's absolute path to the owner. Before editing, require the owner to verify or create
 `<branch>` from `origin/<base>`. If an existing branch has work, preserve it and verify its intended
 base rather than resetting it.
 
-- Give PR-producing work one background agent in its own managed worktree.
+- Give PR-producing work one background agent in its own worktree.
 - Run work that does not modify the checkout as a plain background agent: `prp-codebase-question`,
   `prp-debug`, `prp-plan`, and `prp-prd`. Assign only one `prp-debug` owner per GitHub issue because it
   can publish there.
-- Follow a repository's managed-worktree convention when one exists.
+- Follow a repository's worktree convention when one exists.
 - Keep the raw agent handle in the live session for follow-up messages, stop, and status. Write
   only the run-local alias to the run file, plus a PID for a process-backed integration.
 
@@ -54,6 +49,9 @@ preserve the operator's meaning:
 - For checkout-bearing work, add `Work in <absolute worktree path> on <branch>, created from origin/<base>.`
 - For PR-producing work, add `Open the PR against <base>.`
 - Omit both instructions when they do not apply.
+- For reviewed delivery, pass the review intent as a risk level, never a list of reviewer agents. The
+  engine reviews through `prp-review`, which picks the reviewers and owns the checkout they read.
+- Do not restate rules the repository's `AGENTS.md` or `CLAUDE.md` already gives every agent.
 
 ```text
 Run the <prp-skill> skill against <source or complete natural-language request>.
@@ -75,12 +73,12 @@ with the recommendation.
   is gone rather than letting the owner work wherever it landed.
 - **Stop**: use the native stop control. Record `dropped` and the reason. Preserve the worktree and
   branch unless later cleanup proves deletion safe.
-- **Status**: reconcile native task status, the run row, and GitHub. Return a compact outcome table and
+- **Status**: reconcile native task status, the run file, and GitHub. Return a compact outcome table and
   put blockers or decisions at the end. Do not forward raw agent narration.
 
 ## Verify completion
 
-Treat the owner's final message as an artifact map. Verify the real state before changing the run row:
+Treat the owner's final message as an artifact map. Verify the real state before logging the completion:
 
 ```bash
 gh pr view <number> --json number,url,isDraft,state,baseRefName,headRefName,headRefOid
@@ -93,9 +91,27 @@ For a delivery, read the canonical review report and require:
 
 - an open, non-draft PR targeting the confirmed base;
 - a verified published `READY TO MERGE` verdict;
-- `reviewed_head` equal to the current `headRefOid`;
-- every finding in a terminal disposition;
+- `reviewed_head` equal to the current `headRefOid`, or a current head that only brought in the base, or
+  one whose changes since `reviewed_head` are low-risk fixes the owner listed on the PR (read
+  `git diff <reviewed_head> <headRefOid>` to confirm nothing changes behavior or touches a wire format,
+  persisted state, isolation, or security);
+- every Critical or Important finding in a terminal disposition, and every Suggestion dispositioned in
+  the review or in the owner's PR comment;
 - every required check green for the current PR head.
+
+A clean base update, by update-branch merge or by rebase, keeps the verdict. Prove it by comparing the
+PR's net diff before and after:
+
+```bash
+git diff $(git merge-base origin/<base> <reviewed_head>) <reviewed_head> | git patch-id --stable
+git diff $(git merge-base origin/<base> <headRefOid>) <headRefOid> | git patch-id --stable
+```
+
+Equal IDs mean the PR changes exactly what was reviewed, and CI on the new head is the proof. Compare net
+diffs rather than `git range-diff`, which skips merge commits and would miss a conflict resolved inside
+one. Different IDs after a conflict resolution need a review of the resolution only. Otherwise the
+difference must be the owner's listed low-risk fixes; a blocking fix, a risky fix, or a disputed
+disposition needs a verify round scoped to it, and anything else is a new head that needs its review.
 
 When no required CI exists, run the repository's authoritative local gate against the branch. Capture
 each command's own exit code. Do not treat a piped pager's exit code as the gate result. Optional checks
@@ -110,13 +126,17 @@ After GitHub reports the PR merged, fetch and verify its merge commit is reachab
 `origin/<base>`. Read the PR's `headRefOid`, release its owner, and remove the checkout before deleting
 branches. Preserve dirty worktrees, changed refs, or a checkout still owned by a live agent.
 
-Use `git worktree list` to choose teardown. A worktree under `.worktrees/` belongs to `prp-worktree`
-and needs explicit teardown. For any other path, release the native owner and verify the harness removed
-the unchanged checkout. For a managed worktree, invoke:
+Use `git worktree list` to choose teardown. A worktree under `.worktrees/` needs explicit teardown. For
+any other path, release the native owner and verify the harness removed the unchanged checkout. Remove a
+clean `.worktrees/` checkout with:
 
-```text
-$prp-worktree remove <branch>
+```bash
+git worktree remove .worktrees/<name>
 ```
+
+`git worktree remove` refuses a dirty checkout; preserve it and report it instead of forcing. While
+here, remove any other clean worktree this run created whose workstream is merged or dropped and whose
+owner is released.
 
 After no worktree holds the branch, compare and delete the exact reviewed refs:
 
@@ -126,5 +146,5 @@ git push --force-with-lease=refs/heads/<branch>:<headRefOid> origin --delete <br
 ```
 
 A stale-ref rejection means another actor changed the branch. Preserve it and report the remaining
-cleanup in the final handoff. This exact-identity path supports merge, squash, and rebase merges without
-weakening `prp-worktree`'s ancestry checks.
+cleanup in the final handoff. This exact-identity path supports merge, squash, and rebase merges, where an
+ancestry check would refuse a squashed branch.

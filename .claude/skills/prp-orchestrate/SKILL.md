@@ -33,7 +33,7 @@ mkdir -p "$PRP_DIR"; [ -f "$PRP_DIR/project.json" ] || printf '{"path": "%s", "n
 - Drive workstreams through the native agent tools. Never improvise detached CLI processes.
 - Compose PRP skills by name. Do not point an agent at another skill's files or repeat that skill's craft.
 - Use an agent's final report only to locate its proof. Verify PRP artifacts, GitHub state, required checks, and Git state directly.
-- Require each delivery owner to return its plan, implementation report, PR, validation and CI evidence, published review, and `READY TO MERGE` verdict. Require its review and CI proof to cover the current PR head before acceptance and again before merge.
+- Require each delivery owner to return its plan, implementation report, PR, validation and CI evidence, published review, and `READY TO MERGE` verdict. Require its review and CI proof to cover the current PR head, or a clean base update of the reviewed head, before acceptance and again before merge.
 - Let `prp-issue` finish its own correction loop. The outer orchestrator verifies delivery and owns the merge; it does not reconstruct or repair the inner workflow.
 - Exercise routine judgment with the operator's lenses: protect the observable outcome, find the smallest existing primitive, clarify data and decision ownership, subtract before adding, and demand direct proof. Challenge workstream owners as the operator would.
 - Apply a scoped Standing Decision when one exists. Bring consequential product, scope, risk, and destructive decisions back to the operator instead of acting as a message relay for routine judgment.
@@ -53,7 +53,7 @@ mkdir -p "$PRP_DIR"; [ -f "$PRP_DIR/project.json" ] || printf '{"path": "%s", "n
    - Any other bounded PRP capability: invoke its matching skill directly rather than forcing it through planning or delivery.
 3. Resolve one base branch for the run. Use a branch named by the user. Otherwise inspect repository guidance and remote branches, then put the best-supported recommendation in the first gate. Ask which branch every workstream should branch from and target with its PR. Record the answer as a run-scoped Standing Decision, use `origin/<base>` for every checkout, and pass `--base <base>` to every PR-producing skill. Never infer the base again later in the run.
 4. Map dependencies and likely file overlap. Run disjoint work in parallel. Serialize overlapping work or combine it when it is one outcome.
-5. Set configured `max-parallel` to the user's value or `10`. Never rewrite that value because dependencies or harness capacity lower the effective launch limit. Calculate effective capacity from `references/launching.md` when launching.
+5. Set configured `max-parallel` to the user's value or `10`. Never rewrite that value because dependencies or a refused spawn lower actual concurrency.
 
 Before approving a design that adds a subsystem, policy layer, state store, staging area, or lifecycle,
 ask its owner:
@@ -79,9 +79,9 @@ Read `templates/orchestration-run.md`, create `$PRP_DIR/orchestration/<run-id>.m
 its expanded path. Use `YYYY-MM-DD-<slug>` for the run ID. Do not send a separate progress message.
 
 Seed Standing Decisions with the confirmed base and any other user decision that will govern a later
-choice, following the template's routing rules. Maintain the run file for the run's lifetime. Keep
-current state in each workstream row. Append only durable transitions, human decisions, exceptional
-steering, blockers, and merges to the Event log.
+choice, following the template's routing rules. Maintain the run file for the run's lifetime. Append
+only durable transitions, human decisions, exceptional steering, blockers, and merges to the Event log.
+Live state comes from the agents, GitHub, and Git, never from a table in the run file.
 
 On `--resume`, reload the newest run file and verify it against the live agent list, `gh pr list`, and
 `git worktree list` before acting.
@@ -94,7 +94,7 @@ capacity, prompt construction, agent handles, and cleanup. Start every checkout 
 
 Launch eligible owners as background agents. Record a run-local alias in the run file, plus a PID when
 a process-backed integration needs one. Keep ephemeral agent handles in the live session. Queue other
-work and launch it as effective capacity frees.
+work and launch it as slots free.
 
 Give each owner the complete source or relevant user context. Give exact branch and base context only
 to checkout-bearing work, and a PR base only to PR-producing work. Pass only operator context or
@@ -107,15 +107,16 @@ React to completion notifications instead of polling. Update the run file withou
 progress messages.
 
 On completion, use `references/launching.md` to verify the promised artifact and terminal signal. For a
-delivery, require a live PR, a published `READY TO MERGE` review of its current head, and green required
-CI or the recorded local gate. Update the row and Event log, then launch the next queued workstream.
+delivery, require a live PR, a published `READY TO MERGE` review of its current head or of a head it
+only brought the base into, and green required CI or the recorded local gate. Log the completion, then
+launch the next queued workstream.
 Keep a delivery owner addressable until merge so its context can handle corrections or conflicts. Treat
 an intermediate review as progress inside `prp-issue`, not completion.
 
 Interpret new user messages by intent:
 
 - Additional work: repeat intake for the additions, check overlap, then append and launch or queue it.
-- A new parallel limit: update the configured value, recalculate effective capacity from `references/launching.md`, and launch eligible work. If the harness rejects a spawn, keep the work pending without rejecting or rewriting the user's value.
+- A new parallel limit: update the configured value and launch eligible work. If the harness rejects a spawn, keep the work pending without rejecting or rewriting the user's value.
 - Stop or steer: use the native task control, preserve recoverable work, and record the durable action.
 - Status: reconcile the run file, live agents, and GitHub, then return a concise outcome table with anything needing attention last.
 - A decision or instruction: record it by the routing rules in section 5 and send it to affected owners as a follow-up message.
@@ -134,8 +135,8 @@ Apply an in-scope Standing Decision when one exists and record the action. Other
 digest: what happened, the recommendation and its risk, then the exact decision needed at the end.
 Group simultaneous decisions into one message. Log every answer in the Event log and send it to the
 affected owner as a follow-up. Promote an answer to a Standing Decision only when it also settles a
-question that will be asked again. A one-time authorization stays an event, and a change to the
-workstream set or its scope updates the Workstreams table.
+question that will be asked again. A one-time authorization or a change to the workstream set or its
+scope stays an event.
 
 Never merge to a protected branch until the user has approved that merge path in the run. Never delete
 a branch or worktree with unmerged commits.
@@ -146,8 +147,9 @@ Build the merge queue from dependencies and pairwise overlap of `gh pr diff <n> 
 ready PRs, choose the lowest-risk one. After each merge, recalculate readiness and overlap for the
 remaining queue.
 
-Before each merge, repeat the current-head review and CI proof. Merge one PR at a time. Verify its
-GitHub merge commit is reachable from `origin/<base>`, update the run file, then follow
+Before each merge, repeat the review and CI proof for the current head, as `references/launching.md`
+defines it. Merge one PR at a time. Verify its GitHub merge commit is reachable from `origin/<base>`,
+update the run file, then follow
 `references/launching.md` to clean the checkout and exact PR-head refs. Preserve and report dirty state
 or changed refs.
 
@@ -157,8 +159,9 @@ the local gate when no required CI exists, before the next merge.
 
 ## 7. Close out
 
-When every row is terminal (`complete`, `merged`, `verdict:*`, `failed`, `dropped`, or `handed-back`), set the run
-status to `complete`. Reconcile cleanup deferred after a merge. Keep the run file as the record.
+When every workstream has a terminal event (`complete`, `merged`, `verdict:*`, `failed`, `dropped`, or
+`handed-back`), set the run status to `complete`. Reconcile cleanup deferred after a merge. Keep the
+run file as the record.
 
 Fill the template's Final handoff from verified state. Put shipped outcomes and proof first. Put
 decisions, incomplete or handed-back work, risks, cleanup, and worthwhile follow-ups at the end. Use
