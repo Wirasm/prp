@@ -142,11 +142,12 @@ head would leave in the code. Code that runs is not enough: it must also be simp
   state contract with no type at the seam; a false comment or document; dead or duplicated machinery
   the change adds; a test that proves nothing; or a PR-caused failure of an authoritative merge gate;
 - `Suggestion` — fix now, in the same loop: a simplification, a clearer name, a missing type for an
-  invariant, or stale documentation the change touched.
+  invariant, or stale documentation, in or adjacent to what the change works on.
 
-Anything outside the change's scope, and pure taste, is not a fix for this PR. Report it as a
-`Suggestion` whose required outcome says `log or decline` and why; the owner tracks or declines it with
-a reason instead of changing the code.
+A real finding completely unrelated to the change is a follow-up, not a fix for this PR; pure taste is
+not a finding. Report the first as a `Suggestion` whose required outcome says `follow-up` and why. The
+owner judges every finding, fixes what matters, and records each disposition (fixed, follow-up, or
+declined, with a reason) in one PR comment.
 
 Weigh simplification while the change is still cheap to correct. A passing happy path does not make a
 foundation sound: premature defensive machinery, tests for unsupported behavior, shared state,
@@ -195,8 +196,8 @@ Verdict rules:
 - `READY TO MERGE`: no `OPEN` Critical or Important findings and all required validation passed.
 - `NEEDS FIXES`: at least one `OPEN` Critical or Important finding, or a PR-caused required validation failure.
 - `REVIEW INCOMPLETE`: required validation or decisive evidence could not be obtained.
-- Suggestions never block by themselves. The owner still fixes them in the same loop, and fixing them
-  needs no further review round unless the fix is itself risky.
+- Suggestions never block by themselves. The owner fixes the ones that matter in the same loop, and
+  those fixes need no further review round unless a fix is itself risky.
 
 Write the report to the expanded absolute path `$PRP_DIR/reviews/pr-{NUMBER}-review.md`, then copy it
 to `$PRP_DIR/reviews/pr-{NUMBER}/round-{n}/report.md`. The canonical path always holds the current
