@@ -133,15 +133,20 @@ including agents that returned no finding.
 Write the synthesis in plain, concrete language. Cut generic praise, formulaic transitions, and vague
 claims; use the repository's exact terms and name the behavior or consequence directly.
 
-Treat agent labels as advisory evidence. Independently judge each finding by the actual consequence of
-merging the current head:
+Treat agent labels as advisory evidence. Independently judge each finding by what merging the current
+head would leave in the code. Code that runs is not enough: it must also be simple, current, and true.
 
-- `Critical` — a plausible security compromise, data loss or corruption, widespread outage, or
-  unrecoverable contract break on a supported path;
-- `Important` — materially wrong, unsafe, or incomplete behavior on a reachable supported path, or a
-  PR-caused failure of an authoritative merge gate; also a proved premature structural decision that
-  creates material, durable state, ownership, or coordination cost disproportionate to the outcome;
-- `Suggestion` — a useful observation that does not make the delivered outcome materially incorrect.
+- `Critical` — blocking: a plausible security compromise, data loss or corruption, widespread outage,
+  or unrecoverable contract break on a supported path;
+- `Important` — blocking: wrong behavior on a reachable path; an isolation or security hole; a wire or
+  state contract with no type at the seam; a false comment or document; dead or duplicated machinery
+  the change adds; a test that proves nothing; or a PR-caused failure of an authoritative merge gate;
+- `Suggestion` — fix now, in the same loop: a simplification, a clearer name, a missing type for an
+  invariant, or stale documentation the change touched.
+
+Anything outside the change's scope, and pure taste, is not a fix for this PR. Report it as a
+`Suggestion` whose required outcome says `log or decline` and why; the owner tracks or declines it with
+a reason instead of changing the code.
 
 Weigh simplification while the change is still cheap to correct. A passing happy path does not make a
 foundation sound: premature defensive machinery, tests for unsupported behavior, shared state,
@@ -190,7 +195,8 @@ Verdict rules:
 - `READY TO MERGE`: no `OPEN` Critical or Important findings and all required validation passed.
 - `NEEDS FIXES`: at least one `OPEN` Critical or Important finding, or a PR-caused required validation failure.
 - `REVIEW INCOMPLETE`: required validation or decisive evidence could not be obtained.
-- Suggestions never block by themselves.
+- Suggestions never block by themselves. The owner still fixes them in the same loop, and fixing them
+  needs no further review round unless the fix is itself risky.
 
 Write the report to the expanded absolute path `$PRP_DIR/reviews/pr-{NUMBER}-review.md`, then copy it
 to `$PRP_DIR/reviews/pr-{NUMBER}/round-{n}/report.md`. The canonical path always holds the current

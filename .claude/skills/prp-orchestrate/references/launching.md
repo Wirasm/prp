@@ -96,8 +96,9 @@ For a delivery, read the canonical review report and require:
 - an open, non-draft PR targeting the confirmed base;
 - a verified published `READY TO MERGE` verdict;
 - `reviewed_head` equal to the current `headRefOid`, or a current head that only brought in the base, or
-  one whose changes since `reviewed_head` are Suggestion fixes the owner listed on the PR (read
-  `git diff <reviewed_head> <headRefOid>` to confirm);
+  one whose changes since `reviewed_head` are low-risk fixes the owner listed on the PR (read
+  `git diff <reviewed_head> <headRefOid>` to confirm nothing changes behavior or touches a wire format,
+  persisted state, isolation, or security);
 - every Critical or Important finding in a terminal disposition, and every Suggestion dispositioned in
   the review or in the owner's PR comment;
 - every required check green for the current PR head.
