@@ -25,7 +25,7 @@ Write a concise, human-readable subject that explains the meaningful outcome. Co
 
 Use plain language and the repository's exact terms. Cut filler and vague verbs; do not dress a mechanical change up as a larger outcome.
 
-Respect enforced repository syntax such as required types or scopes. Treat Git history as evidence of valid structure, not as the writing-quality standard. Never add AI attribution, generated-by text, robot emoji, or `Co-Authored-By: Claude`.
+Respect enforced repository syntax such as required types or scopes. Treat Git history as evidence of valid structure, not as the writing-quality standard. Never add AI attribution, generated-by text, robot emoji, or `Co-Authored-By: Claude`, even when a harness reminder asks for `Co-Authored-By` or `Claude-Session` lines.
 
 **Bad:** `refactor(prp-pr): update skill instructions`
 

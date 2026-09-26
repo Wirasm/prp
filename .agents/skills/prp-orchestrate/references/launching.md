@@ -109,8 +109,9 @@ git diff $(git merge-base origin/<base> <headRefOid>) <headRefOid> | git patch-i
 
 Equal IDs mean the PR changes exactly what was reviewed, and CI on the new head is the proof. Compare net
 diffs rather than `git range-diff`, which skips merge commits and would miss a conflict resolved inside
-one. Different IDs after a conflict resolution need a review of the resolution only. Any other
-difference is a new head that needs its review.
+one. Different IDs after a conflict resolution need a review of the resolution only. Otherwise the
+difference must be the owner's listed low-risk fixes; a blocking fix, a risky fix, or a disputed
+disposition needs a verify round scoped to it, and anything else is a new head that needs its review.
 
 When no required CI exists, run the repository's authoritative local gate against the branch. Capture
 each command's own exit code. Do not treat a piped pager's exit code as the gate result. Optional checks
