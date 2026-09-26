@@ -68,10 +68,14 @@ allows; otherwise report the uncertainty.
 
 ## 3. Select scopes
 
-With no operator scope instruction, select `code`, `seams`, and `simplify`. Those three are the
-standing review. The seam reviewer owns type design, including a type that admits a state the code
-forbids, so there is no separate types scope; an operator asking for `types` gets `seams`. Treat
-named or added scopes as additive to the applicable defaults; “add tests” means those defaults plus `tests`. Treat an explicit
+With no operator scope instruction, scale the scopes to the change's risk. Select `code` alone for a
+small fix, a deletion, or a mechanical refactor. Select `code`, `seams`, and `simplify`, the standing
+review, for anything that touches a wire format, persisted state, concurrency, isolation, security, or
+possible data loss, and whenever the risk is unclear. Record the risk call in the report's Signal.
+
+The seam reviewer owns type design, including a type that admits a state the code forbids, so there is
+no separate types scope; an operator asking for `types` gets `seams`. Treat named or added scopes as
+additive to the applicable defaults; “add tests” means those defaults plus `tests`. Treat an explicit
 restriction as replacement; “only tests” means exactly `tests`. Honor any other explicit operator
 inclusion or exclusion by intent rather than parsing fixed syntax.
 
@@ -99,7 +103,7 @@ All agents are advisory and must not modify files or post their own PR comments.
 Spawn every selected agent in its named reviewer role. Do not paraphrase the role's defect class in the
 launch prompt; the agent definition owns it. Give every reviewer this shared instruction:
 
-> Review PR #<number> at exact head `<reviewed_head>` against its actual base. Work only in `<review checkout path>`; never run a command that moves any other tree. Do not follow a newer head. Read `engineering.md` when the project has one, wherever it lives in the repository, and judge the change against the standard it sets. Suggest `Critical`, `Important`, or `Suggestion` for each finding based on its actual consequence. When one finding proves that a member of a finite class violates an invariant, enumerate that class with a deterministic repository search before reporting, and return one finding naming the invariant, the search you ran, every affected member, and every member you examined and found clean; a member you could not examine is unexamined, never clean. The coordinator independently determines final severity and merge readiness. Do not modify files, commit, or post comments.
+> Review PR #<number> at exact head `<reviewed_head>` against its actual base. Work only in `<review checkout path>`; never run a command that moves any other tree. Do not follow a newer head. Read `engineering.md` when the project has one, wherever it lives in the repository, and judge the change against the standard it sets. Suggest `Critical`, `Important`, or `Suggestion` for each finding based on its actual consequence. When one finding proves that a member of a finite class violates an invariant, enumerate that class with a deterministic repository search before reporting, and return one finding naming the invariant, the search you ran, every affected member, and every member you examined and found clean; a member you could not examine is unexamined, never clean. The coordinator independently determines final severity and merge readiness. Do not modify files, commit, or post comments. Do not spawn agents. The coordinator has run the repository gate; run only a focused check that proves a specific finding. Never build system-level experiments such as fake app bundles, copied system binaries, launchd jobs, or GUI windows; report the claim as unverified instead.
 
 Persist what each reviewer returns. This review's round is `1` when `$PRP_DIR/reviews/pr-<number>/`
 holds no `round-*` directory, and one higher than the largest otherwise. Create

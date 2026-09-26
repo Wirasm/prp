@@ -104,11 +104,6 @@ LAUNCHER_REWRITES: dict[str, tuple[str, str, str]] = {
         "${CLAUDE_PLUGIN_ROOT}/skills/prp-loop/scripts/prp_loop.py",
         ".agents/skills/prp-loop/scripts/prp_loop.py",
     ),
-    "prp-worktree": (
-        ".claude/skills/prp-worktree/scripts/worktree.py",
-        "${CLAUDE_PLUGIN_ROOT}/skills/prp-worktree/scripts/worktree.py",
-        ".agents/skills/prp-worktree/scripts/worktree.py",
-    ),
 }
 
 SKIP_DIRS = {"__pycache__"}
@@ -153,9 +148,6 @@ CODEX_REWRITES: list[tuple[re.Pattern, object]] = [
     (re.compile(r"`claude -p`"), "`codex exec`"),
     # slash invocation -> Codex $skill mention (lookbehind protects file paths)
     (re.compile(r"(?<![\w/])/prp-"), "$prp-"),
-    # bundled-script launcher paths
-    (re.compile(r"\.claude/skills/prp-worktree/scripts/worktree\.py"),
-     ".agents/skills/prp-worktree/scripts/worktree.py"),
     # any remaining skill-tree path: the local harness discovers .agents/skills
     (re.compile(r"\.claude/skills/"), ".agents/skills/"),
     # Claude Agent-tool spawn phrasing -> harness-neutral
@@ -175,7 +167,7 @@ CODEX_SKILL_REWRITES: dict[str, list[tuple[re.Pattern, str]]] = {
         (re.compile(r'prp_loop\.py "\$ARGUMENTS"'), 'prp_loop.py "$ARGUMENTS" --cli codex'),
         (re.compile(r"prp_loop\.py --resume"), "prp_loop.py --resume --cli codex"),
     ],
-    # Both harnesses now pre-create the checkout with prp-worktree, so only the
+    # Both harnesses now pre-create the checkout with `git worktree add`, so only the
     # Claude-only spawn mechanics need removing: a warning about an `isolation`
     # parameter Codex does not have, and `run_in_background`.
     "prp-orchestrate": [
@@ -184,8 +176,8 @@ CODEX_SKILL_REWRITES: dict[str, list[tuple[re.Pattern, str]]] = {
                     r"which is what a finished delivery looks\s+like, and the next resume lands silently in "
                     r"the operator's own checkout\.\n\n"),
          ""),
-        (re.compile(r"one agent, `run_in_background` \(the default\), in its own managed worktree\."),
-         "one background agent in its own managed worktree."),
+        (re.compile(r"one agent, `run_in_background` \(the default\), in its own worktree\."),
+         "one background agent in its own worktree."),
     ],
     # Meta-skill: only its meta-documentation of Claude-only mechanics needs a touch;
     # authored-skill paths are handled by the global .claude/skills -> .agents/skills map.

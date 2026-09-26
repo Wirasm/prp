@@ -77,7 +77,7 @@ Spike code is disposable and often invasive. Keep it away from the working check
 
 **If already in an isolated worktree** — spawned there by an orchestrator — stay put and do not nest a second one. `EnterWorktree` is unavailable to a pinned agent; where a branch name is wanted, plain `git switch -c spike/<slug>` inside the current worktree is enough.
 
-Otherwise use the prp-worktree skill to create a worktree named `spike/<slug>` and work there. A spike branch is never merged.
+Otherwise create a worktree on a branch named `spike/<slug>` with `git worktree add -b spike/<slug> .worktrees/spike-<slug> origin/<base>`, where `<base>` is the repository's integration branch, and work there. A spike branch is never merged.
 
 `--here` skips isolation entirely — use it only when a fresh checkout cannot run the project (gitignored build prerequisites, an expensive bootstrap, a running local stack). Record in the report that it was used and why, and leave the checkout as it was found.
 
@@ -140,7 +140,7 @@ But `$PRP_DIR` is **local-only**, so a store path is unfollowable by anyone else
 - **Never open a PR.** Every other terminal skill in this pack ends in one; this one ends in a verdict.
 - Do not fold spike code into production. A validated approach gets **rewritten** under normal standards, by `prp-plan` and `prp-implement`.
 - **Verify the Evidence pointer before calling the report done.** A named branch must exist and carry a commit; otherwise point at the store directory. Evidence that cannot be followed is a claim, not a result.
-- Leave the worktree in place if the user may want to poke at it; otherwise tear it down with the prp-worktree skill.
+- Leave the worktree in place if the user may want to poke at it; otherwise remove it with `git worktree remove .worktrees/spike-<slug>`. Keep the report and harness source in the store; never copy runtime state such as browser profiles, caches, or build output.
 
 ## Phase 8 — Route the verdict
 

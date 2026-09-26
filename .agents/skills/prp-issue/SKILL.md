@@ -39,6 +39,11 @@ Do not start review without `VALIDATION: GREEN`, the absolute plan and report pa
 
 ## 3. Review in a fresh context
 
+Scale review to risk. A change to prose only (documentation, comments, or configuration wording) skips
+review: CI or the repository's local gate is its check. A documented snippet that runs is code, not prose.
+Everything else is reviewed, and only through `$prp-review`, which picks reviewers by risk and gives them
+a detached checkout. Never point a reviewer at your own working tree.
+
 Start a fresh agent with this prompt:
 
 > Invoke `$prp-review` on `<PR URL or number>` with scopes `<requested scopes, if any>`. Applicable caller decisions and scope constraints, verbatim: `<decisions or "None">`. Read the linked plan and implementation report, publish the complete review to GitHub, and return the verdict, canonical review-report path, verified publication URL, and any blocker. Do not modify the PR.
@@ -50,13 +55,13 @@ Wait until all selected review agents have finished and the review coordinator h
 
 Read the complete report in this implementation context and disposition every finding. Fix valid Critical or Important findings. Prefer fixing a valid Suggestion now when the correction is narrow, low-risk, aligned, and cheaper than another delivery cycle. Use `NOT A FINDING` with decisive evidence when it is false or already satisfied. Use `TRACKED FOLLOW-UP` only for clearly valuable, distinct work with a verified issue link. Use `DECLINED` for speculative defense-in-depth, overengineering, preference, or unclear or undesirable direction; record why and do not create an issue. Never leave a bare deferred state.
 
-Batch every accepted correction and evidence-backed disposition into one coherent pass, then invoke `$prp-implement` in review-correction mode in this same context. Start one fresh `$prp-review --verify-corrections` agent with the previous reviewed head, current PR head, complete canonical report, and dispositions. Never start another review when neither the head nor disposition evidence changed. Do not wait for or check CI between rounds; CI clears once, at the end of the workstream, on the final head.
+Batch every accepted correction and evidence-backed disposition into one coherent pass, then invoke `$prp-implement` in review-correction mode in this same context. Start a fresh `$prp-review --verify-corrections` agent only when a Critical or Important finding was fixed or its disposition is disputed, and give it the previous reviewed head, current PR head, complete canonical report, and dispositions, so it verifies that fix's diff. A pass that fixed only Suggestions needs no review round: post one PR comment giving every Suggestion's disposition (fixed at `<sha>`, declined with the reason, or tracked with its issue), and the verdict stands for the new head. Do not wait for or check CI between rounds; CI clears once, at the end of the workstream, on the final head.
 
 Repeat correction and focused verification only for an unresolved prior blocker, a disproven disposition, or a defect caused by the correction. Return to a full review only when the correction materially changed the PR's outcome, architecture, or scope. Continue until the independent verdict is `READY TO MERGE` and every finding has a terminal disposition. Resolve `REVIEW INCOMPLETE` by obtaining its missing validation or evidence; stop only when that is genuinely unavailable.
 
 ## 5. Require green CI
 
-After `READY TO MERGE`, wait for every required CI check. A pending check is not green. For a PR-caused failure, invoke `$prp-implement` in CI-correction mode with the PR and complete failing-check evidence in this context, then run `$prp-review --verify-corrections` against the changed head. When no required CI exists, rerun the repository's authoritative local gate and record it instead.
+After `READY TO MERGE`, wait for every required CI check. A head that only brought the base in, with the PR's own diff unchanged, keeps the verdict; CI on that head is its proof. A pending check is not green. For a PR-caused failure, invoke `$prp-implement` in CI-correction mode with the PR and complete failing-check evidence in this context, then run `$prp-review --verify-corrections` against the changed head. When no required CI exists, rerun the repository's authoritative local gate and record it instead.
 
 ## 6. Return proof and follow-ups
 
