@@ -8,6 +8,7 @@ Lead with the recommendation, then provide the artifact and only the evidence us
 {One or two sentences: recommended approach, invariant, and why this is the simplest supported shape.}
 
 **Plan:** `{expanded absolute plan path}`
+**Companion:** `{expanded absolute companion path}`
 
 {If from a PRD:}
 **Source:** `{PRD path}`, phase {number and name} — marked `in-progress` and linked

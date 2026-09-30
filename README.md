@@ -96,6 +96,7 @@ The `.claude/skills/` directory contains the core PRP workflow as Agent Skills â
 | `/prp-issue`     | Own an issue, plan, document, or idea through reviewed PR and green CI |
 | `/prp-issue-contract` | Create an issue or check its preconditions before agent automation |
 | `/prp-prd-update` | Maintain PRD phase status and delivery links             |
+| `/prp-companion` | Visual HTML companion of a plan or review, beside its markdown |
 
 ### Debug Workflow
 

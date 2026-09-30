@@ -195,7 +195,9 @@ Before reporting completion, verify:
 
 If the input came from a PRD, invoke `$prp-prd-update planned` with the PRD path, selected phase, and absolute plan path. Verify that the phase is `in-progress` and links to the plan.
 
-Read `templates/report-format.md` and report the recommendation, absolute plan path, source PRD or issue when applicable, evidence or spike used, visuals included, and the next step.
+Invoke `$prp-companion` on the absolute plan path to write the plan's HTML companion beside it.
+
+Read `templates/report-format.md` and report the recommendation, absolute plan path, companion path, source PRD or issue when applicable, evidence or spike used, visuals included, and the next step.
 
 ## Resources
 
