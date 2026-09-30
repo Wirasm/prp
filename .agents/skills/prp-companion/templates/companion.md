@@ -8,7 +8,7 @@ stays the artifact. The page is derived from it and states nothing the markdown 
 - One self-contained `.html` file. Nothing on the page is loaded from a network: no CDN script,
   no web font, no remote image, no `@import`, no `fetch`. Draw every visual as inline SVG. Add no
   JavaScript; native `<details>` covers collapsing.
-- The theme is the first `<style>` block, pasted verbatim (see `SKILL.md` for which file). Spend
+- The theme is the first `<style>` block (see `SKILL.md` for what goes in it). Spend
   colour and font only through its custom properties: `--surface`, `--raised`, `--text`, `--muted`,
   `--faint`, `--border`, `--accent`, `--attention`, `--danger`, `--font-body`, `--font-mono`. No
   colour literal anywhere else, so the page follows the theme in light and dark.
@@ -25,9 +25,9 @@ stays the artifact. The page is derived from it and states nothing the markdown 
 - **The three things first**, in the order given below for the artifact kind. The first screen
   answers "what is this and what do I have to decide".
 - **Copy, never paraphrase.** Risk text, finding text, required outcomes, acceptance criteria, the
-  plan's outcome and the review's opening paragraph are the markdown's words, copied whole. So are
-  file paths, `file:line`, severities, states, counts, verdicts and step titles. Shorten by leaving
-  a field out, never by rewording it. Never merge table cells into a new sentence: a card built from
+  plan's approach and the review's opening paragraph are the markdown's words, copied whole. So are
+  `file:line`, severities, states, counts, verdicts and step titles. Shorten by leaving a field out,
+  never by rewording it. The one allowed trim inside a field: a file path may be cut to its file name. Never merge table cells into a new sentence: a card built from
   a table row shows each cell as it is, under its column name. A certainty in the markdown stays a
   certainty on the page. No sentence adds a judgement the markdown did not make.
 - **Every item carries a stable `id`** on the element that wraps the whole item, and nowhere
@@ -36,7 +36,7 @@ stays the artifact. The page is derived from it and states nothing the markdown 
 
   | Item | id |
   |---|---|
-  | plan step | `S1`, `S2`, … in plan order |
+  | plan step | `S` + the task's own number in the plan, `S1`, … |
   | plan risk or decision | `K1`, `K2`, … |
   | acceptance criterion | its own id, `AC1`, … |
   | diagram component | `C-<slug>` |
@@ -59,12 +59,12 @@ The three things, in this order:
 1. **What changes.** A diagram of the components the plan touches and how they connect after the
    change: new, changed, unchanged. Under it, the plan's **Approach** copied.
 2. **The steps.** One card per implementation task (`id="S<n>"`): its title, and the files or
-   components it touches by short name. Mark the step that carries the first test or the riskiest
+   components it touches. Mark the step that carries the first test or the riskiest
    change, when the plan says which.
-3. **The risks.** One card per row of **Risks and Decisions** and per row of **Delivery
+3. **Risks and decisions.** One card per row of **Risks and Decisions** and per row of **Delivery
    Considerations** (`id="K<n>"`), cells copied under their column names. Only rows the plan puts in
-   those sections are risks. **Not building** is never a risk card: show it as one quiet line of its
-   items in `--muted`, below the risk cards.
+   those sections get a card. **Not building** never does: show it as one quiet line of its items in
+   `--muted`, below the cards.
 
 Then, smaller: acceptance criteria (`id="AC<n>"`, text copied), and the validation gates as a table
 of gate and what it proves.
@@ -81,10 +81,10 @@ The three things, in this order:
    Then the **Validation** line.
 2. **The findings at a glance.** A bar or row of counts per severity, and a count per state.
 3. **The findings.** OPEN findings first, by severity (Critical, Important, Suggestion) then ID. Each
-   is a card (`id="R<n>"`): severity chip, state chip, the finding line, `file:line` in mono, and the
+   is a card (`id="R<n>"`): severity chip, state chip, the Findings table's Finding cell, `file:line` in mono, and the
    required outcome. Impact, evidence, class and disposition go in a closed `<details>` inside the
    card, copied. After the OPEN ones, every other finding (FIXED, NOT A FINDING, TRACKED FOLLOW-UP,
-   DECLINED) by ID as one line each, still wrapped in its `id`: chips and the finding line, with its
+   DECLINED) by ID as one line each, still wrapped in its `id`: chips and the Finding cell, with its
    disposition in a closed `<details>`.
 
 Then, smaller: reviewer coverage (scope → result). A review with no findings still shows the verdict,

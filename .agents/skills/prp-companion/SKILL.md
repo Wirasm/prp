@@ -37,8 +37,9 @@ mkdir -p "$PRP_DIR"; [ -f "$PRP_DIR/project.json" ] || printf '{"path": "%s", "n
 ## Write the page
 
 1. Read the whole markdown artifact.
-2. Pick the theme: `$PRP_DIR/companion.css` when it exists, otherwise `templates/default-theme.css`.
-   A host UI that wants pages in its own look writes that file into the store; prp never writes it.
+2. Build the theme `<style>`: `templates/default-theme.css` verbatim, then `$PRP_DIR/companion.css`
+   verbatim after it when that file exists, so any token the store's file leaves out keeps its
+   default. A host UI that wants pages in its own look writes that file; prp never writes it.
 3. Read `templates/companion.md` and follow it exactly.
 4. Write the page beside the markdown: same directory, final `.md` replaced by `.html`
    (`x.plan.md` → `x.plan.html`, `pr-12-review.md` → `pr-12-review.html`).
@@ -53,4 +54,4 @@ One line: the companion's absolute path.
 ## Resources
 
 - `templates/companion.md` — the page contract: file rules, fidelity, ids, diagrams, plan and review layouts
-- `templates/default-theme.css` — the built-in theme, pasted verbatim when the store has no `companion.css`
+- `templates/default-theme.css` — the built-in theme, always pasted first; the store's `companion.css` overrides it
