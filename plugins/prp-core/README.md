@@ -17,6 +17,7 @@ Everything here ships as **skills** (not slash commands). Most are both **user-i
 | `/prp-core:prp-prd` | Interactive, problem-first PRD generator with an implementation-phases table |
 | `/prp-core:prp-plan` | Create an implementation plan (from a PRD or free-form). Also wires bidirectional plan references via its `update-references` workflow |
 | `/prp-core:prp-issue-contract` | Create an issue or check its preconditions before agent automation |
+| `/prp-core:prp-companion` | Write a plan's or review's visual HTML companion beside its markdown. `prp-plan` and `prp-review` run it; theme from `$PRP_DIR/companion.css` when present |
 
 ### Build & ship
 

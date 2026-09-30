@@ -240,6 +240,9 @@ nothing at all.
 
 Read the PR back to verify the canonical comment exists and capture its stable URL. Replace
 `publication: pending` in the local report and comment after first creation; on re-review, preserve the
-existing URL. Then re-read the report and GitHub state to verify their bodies agree. Return the PR URL,
-verdict, finding and disposition counts, validation summary, selected scopes, absolute report path,
-and canonical comment URL.
+existing URL. Then re-read the report and GitHub state to verify their bodies agree.
+
+Invoke `/prp-companion` on the canonical report path to write the review's HTML companion beside it.
+The GitHub comment stays the markdown report. Return the PR URL, verdict, finding and disposition
+counts, validation summary, selected scopes, absolute report path, companion path, and canonical
+comment URL.

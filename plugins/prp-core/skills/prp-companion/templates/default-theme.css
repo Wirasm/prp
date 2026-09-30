@@ -1,0 +1,15 @@
+/* prp-companion default theme. Always pasted first; $PRP_DIR/companion.css, when present,
+   follows it and overrides any of these custom properties. */
+:root {
+  color-scheme: light dark;
+  --surface: #fafafa; --raised: #f0f1f3; --text: #1d2125; --muted: #5a616b; --faint: #868d96;
+  --border: #dde0e4; --accent: #2f7d6d; --attention: #a15c00; --danger: #c42b3c;
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --surface: #1b1d20; --raised: #25282c; --text: #e4e6e8; --muted: #9ba1a8; --faint: #6f757c;
+    --border: #33373c; --accent: #5cbfa9; --attention: #e0a03a; --danger: #f2596b;
+  }
+}
