@@ -26,9 +26,10 @@ stays the artifact. The page is derived from it and states nothing the markdown 
   answers "what is this and what do I have to decide".
 - **Copy, never paraphrase.** Risk text, finding text, required outcomes, acceptance criteria, the
   plan's approach and the review's opening paragraph are the markdown's words, copied whole. So are
-  `file:line`, severities, states, counts, verdicts and step titles. Shorten by leaving a field out,
-  never by rewording it. The one allowed trim inside a field: a file path may be cut to its file name. Never merge table cells into a new sentence: a card built from
-  a table row shows each cell as it is, under its column name. A certainty in the markdown stays a
+  `file:line` (path included), severities, states, counts, verdicts and step titles. Shorten by
+  leaving a field out, never by rewording it. The one allowed trim inside a field: a file path listed
+  on its own, as in a step's files, may be cut to its file name. Never merge table cells into a new
+  sentence: a card built from a table row shows each cell as it is, under its column name. A certainty in the markdown stays a
   certainty on the page. No sentence adds a judgement the markdown did not make.
 - **Every item carries a stable `id`** on the element that wraps the whole item, and nowhere
   decorative. A mark a human makes on the page resolves to the nearest ancestor `id`, so the id is

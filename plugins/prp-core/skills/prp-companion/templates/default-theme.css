@@ -1,5 +1,5 @@
-/* prp-companion default theme. Used when $PRP_DIR/companion.css does not exist.
-   A replacement theme defines the same custom properties. */
+/* prp-companion default theme. Always pasted first; $PRP_DIR/companion.css, when present,
+   follows it and overrides any of these custom properties. */
 :root {
   color-scheme: light dark;
   --surface: #fafafa; --raised: #f0f1f3; --text: #1d2125; --muted: #5a616b; --faint: #868d96;
