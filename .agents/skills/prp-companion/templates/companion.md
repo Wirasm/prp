@@ -43,6 +43,9 @@ stays the artifact. The page is derived from it and states nothing the markdown 
   | acceptance criterion | its own id, `AC1`, … |
   | diagram component | `C-<slug>` |
   | review Part's Change line | `C-<slug>-change`, the slug of its node |
+
+  A review Part's `<slug>` is the Part lowercased, with every run of other characters than `a-z0-9`
+  turned into one `-` and none at either end: `Sources/Helm/Canvas/` → `sources-helm-canvas`.
   | review finding | its report ID, `R1`, … |
 
 - **Diagrams** are inline SVG with real `<text>` labels, so a label can be marked. Each node that
@@ -82,7 +85,7 @@ The three things, in this order:
    `--danger` for REVIEW INCOMPLETE. Beside it the blocking and non-blocking counts. Under it, the
    report's lead sentence, then the **Validation** line, then a closed `<details>` with the summary
    `Signal` holding the Signal paragraph. Keep the Signal closed: the findings belong on the first
-   screen. A report from before the lead and Signal were split has no lead, only one opening
+   screen. A report with no `**Signal:**` line predates the split and has no lead, only one opening
    paragraph: show no lead and put that paragraph whole in the `<details>`.
 2. **The findings at a glance.** A bar or row of counts per severity, and a count per state.
 3. **The findings.** OPEN findings first, by severity (Critical, Important, Suggestion) then ID. Each
@@ -96,9 +99,10 @@ Then **What changed**, when the report has that section. The **User-visible** an
 lines copied, then a diagram of the parts table: one node per Part (`id="C-<slug>"`) labelled with
 the Part and, in small caps `--faint`, its Kind; State by colour (new `--accent`, changed
 `--attention`, unchanged `--border`, removed `--danger` with a dashed outline); one edge per name in
-Connects to, pointing from the Part to that name, and no other. Under the diagram, every Part that is
-not unchanged as one line: the Part in mono and its Change cell, wrapped in `id="C-<slug>-change"`.
-Draw the diagram even when Boundaries says none moved: it shows which shape held.
+Connects to, pointing from the Part to that name, and no other. Skip a name that has no row in the
+table. Under the diagram, every Part that is not unchanged as one line: the Part in mono and its
+Change cell, wrapped in `id="C-<slug>-change"`. Draw the diagram even when Boundaries says none
+moved: it shows which shape held.
 
 Then, smaller: reviewer coverage (scope → result). A review with no findings still shows the verdict,
 the lead sentence, the Signal and the line "No findings."

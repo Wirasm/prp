@@ -27,9 +27,9 @@ publication: <verified canonical GitHub comment URL | pending>
 
 <When applicable: **Resolved:** <count> · **Tracked follow-ups:** <issue links>>
 
-**Signal:** <The rest of the reasoning, in one short paragraph: the risk call behind the selected
-scopes, the verified head range or why a full review ran instead, the common cause connecting the
-findings, and what checked clean. Leave out what does not apply.>
+**Signal:** <Always present. The rest of the reasoning, in one short paragraph: the risk call behind
+the selected scopes, the verified head range or why a full review ran instead, the common cause
+connecting the findings, and what checked clean. Leave out the parts that do not apply.>
 
 ### What changed
 

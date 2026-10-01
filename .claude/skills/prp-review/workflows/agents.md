@@ -138,7 +138,8 @@ including agents that returned no finding.
 Write What changed from the diff read in step 1. It names the parts the PR touches and how they
 connect; it is description, not review, so it never carries a judgement or a finding. In correction
 verification, carry the previous report's What changed forward and update only the parts the
-correction diff touches.
+correction diff touches; when the previous report has none, write it from the full PR diff against
+its base.
 
 Write the synthesis in plain, concrete language. Cut generic praise, formulaic transitions, and vague
 claims; use the repository's exact terms and name the behavior or consequence directly.
