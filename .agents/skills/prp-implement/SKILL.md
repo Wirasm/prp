@@ -129,6 +129,27 @@ For initial implementation, invoke `$prp-pr`, passing the explicit `--base` argu
 
 If the plan has non-empty `Source PRD` and `PRD Phase` metadata, invoke `$prp-prd-update implemented` with the PRD path, phase number, plan path, report path, and PR URL. Do not edit the PRD directly. If the plan is not based on a PRD, skip this step.
 
+**A live review page.** When a correction pass fixes findings and `pr-{NUMBER}-review.data.json`
+exists beside the review report, the operator may have the review open in helm. After the push, set
+each fixed finding that has an entry there to `"status": "fixed"` with a one-sentence `note` naming
+the fix and its short SHA. Keep every other field and entry: `reply` is the operator's. Write through
+`bench`, so a change he made meanwhile is refused rather than overwritten (exit 3: run it again).
+Without `bench`, skip this: nothing shows the file.
+
+```bash
+LIVE="$PRP_DIR/reviews/pr-{NUMBER}-review.data.json"
+READ=$(mktemp) NEW=$(mktemp)
+bench file read "$LIVE" > "$READ"
+python3 - "$READ" > "$NEW" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1]))
+d["findings"]["R1"].update(status="fixed", note="Fixed in abc1234: the empty write is refused.")
+print(json.dumps(d, indent=2))
+PY
+bench file write "$LIVE" --expect "$READ" < "$NEW"; echo "exit $?"
+rm -f "$READ" "$NEW"
+```
+
 If committing, pushing, PR creation, or the required PRD update fails, leave the recoverable state intact, mark the report `BLOCKED`, and return the concrete failure.
 
 ## 6. Verify and hand off

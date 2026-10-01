@@ -1,6 +1,6 @@
 ---
 name: prp-companion
-description: Writes the visual HTML companion of a PRP plan or review - one self-contained page beside the markdown that shows a plan's change diagram, steps and risks, or a review's verdict, findings and a diagram of what the PR changed, with every item carrying a stable id a mark can point at. prp-plan and prp-review run it after writing their markdown. Use when the user wants to "make it visual", "show me the plan", "visualize this review", "diagram this plan", "write the companion", or invokes /prp-companion.
+description: Writes the visual HTML companion of a PRP plan or review - one self-contained page beside the markdown that shows a plan's change diagram, steps and risks, or a review's verdict, findings and a diagram of what the PR changed, with every item carrying a stable id a mark can point at. In helm a review page is live: the operator sets each finding's status and replies on the page. prp-plan and prp-review run it after writing their markdown. Use when the user wants to "make it visual", "show me the plan", "visualize this review", "diagram this plan", "write the companion", or invokes /prp-companion.
 argument-hint: "[path/to/plan-or-review.md] (blank = most recent plan or review in the store)"
 ---
 
@@ -45,12 +45,17 @@ mkdir -p "$PRP_DIR"; [ -f "$PRP_DIR/project.json" ] || printf '{"path": "%s", "n
 5. Before reporting, check the page against the markdown once: every risk, finding, required outcome,
    acceptance criterion and changed Part is on the page as the markdown's own words, and nothing on
    the page is absent from the markdown. Fix the page, never the markdown.
+6. When the artifact is a review and `command -v bench` succeeds, the page is live in helm: read
+   `templates/live.md` and follow it. It adds the page's script, writes `<stem>.data.json` beside the
+   page and opens the page. Otherwise the page stays static.
 
 ## Report
 
-One line: the companion's absolute path.
+One line: the companion's absolute path, and in live mode the data file's path or why it was not written.
 
 ## Resources
 
 - `templates/companion.md` — the page contract: file rules, fidelity, ids, diagrams, plan and review layouts
 - `templates/default-theme.css` — the built-in theme, always pasted first; the store's `companion.css` overrides it
+- `templates/live.md` — live mode for a review page in helm: the data file, opening the page, answering its mail
+- `templates/live.js` — the live page's script, pasted verbatim in live mode only

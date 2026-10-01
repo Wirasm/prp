@@ -35,6 +35,11 @@ mkdir -p "$PRP_DIR"; [ -f "$PRP_DIR/project.json" ] || printf '{"path": "%s", "n
 Read `workflows/agents.md` and execute it end-to-end. Before producing the report, read
 `templates/review-report.md` and follow its output contract exactly.
 
+In helm, `$prp-companion` makes the review's page live: it writes `pr-{NUMBER}-review.data.json`
+beside the page and opens it, so the operator's status changes and replies on the page reach you as
+mail. Answer them as the companion's live mode says, and return the data file's path with the
+companion's.
+
 ## Resources
 
 - `workflows/agents.md` — PR resolution, validation, agent scopes, aggregation, and publication
