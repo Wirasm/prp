@@ -133,7 +133,8 @@ If the plan has non-empty `Source PRD` and `PRD Phase` metadata, invoke `$prp-pr
 exists beside the review report, the operator may have the review open in helm. After the push, set
 each fixed finding that has an entry there to `"status": "fixed"` with a one-sentence `note` naming
 the fix and its short SHA. Keep every other field and entry: `reply` is the operator's. Write through
-`bench`, so a change he made meanwhile is refused rather than overwritten (exit 3: run it again).
+`bench`, so a change he made meanwhile is refused rather than overwritten (exit 3 "changed since you
+read it": run it again; any other refusal names its cause).
 Without `bench`, skip this: nothing shows the file.
 
 ```bash

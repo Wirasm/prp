@@ -95,12 +95,12 @@
 
   // A change is a function of the data, so it can be applied again to a newer version.
   async function change(edit) {
-    edit(data);
-    render();
     try {
+      edit(data);
+      render();
       const answer = await helm.postMessage({ kind: "canvas.data.write", data, base });
       base = answer.text;
-      if (answer.kind === "changed") { data = JSON.parse(answer.text); return change(edit); }
+      if (answer.kind === "changed") { data = JSON.parse(answer.text); return await change(edit); }
       said = "saved";
     } catch (e) {
       said = `not saved (${e})`;

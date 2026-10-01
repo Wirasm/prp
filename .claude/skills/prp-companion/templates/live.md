@@ -60,8 +60,9 @@ bench file write "$LIVE" --expect "$READ" < "$NEW"; echo "exit $?"
 rm -f "$READ" "$NEW"
 ```
 
-Exit 3 means the operator changed the file since you read it: run it again. Any other failure means
-benchd is not reachable: say so in the report line and leave the page static.
+Exit 3 with "changed since you read it" means the operator wrote first: run it again. Any other
+refusal names its cause on stderr, such as stdin that is not JSON: fix that rather than retrying. If
+benchd is not reachable, say so in the report line and leave the page static.
 
 ## Open it
 
