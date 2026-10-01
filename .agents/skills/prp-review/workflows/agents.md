@@ -1,7 +1,5 @@
 # Agent Review Workflow
 
-> **Arguments:** `$ARGUMENTS` (and `$1`, `$2`, ...) refer to the arguments given when this skill was invoked. Take them from the user's request; if absent, infer them from the conversation.
-
 Review the target PR through specialist agents, then publish one evidence-based summary.
 
 ## 1. Resolve the PR and context
@@ -48,18 +46,21 @@ including when the review stops early. The canonical report lives under `$PRP_DI
   is not an ancestor, or the correction materially changes the outcome, architecture, or scope, run
   one full review instead and record why.
 - When the head moved since the previous report's `reviewed_head` only by merging the base, and that
-  merge touches none of the PR's files, run a bounded verification instead of a review. Both commands
-  print nothing in that case:
+  merge touches none of the PR's files, run a bounded verification instead of a review. Fetch the
+  base, list the PR's files, then run the two checks; both print nothing in that case:
 
   ```bash
+  git fetch origin <base>
+  files="$(mktemp)"; gh pr diff <n> --name-only > "$files"                 # must succeed, non-empty
   git rev-list --no-merges <previous_head>..<head> --not origin/<base>     # no new PR commits
-  git diff --name-only <previous_head> <head> | grep -Fxf <(gh pr diff <n> --name-only)
+  git diff --name-only <previous_head> <head> | grep -Fxf "$files"         # no PR file touched
   ```
 
-  Run no reviewers and no repository gate; CI on the new head is its proof. Carry the previous
-  report forward with the new `reviewed_head`, state the verified range and those two empty results
-  in the Signal, and publish. Any output from either command means a correction verification or a
-  full review, as above.
+  A failed fetch or an empty or failed file list proves nothing: review as below. Otherwise run no
+  reviewers and no repository gate; CI on the new head is its proof. Carry the previous report
+  forward with the new `reviewed_head`, state the verified range and the two empty results in the
+  Signal, rewrite the report and companion as step 5 does, and publish. Any output from either check
+  means a correction verification or a full review, as above.
 - If the only matching artifact is under a legacy `.claude/PRPs/` path, stop and tell the user to
   run the PRP home-store migration.
 
@@ -72,13 +73,11 @@ create it again rather than working wherever the shell happens to be.
 
 ## 2. Run repository validation
 
-Check free disk space first, because a fresh review checkout pays a full build. Below about 20 GB,
-stop before the gate and report `REVIEW INCOMPLETE` with the number, for example "11 GB free in
-<checkout>; the gate needs about 20 GB for a fresh build. Free space and rerun."
-
-```bash
-df -Pk .worktrees/review-pr-<number> | awk 'NR==2 {print int($4 / 1048576) " GB free"}'
-```
+When the gate builds or installs dependencies, check free disk space first, because a fresh review
+checkout pays the full build. `df -Pk .worktrees/review-pr-<number>` reports it in KB, in the
+`Available` column. Below about 20 GB, stop before the gate and report `REVIEW INCOMPLETE` with the
+number, for example "11 GB free in <checkout>; the gate needs about 20 GB for a fresh build. Free
+space and rerun." A gate that builds nothing, such as a docs or prompt repository's, skips the check.
 
 Run every check in the review's own checkout. Discover authoritative checks from repository guidance,
 package scripts, task runners, and CI.
