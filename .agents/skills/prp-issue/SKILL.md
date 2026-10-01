@@ -18,6 +18,7 @@ Own planning through PR and every correction in this context. Preserve accumulat
 - Keep the plan, implementation report, PR, review report, publication URL, validation, and CI as the workstream's proof. Tiny work (§1) has no plan or report; its PR description carries that proof. Never reduce a handoff to a private summary.
 - Stop only for a product decision, missing prerequisite primitive, inaccessible dependency, permission boundary, or repeated no-progress failure that cannot be resolved in this context.
 - Do not merge. The caller or outer orchestrator owns that gate.
+- Never wait for a notification nobody sends. End a turn expecting to be woken only while a background child you launched is still running and will deliver its result. Poll everything else with a bounded loop: CI with `timeout 1800 gh pr checks <n> --required --watch --fail-fast`, a reviewer's result by re-reading its output or the published PR comment. A timeout is a result to act on, not a reason to stop.
 
 ## 1. Resolve and plan in this context
 
@@ -53,7 +54,7 @@ Start a fresh agent with this prompt:
 
 > Invoke `$prp-review` on `<PR URL or number>` with scopes `<requested scopes, if any>`. Applicable caller decisions and scope constraints, verbatim: `<decisions or "None">`. Read the linked plan and implementation report, or for tiny work the PR description, publish the complete review to GitHub, and return the verdict, canonical review-report path, verified publication URL, and any blocker. Do not modify the PR.
 
-Require the complete canonical review report and verified GitHub publication.
+Require the complete canonical review report and verified GitHub publication. Read the reviewer's result from its returned output or its published PR comment; end the turn to wait for it only while that reviewer is still running as your background child.
 Wait until all selected review agents have finished and the review coordinator has produced the complete canonical report before addressing any finding; never start correction from partial reviewer messages.
 
 ## 4. Disposition findings and re-review
@@ -66,7 +67,7 @@ Repeat correction and focused verification only for an unresolved prior blocker,
 
 ## 5. Require green CI
 
-After `READY TO MERGE`, wait for every required CI check. A head that only brought the base in, with the PR's own diff unchanged, keeps the verdict; CI on that head is its proof. A pending check is not green. For a PR-caused failure, invoke `$prp-implement` in CI-correction mode with the PR and complete failing-check evidence in this context, then run `$prp-review --verify-corrections` against the changed head. When no required CI exists, rerun the repository's authoritative local gate and record it instead.
+After `READY TO MERGE`, poll every required CI check with `timeout 1800 gh pr checks <n> --required --watch --fail-fast`; nothing notifies you when CI finishes. A head that only brought the base in, with the PR's own diff unchanged, keeps the verdict; CI on that head is its proof. A pending check is not green. For a PR-caused failure, invoke `$prp-implement` in CI-correction mode with the PR and complete failing-check evidence in this context, then run `$prp-review --verify-corrections` against the changed head. When no required CI exists, rerun the repository's authoritative local gate and record it instead.
 
 ## 6. Return proof and follow-ups
 
