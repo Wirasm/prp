@@ -15,7 +15,7 @@ Own planning through PR and every correction in this context. Preserve accumulat
 
 - Continue autonomously through plan, implementation, PR, review, correction, re-review, and CI.
 - Compose `$prp-plan`, `$prp-implement`, and `$prp-review`; do not reproduce their craft.
-- Keep the plan, implementation report, PR, review report, publication URL, validation, and CI as the workstream's proof. Never reduce a handoff to a private summary.
+- Keep the plan, implementation report, PR, review report, publication URL, validation, and CI as the workstream's proof. Tiny work (§1) has no plan or report; its PR description carries that proof. Never reduce a handoff to a private summary.
 - Stop only for a product decision, missing prerequisite primitive, inaccessible dependency, permission boundary, or repeated no-progress failure that cannot be resolved in this context.
 - Do not merge. The caller or outer orchestrator owns that gate.
 
@@ -26,18 +26,21 @@ Accept an issue or tracker URL, PRD, document, existing `.plan.md`, free-form re
 - Review-only request or contributor PR: use `$prp-review` and stop.
 - Existing plan: use it; publish it first with `$prp-plan publish <path>` when issue-derived publication is missing.
 - Issue with a published plan: let `$prp-implement` resolve and persist its absolute path from source metadata.
-- Existing reviewed PR: resolve its plan and implementation report, then resume correction or verification without repeating completed work.
+- Existing reviewed PR: resolve its plan and implementation report, or for tiny work its PR description, then resume correction or verification without repeating completed work.
+- Tiny work: skip `$prp-plan` and go straight to §2 with the change itself as the input. If `$prp-implement` returns that it is not tiny after all, invoke `$prp-plan` and continue as for any other input.
 - Every other input: invoke `$prp-plan` now in this context. Keep its reasoning available for implementation.
+
+Paperwork scales with risk, like review. Work is **tiny** when the change is a one-line or few-line fix, test-only, or docs-only, and touches no wire format, schema, persisted state, data-loss path, isolation, or security surface. Judge it from what the change does, not by counting lines; when unsure, it is not tiny. Tiny work writes no plan file and no implementation report: the PR description carries the problem, the fix, and the evidence. It still reproduces a bug before fixing it, still passes the repository's gate, and is still reviewed when §3 says so: prose only skips review, and anything else gets `$prp-review`, which scales a tiny change to the code reviewer alone.
 
 For a non-trivial change, run `code-simplifier` early, on the plan before implementing it and again on the first working implementation, and fold what it finds into this loop. It catches an overcomplicated direction while it is still cheap to change; a late review gate cannot.
 
-Require the absolute plan path and, for issue-derived plans, the verified publication URL before review.
+Require the absolute plan path and, for issue-derived plans, the verified publication URL before review; tiny work has neither.
 
 ## 2. Implement through PR in this context
 
-Invoke `$prp-implement` with the plan path—or source issue when resolving a published plan—and any explicit base. Keep ownership in this context through validation, scoped commit, PR creation, linked PRD updates, and the implementation report.
+Invoke `$prp-implement` with the plan path—or source issue when resolving a published plan, or for tiny work the change itself, stated as tiny—and any explicit base. Keep ownership in this context through validation, scoped commit, PR creation, linked PRD updates, and the implementation report.
 
-Do not start review without `VALIDATION: GREEN`, the absolute plan and report paths, and a live PR.
+Do not start review without `VALIDATION: GREEN`, the absolute plan and report paths (for tiny work, a PR description holding the problem, fix, and evidence), and a live PR.
 
 ## 3. Review in a fresh context
 
@@ -48,7 +51,7 @@ a detached checkout. Never point a reviewer at your own working tree.
 
 Start a fresh agent with this prompt:
 
-> Invoke `$prp-review` on `<PR URL or number>` with scopes `<requested scopes, if any>`. Applicable caller decisions and scope constraints, verbatim: `<decisions or "None">`. Read the linked plan and implementation report, publish the complete review to GitHub, and return the verdict, canonical review-report path, verified publication URL, and any blocker. Do not modify the PR.
+> Invoke `$prp-review` on `<PR URL or number>` with scopes `<requested scopes, if any>`. Applicable caller decisions and scope constraints, verbatim: `<decisions or "None">`. Read the linked plan and implementation report, or for tiny work the PR description, publish the complete review to GitHub, and return the verdict, canonical review-report path, verified publication URL, and any blocker. Do not modify the PR.
 
 Require the complete canonical review report and verified GitHub publication.
 Wait until all selected review agents have finished and the review coordinator has produced the complete canonical report before addressing any finding; never start correction from partial reviewer messages.
@@ -67,4 +70,4 @@ After `READY TO MERGE`, wait for every required CI check. A head that only broug
 
 ## 6. Return proof and follow-ups
 
-Only after review and CI are green, return the outcome, absolute plan and implementation-report paths, PR URL, latest review verdict, review-report path, publication URL, validation, and CI evidence. Then suggest only meaningful remaining non-blocking follow-ups, including already-created tracking issues; do not present required unfinished work as optional follow-up.
+Only after review and CI are green, return the outcome, absolute plan and implementation-report paths (none for tiny work), PR URL, latest review verdict, review-report path, publication URL, validation, and CI evidence. Then suggest only meaningful remaining non-blocking follow-ups, including already-created tracking issues; do not present required unfinished work as optional follow-up.
