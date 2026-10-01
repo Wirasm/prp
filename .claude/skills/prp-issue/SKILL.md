@@ -26,7 +26,7 @@ Accept an issue or tracker URL, PRD, document, existing `.plan.md`, free-form re
 - Existing plan: use it; publish it first with `/prp-plan publish <path>` when issue-derived publication is missing.
 - Issue with a published plan: let `/prp-implement` resolve and persist its absolute path from source metadata.
 - Existing reviewed PR: resolve its plan and implementation report, or for tiny work its PR description, then resume correction or verification without repeating completed work.
-- Tiny work: skip `/prp-plan` and go straight to §2 with the change itself as the input.
+- Tiny work: skip `/prp-plan` and go straight to §2 with the change itself as the input. If `/prp-implement` returns that it is not tiny after all, invoke `/prp-plan` and continue as for any other input.
 - Every other input: invoke `/prp-plan` now in this context. Keep its reasoning available for implementation.
 
 Paperwork scales with risk, like review. Work is **tiny** when the change is a one-line or few-line fix, test-only, or docs-only, and touches no wire format, schema, persisted state, data-loss path, isolation, or security surface. Judge it from what the change does, not by counting lines; when unsure, it is not tiny. Tiny work writes no plan file and no implementation report: the PR description carries the problem, the fix, and the evidence. It still reproduces a bug before fixing it, still passes the repository's gate, and is still reviewed when §3 says so: prose only skips review, and anything else gets `/prp-review`, which scales a tiny change to the code reviewer alone.
