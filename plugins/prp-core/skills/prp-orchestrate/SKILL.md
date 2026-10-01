@@ -103,12 +103,20 @@ words or a lossy one-line summary. Let the selected skill own its validation and
 
 ## 4. Monitor and steer
 
-React to completion notifications from the owners you launched: each is a running background child, so
-its completion arrives. Never wait for a notification nobody sends. CI, a published review, and a
-rebased head have no child behind them; poll them with a bounded loop, such as
-`timeout 1800 gh pr checks <n> --required --watch --fail-fast`, and treat a timeout as a result. An owner
-that ended its turn waiting for CI or a reviewer with nothing of its own still running is idle, not
-busy: tell it to poll. Update the run file without sending routine progress messages.
+Never end a turn with nothing armed to wake you. Wait in one of three ways:
+
+- **Another agent's result** comes by message: an owner reporting to you, or an owner answering your
+  steer. In Claude Code a message wakes its recipient, so there is nothing to poll.
+- **External state with no sender** (CI, a PR comment, a rebased head) needs a watcher that wakes you
+  when the condition holds. In Claude Code, run a bounded command in the background, which notifies
+  when it exits, such as `timeout 1800 gh pr checks <n> --required --watch --fail-fast`, or arm the
+  Monitor tool with a command that exits on the condition. Codex and pi have neither, so there a
+  bounded foreground poll is the fallback.
+- **A child you launched**, such as a delivery owner, wakes you when it finishes.
+
+A watcher that times out is a result: act on it or re-arm it. An owner that ended its turn with nothing
+armed is idle, not busy: tell it to arm a watcher. Update the run file without sending routine progress
+messages.
 
 On completion, use `references/launching.md` to verify the promised artifact and terminal signal. For a
 delivery, require a live PR, a published `READY TO MERGE` review of its current head or of a head it

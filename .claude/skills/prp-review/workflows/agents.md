@@ -128,8 +128,8 @@ current default review.
 ## 4. Launch reviewers
 
 Dispatch every selected agent in parallel when capacity permits, or sequentially when it does not. Every selected role remains required; collect all of them before aggregation.
-Read each reviewer's result from its returned output. End the turn to wait for one only while it is
-still running as your background child; never wait for a notification nobody sends.
+Read each reviewer's result from its returned output. A reviewer you launched wakes you when it
+finishes; never end a turn with nothing armed to wake you.
 All agents are advisory and must not modify files or post their own PR comments.
 
 Spawn every selected agent in its named reviewer role. Do not paraphrase the role's defect class in the
