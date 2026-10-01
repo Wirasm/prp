@@ -19,14 +19,27 @@ publication: <verified canonical GitHub comment URL | pending>
 
 ## <Ready to merge | Needs fixes | Review incomplete>
 
-<One concise paragraph explaining the outcome, the conclusions that determine readiness, and any
-common cause connecting the findings.>
+<One sentence: the outcome and the conclusion that decides it.>
 
 **<count> blocking · <count> non-blocking**
 
 **Validation:** <concise status>
 
 <When applicable: **Resolved:** <count> · **Tracked follow-ups:** <issue links>>
+
+**Signal:** <Always present. The rest of the reasoning, in one short paragraph: the risk call behind
+the selected scopes, the verified head range or why a full review ran instead, the common cause
+connecting the findings, and what checked clean. Leave out the parts that do not apply.>
+
+### What changed
+
+**User-visible:** <what a user or operator of the product now sees or does differently, or "None">
+
+**Boundaries:** <the parts that appeared, disappeared, or now connect differently, or "None moved">
+
+| Part | Kind | State | Connects to | Change |
+|---|---|---|---|---|
+| `<name as the repository spells it>` | module / type / wire / data | new / changed / removed / unchanged | <other Parts in this table it calls, reads, or writes> | <one line; blank when unchanged> |
 
 ### Findings
 
@@ -77,6 +90,12 @@ Rules:
 
 - Preserve every machine-metadata key and keep `verdict`, `open_findings`, and `publication` on exact
   unindented lines; deterministic consumers parse them from the raw report.
+- What changed describes the PR; it judges nothing and adds no finding. A Part is one unit the diff
+  touches at its edge: a module or directory (`module`), a type or schema shared across files
+  (`type`), a wire format, protocol, or CLI surface (`wire`), or stored data or a file format
+  (`data`). Group files into the unit they belong to, and keep the table to the parts a reader needs
+  to see the shape, usually under eight rows. List an unchanged Part only when a changed one connects
+  to it, and name connections only by Parts in the table.
 - Every Critical or Important finding needs a concrete impact and file:line evidence.
 - A finding that closes a causal class states the invariant, the search that enumerated it, every
   affected member, and every member examined and found clean, and its required outcome covers the

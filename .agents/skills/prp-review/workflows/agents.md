@@ -127,12 +127,19 @@ original PR for unrelated findings.
 
 ## 5. Synthesize without re-reviewing
 
-Read `../templates/review-report.md` before writing. Lead with the review's central signal: the
-outcome, the few conclusions that determine readiness, and the common cause when findings converge.
+Read `../templates/review-report.md` before writing. Lead with one sentence: the outcome and the
+conclusion that decides it. The Signal carries the rest: the risk call, the verified head range, and
+the common cause when findings converge.
 Merge duplicate findings into one causal item, attribute every contributing agent, preserve meaningful
 disagreement, and retain every distinct useful issue the agents found. Keep raw agent prose and
 supporting paths in the finding's detail rather than the scanning layer. Record every selected scope,
 including agents that returned no finding.
+
+Write What changed from the diff read in step 1. It names the parts the PR touches and how they
+connect; it is description, not review, so it never carries a judgement or a finding. In correction
+verification, carry the previous report's What changed forward and update only the parts the
+correction diff touches; when the previous report has none, write it from the full PR diff against
+its base.
 
 Write the synthesis in plain, concrete language. Cut generic praise, formulaic transitions, and vague
 claims; use the repository's exact terms and name the behavior or consequence directly.

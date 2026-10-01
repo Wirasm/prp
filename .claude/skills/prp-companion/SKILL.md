@@ -1,6 +1,6 @@
 ---
 name: prp-companion
-description: Writes the visual HTML companion of a PRP plan or review - one self-contained page beside the markdown that shows a plan's change diagram, steps and risks, or a review's verdict and findings, with every item carrying a stable id a mark can point at. prp-plan and prp-review run it after writing their markdown. Use when the user wants to "make it visual", "show me the plan", "visualize this review", "diagram this plan", "write the companion", or invokes /prp-companion.
+description: Writes the visual HTML companion of a PRP plan or review - one self-contained page beside the markdown that shows a plan's change diagram, steps and risks, or a review's verdict, findings and a diagram of what the PR changed, with every item carrying a stable id a mark can point at. prp-plan and prp-review run it after writing their markdown. Use when the user wants to "make it visual", "show me the plan", "visualize this review", "diagram this plan", "write the companion", or invokes /prp-companion.
 argument-hint: "[path/to/plan-or-review.md] (blank = most recent plan or review in the store)"
 ---
 
@@ -42,9 +42,9 @@ mkdir -p "$PRP_DIR"; [ -f "$PRP_DIR/project.json" ] || printf '{"path": "%s", "n
 3. Read `templates/companion.md` and follow it exactly.
 4. Write the page beside the markdown: same directory, final `.md` replaced by `.html`
    (`x.plan.md` → `x.plan.html`, `pr-12-review.md` → `pr-12-review.html`).
-5. Before reporting, check the page against the markdown once: every risk, finding, required outcome
-   and acceptance criterion is on the page as the markdown's own words, and nothing on the page is
-   absent from the markdown. Fix the page, never the markdown.
+5. Before reporting, check the page against the markdown once: every risk, finding, required outcome,
+   acceptance criterion and changed Part is on the page as the markdown's own words, and nothing on
+   the page is absent from the markdown. Fix the page, never the markdown.
 
 ## Report
 
