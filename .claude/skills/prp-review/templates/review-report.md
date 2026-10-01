@@ -110,6 +110,8 @@ Rules:
   do not create issues for speculative defense-in-depth, overengineering, or unclear direction.
 - Keep a finding open when a proposed follow-up or decline would leave the PR's outcome or invariant
   unsatisfied.
+- Keep the Signal visible in the markdown report and GitHub comment. A GitHub reader has no companion
+  page, and the Signal holds the risk call and the verified head range; only the companion collapses it.
 - Record every selected scope and actual validation result inside the collapsed coverage section.
 - Do not add generic praise, boilerplate checklists, confidence scores, or AI attribution.
 - Write `publication: pending` before the first post. After GitHub verification, replace it in both the

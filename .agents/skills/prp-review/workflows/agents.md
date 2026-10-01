@@ -26,7 +26,8 @@ reset is ever needed to reach the reviewed head.
 Remove the checkout with `git worktree remove .worktrees/review-pr-<number>` as the review's last act,
 including when the review stops early. The canonical report lives under `$PRP_DIR` and outlives it.
 
-- Stop when the PR is merged. Warn before reviewing a closed PR.
+- Stop when the PR is merged, and say why: "PR #<n> is already merged, so its diff against the base
+  branch no longer shows its change. Nothing was reviewed." Warn before reviewing a closed PR.
 - Review a draft normally, but post a comment rather than approving or requesting changes.
 - For a full review, read the complete diff, repository guidance, full changed files, and directly
   relevant tests and precedents.
@@ -44,6 +45,22 @@ including when the review stops early. The canonical report lives under `$PRP_DI
   context needed to verify them and detect correction-caused defects. If the previous head is missing,
   is not an ancestor, or the correction materially changes the outcome, architecture, or scope, run
   one full review instead and record why.
+- When the head moved since the previous report's `reviewed_head` only by merging the base, and that
+  merge touches none of the PR's files, run a bounded verification instead of a review. Fetch the
+  base, list the PR's files, then run the two checks; both print nothing in that case:
+
+  ```bash
+  git fetch origin <base>
+  files="$(mktemp)"; gh pr diff <n> --name-only > "$files"                 # must succeed, non-empty
+  git rev-list --no-merges <previous_head>..<head> --not origin/<base>     # no new PR commits
+  git diff --name-only <previous_head> <head> | grep -Fxf "$files"         # no PR file touched
+  ```
+
+  A failed fetch or an empty or failed file list proves nothing: review as below. Otherwise run no
+  reviewers and no repository gate; CI on the new head is its proof. Carry the previous report
+  forward with the new `reviewed_head`, state the verified range and the two empty results in the
+  Signal, rewrite the report and companion as step 5 does, and publish. Any output from either check
+  means a correction verification or a full review, as above.
 - If the only matching artifact is under a legacy `.claude/PRPs/` path, stop and tell the user to
   run the PRP home-store migration.
 
@@ -55,6 +72,12 @@ tree, and moving its HEAD silently reverts committed work. When the review's che
 create it again rather than working wherever the shell happens to be.
 
 ## 2. Run repository validation
+
+When the gate builds or installs dependencies, check free disk space first, because a fresh review
+checkout pays the full build. `df -Pk .worktrees/review-pr-<number>` reports it in KB, in the
+`Available` column. Below about 20 GB, stop before the gate and report `REVIEW INCOMPLETE` with the
+number, for example "11 GB free in <checkout>; the gate needs about 20 GB for a fresh build. Free
+space and rerun." A gate that builds nothing, such as a docs or prompt repository's, skips the check.
 
 Run every check in the review's own checkout. Discover authoritative checks from repository guidance,
 package scripts, task runners, and CI.
@@ -83,6 +106,9 @@ additive to the applicable defaults; “add tests” means those defaults plus `
 restriction as replacement; “only tests” means exactly `tests`. Honor any other explicit operator
 inclusion or exclusion by intent rather than parsing fixed syntax.
 
+An operator's narrowing applies to the round it was given for. A later full review returns to the
+default risk-scaled scopes unless the operator narrows again for that round.
+
 In correction verification, retain any prior scope that owns a finding being verified unless the
 operator explicitly narrows the pass; do not repeat other optional agents that had no affected finding.
 
@@ -101,7 +127,9 @@ current default review.
 
 ## 4. Launch reviewers
 
-Dispatch every selected agent in parallel when capacity permits, or sequentially when it does not. Every selected role remains required; wait for all of them before aggregation.
+Dispatch every selected agent in parallel when capacity permits, or sequentially when it does not. Every selected role remains required; collect all of them before aggregation.
+Read each reviewer's result from its returned output. A reviewer you launched wakes you when it
+finishes; never end a turn with nothing armed to wake you.
 All agents are advisory and must not modify files or post their own PR comments.
 
 Spawn every selected agent in its named reviewer role. Do not paraphrase the role's defect class in the
@@ -215,10 +243,16 @@ Write the report to the expanded absolute path `$PRP_DIR/reviews/pr-{NUMBER}-rev
 to `$PRP_DIR/reviews/pr-{NUMBER}/round-{n}/report.md`. The canonical path always holds the current
 report; the round directory keeps what each round actually said.
 
+Invoke `$prp-companion` on the canonical report path now, before publication, so a failed publication
+still leaves the review's HTML companion beside the report. The GitHub comment stays the markdown
+report.
+
 ## 6. Publish and report
 
 Immediately before publication, re-read the live `headRefOid`. Publish only when it still equals
-`reviewed_head`. If it changed, discard the candidate verdict and rerun a full review on the new head;
+`reviewed_head`. If it changed only by a base merge that touches none of the PR's files (the two empty
+commands in step 1), run that bounded verification for the new head and publish. Otherwise discard
+the candidate verdict and rerun a full review on the new head;
 when that cannot finish, publish `REVIEW INCOMPLETE` rather than claiming current-head coverage.
 
 Maintain one canonical GitHub issue comment for the complete report. When the previous canonical
@@ -249,7 +283,6 @@ Read the PR back to verify the canonical comment exists and capture its stable U
 `publication: pending` in the local report and comment after first creation; on re-review, preserve the
 existing URL. Then re-read the report and GitHub state to verify their bodies agree.
 
-Invoke `$prp-companion` on the canonical report path to write the review's HTML companion beside it.
-The GitHub comment stays the markdown report. Return the PR URL, verdict, finding and disposition
+Return the PR URL, verdict, finding and disposition
 counts, validation summary, selected scopes, absolute report path, companion path, and canonical
 comment URL.
