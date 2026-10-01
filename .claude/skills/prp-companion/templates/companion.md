@@ -43,10 +43,10 @@ stays the artifact. The page is derived from it and states nothing the markdown 
   | acceptance criterion | its own id, `AC1`, … |
   | diagram component | `C-<slug>` |
   | review Part's Change line | `C-<slug>-change`, the slug of its node |
+  | review finding | its report ID, `R1`, … |
 
   A review Part's `<slug>` is the Part lowercased, with every run of other characters than `a-z0-9`
   turned into one `-` and none at either end: `Sources/Helm/Canvas/` → `sources-helm-canvas`.
-  | review finding | its report ID, `R1`, … |
 
 - **Diagrams** are inline SVG with real `<text>` labels, so a label can be marked. Each node that
   stands for an item carries that item's id on its `<g>`. Draw only relationships the markdown
