@@ -195,7 +195,10 @@ Before reporting completion, verify:
 
 If the input came from a PRD, invoke `$prp-prd-update planned` with the PRD path, selected phase, and absolute plan path. Verify that the phase is `in-progress` and links to the plan.
 
-Invoke `$prp-companion` on the absolute plan path to write the plan's HTML companion beside it.
+Invoke `$prp-companion` on the absolute plan path to write the plan's HTML companion beside it. In helm
+it makes the page live: it writes `<plan>.plan.data.json` beside the page and opens it, so the operator's
+replies on steps and answers on risks reach you as mail. Answer them as the companion's live mode says,
+and report the data file's path with the companion's.
 
 Read `templates/report-format.md` and report the recommendation, absolute plan path, companion path, source PRD or issue when applicable, evidence or spike used, visuals included, and the next step.
 

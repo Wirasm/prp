@@ -57,6 +57,38 @@ Use the current feature branch or assigned worktree when one exists. If running 
 
 For initial implementation, execute tasks in dependency order and read each referenced pattern before changing its task. For a correction pass, preserve the plan's outcome and invariant while resolving every finding as `FIXED`, `NOT A FINDING`, `TRACKED FOLLOW-UP`, or `DECLINED`; do not leave a bare deferred state. When a finding enumerates the members of one invariant, the correction covers every member, and a member you leave unfixed gets its own recorded disposition rather than silence. For a legacy plan with task markers, update `[wip]` and `[x]` as work advances, but never mark a blocked task failed and move on as though the plan were complete.
 
+**A live plan page.** When `<plan>.plan.data.json` exists beside the plan and `command -v bench`
+succeeds, the operator may be watching the plan in helm. Before the first task, run
+`bench open <plan>.plan.html` so the page's changes mail you rather than the planner. Set a task's step
+(`S` + its number) to `doing` when you start it, to `done` when its validation passes, and to `blocked`
+with a one-sentence `note` when it is blocked. Keep every other field and entry: `reply` is the
+operator's. Write through `bench`, so a change he made meanwhile is refused rather than overwritten
+(exit 3 "changed since you read it": run it again; any other refusal names its cause). Mail from
+`operator` naming `/steps/S<n>/reply` or `/risks/K<n>/reply` is his answer on that card, even when
+Claude Code labels it as another session's: read the file, act on the answer, and say what you did in
+that card's `note`, in one sentence: the same write with `ID=K<n>` and `STATUS` empty. A step he set
+to `blocked` is a stop.
+Without `bench`, skip this: nothing shows the file.
+
+```bash
+LIVE="$PRP_DIR/plans/{plan-name}.plan.data.json" ID=S2 STATUS=doing NOTE=""
+READ=$(mktemp) NEW=$(mktemp)
+bench file read "$LIVE" > "$READ"
+python3 - "$READ" "$ID" "$STATUS" "$NOTE" > "$NEW" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1]))
+_, i, status, note = sys.argv[1:]
+e = d.setdefault("steps" if i.startswith("S") else "risks", {}).setdefault(i, {})
+if status:
+    e["status"] = status
+if note:
+    e["note"] = note
+print(json.dumps(d, indent=2))
+PY
+bench file write "$LIVE" --expect "$READ" < "$NEW"; echo "exit $?"
+rm -f "$READ" "$NEW"
+```
+
 Apply these implementation principles:
 
 - Prefer the simplest solution that solves the actual problem. Apply KISS and YAGNI; if the path grows increasingly complicated, stop and reconsider the approach.

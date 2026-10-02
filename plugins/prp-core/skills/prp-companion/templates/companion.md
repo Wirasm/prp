@@ -7,8 +7,8 @@ stays the artifact. The page is derived from it and states nothing the markdown 
 
 - One self-contained `.html` file. Nothing on the page is loaded from a network: no CDN script,
   no web font, no remote image, no `@import`, no `fetch`. Draw every visual as inline SVG. Add no
-  JavaScript; native `<details>` covers collapsing. The one exception is a review page in live mode,
-  which carries `live.js` verbatim and nothing else (`live.md`).
+  JavaScript; native `<details>` covers collapsing. The one exception is a review or plan page in live
+  mode, which carries `live.js` verbatim and nothing else (`live.md`).
 - The theme is the first `<style>` block (see `SKILL.md` for what goes in it). Spend
   colour and font only through its custom properties: `--surface`, `--raised`, `--text`, `--muted`,
   `--faint`, `--border`, `--accent`, `--attention`, `--danger`, `--font-body`, `--font-mono`. No
