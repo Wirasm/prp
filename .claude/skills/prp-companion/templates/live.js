@@ -1,13 +1,18 @@
-// prp-companion live layer. Pasted verbatim, only into a review page in live mode (templates/live.md).
-// In helm it shows each finding's status and one-line replies from <stem>.data.json beside the page,
+// prp-companion live layer. Pasted verbatim, only into a review or plan page in live mode (templates/live.md).
+// In helm it shows each item's status and one-line replies from <stem>.data.json beside the page,
 // and writes the operator's changes back through helmCanvasData. Anywhere else it does nothing, and
 // the page is the static companion.
 (() => {
   const helm = window.webkit?.messageHandlers?.helmCanvasData;
   if (!helm) return;
   const LIVE = decodeURIComponent(location.pathname.split("/").pop()).replace(/\.html?$/i, ".data.json");
-  const STATUSES = [["open", "Open"], ["fixed", "Fixed"], ["wontfix", "Won't fix"], ["question", "Question"]];
-  let base = null, data = { findings: {} }, said = "read";
+  // The data file's groups: each maps a card id to its entry. A group with statuses gets buttons.
+  const GROUPS = {
+    findings: { who: "reviewer", statuses: [["open", "Open"], ["fixed", "Fixed"], ["wontfix", "Won't fix"], ["question", "Question"]] },
+    steps: { who: "agent", statuses: [["todo", "To do"], ["doing", "Doing"], ["done", "Done"], ["blocked", "Blocked"]] },
+    risks: { who: "agent", statuses: [] },
+  };
+  let base = null, data = {}, said = "read";
 
   const style = document.createElement("style");
   style.textContent = `
@@ -20,32 +25,34 @@
       border: 1px solid var(--border); border-radius: 4px; padding: .15rem .45rem; }
     .live p { margin: .35rem 0 0; font-size: 14px; }
     .live .who { color: var(--faint); font-size: 12px; text-transform: uppercase; margin-right: .4rem; }
-    [data-live="fixed"], [data-live="wontfix"] { opacity: .65; }
+    [data-live="fixed"], [data-live="wontfix"], [data-live="done"] { opacity: .65; }
     [data-live="question"] { border-color: var(--attention); }
+    [data-live="doing"] { border-color: var(--accent); }
+    [data-live="blocked"] { border-color: var(--danger); }
     #live-line { color: var(--muted); font-size: 13px; }`;
   document.head.appendChild(style);
 
   // The card's controls, built once; render() keeps them current.
-  function controls(id) {
+  function controls(group, id) {
     const live = document.createElement("div");
     live.className = "live";
     const row = document.createElement("div");
     row.className = "row";
-    for (const [s, label] of STATUSES) {
+    for (const [s, label] of GROUPS[group].statuses) {
       const b = document.createElement("button");
       b.dataset.s = s;
       b.textContent = label;
-      b.onclick = () => change((d) => { d.findings[id].status = s; });
+      b.onclick = () => change((d) => { d[group][id].status = s; });
       row.append(b);
     }
     const input = document.createElement("input");
     input.className = "reply";
-    input.placeholder = "One line to the reviewer, Enter to send";
+    input.placeholder = `One line to the ${GROUPS[group].who}, Enter to send`;
     input.onkeydown = (e) => {
       const v = input.value.trim();
       if (e.key !== "Enter" || !v) return;
       input.value = "";
-      change((d) => { d.findings[id].reply = v; });
+      change((d) => { d[group][id].reply = v; });
     };
     row.append(input);
     const op = document.createElement("p"), agent = document.createElement("p");
@@ -65,21 +72,24 @@
   }
 
   function render() {
-    const counts = {};
-    for (const [id, item] of Object.entries(data.findings || {})) {
-      const card = document.getElementById(id);
-      if (!card) continue;
-      counts[item.status] = (counts[item.status] || 0) + 1;
-      let live = card.querySelector(":scope > .live");
-      if (!live) card.append(live = controls(id));
-      live.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.s === item.status));
-      say(live.querySelector(".op"), "you", item.reply);
-      say(live.querySelector(".agent"), "reviewer", item.note);
-      card.dataset.live = item.status;
+    const tally = [];
+    for (const [group, { who, statuses }] of Object.entries(GROUPS)) {
+      const counts = {};
+      for (const [id, item] of Object.entries(data[group] || {})) {
+        const card = document.getElementById(id);
+        if (!card) continue;
+        counts[item.status] = (counts[item.status] || 0) + 1;
+        let live = card.querySelector(":scope > .live");
+        if (!live) card.append(live = controls(group, id));
+        live.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.s === item.status));
+        say(live.querySelector(".op"), "you", item.reply);
+        say(live.querySelector(".agent"), who, item.note);
+        if (item.status) card.dataset.live = item.status;
+      }
+      for (const [s, l] of statuses) if (counts[s]) tally.push(`${counts[s]} ${l.toLowerCase()}`);
     }
     const line = document.getElementById("live-line");
     if (line) {
-      const tally = STATUSES.filter(([s]) => counts[s]).map(([s, l]) => `${counts[s]} ${l.toLowerCase()}`);
       line.textContent = [...tally, `${said} ${new Date().toLocaleTimeString()}`].join(" · ");
     }
   }
@@ -87,8 +97,7 @@
   async function load() {
     const res = await fetch(`./${encodeURIComponent(LIVE)}`, { cache: "no-store" }).catch(() => null);
     base = res && res.ok ? await res.text() : null;
-    data = base ? JSON.parse(base) : { findings: {} };
-    data.findings ||= {};
+    data = base ? JSON.parse(base) : {};
     said = "read";
     render();
   }
